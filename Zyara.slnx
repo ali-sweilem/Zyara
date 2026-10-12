@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/tests/" />
+  <Project Path="src/Zyara.Domain/Zyara.Domain.csproj" />
+  <Project Path="src/Zyara.Services/Zyara.Services.csproj" />
+  <Project Path="src/Zyara.Web/Zyara.Web.csproj" />
+  <Project Path="tests/Zyara.Tests/Zyara.Tests.csproj" />
+</Solution>
