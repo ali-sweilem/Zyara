@@ -7,7 +7,7 @@ using Zyara.Services.Data.Configurations;
 
 namespace Zyara.Services.Data
 {
-    internal class ZyaraDbContext : DbContext
+    internal class ZyaraDbContext(DbContextOptions<ZyaraDbContext> options) : DbContext(options)
     {
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Nurse> Nurses { get; set; }
