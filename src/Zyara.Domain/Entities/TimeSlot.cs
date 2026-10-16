@@ -13,5 +13,6 @@ namespace Zyara.Domain.Entities
         public TimeSpan EndTime { get; set; }
         public TimeSlotStatus Status { get; set; }
         public int ProviderId { get; set; }
+        public Provider Provider { get; set; }
     }
 }

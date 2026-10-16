@@ -4,7 +4,7 @@ using Zyara.Domain.Rules;
 
 namespace Zyara.Domain.Entities
 {
-    internal class Booking
+    public class Booking
     {
         public int Id { get; set; }
         public BookingStatus Status { get; set; }
@@ -22,7 +22,7 @@ namespace Zyara.Domain.Entities
         // Navigation properties
         public Patient? Patient { get; set; }
         // TODO(M2): change to Provider once the class exists
-        public User? Provider { get; set; }
+        public Provider? Provider { get; set; }
         public Service? Service { get; set; }
         public TimeSlot? TimeSlot { get; set; }
         public Payment? Payment { get; set; }
