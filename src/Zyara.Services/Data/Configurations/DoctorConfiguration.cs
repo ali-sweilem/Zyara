@@ -8,17 +8,19 @@ namespace Zyara.Services.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Doctor> builder)
         {
-            builder.HasKey(d => d.Id);
+            builder.HasBaseType<Provider>();
+
+            builder.HasKey(d => d.AdminID);
             builder.Property(d => d.licenser)
                 .IsRequired()
                 .HasMaxLength(100);
-            builder.Property(d => d.Name)
+            builder.Property(d => d.FullName)
                 .IsRequired(true)
                 .HasMaxLength(100);
             builder.Property(d => d.Email)
                 .IsRequired(false)
                 .HasMaxLength(100);
-            builder.Property(d => d.PhoneNumber)
+            builder.Property(d => d.Phone)
                 .IsRequired(true)
                 .HasMaxLength(11);
             builder.Property(d => d.averageRating)
@@ -30,8 +32,8 @@ namespace Zyara.Services.Data.Configurations
                 .IsRequired(true)
                 .HasMaxLength(100);
             // Configure the relationships with Prescription
-            builder.HasMany(d => d.Prescriptions)
-                .WithOne(p => p.doctor)
+            builder.HasMany(d => d.prescriptions)
+                .WithOne(p => p.Doctor)
                 .HasForeignKey(p => p.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
         }

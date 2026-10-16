@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Zyara.Domain.Enums;
 
 namespace Zyara.Domain.Entities
 {
-    public abstract class Provider //:User
+    public abstract class Provider :User
     {
         public string Specilty { get; set; }
         public int experienceYears { get; set; }

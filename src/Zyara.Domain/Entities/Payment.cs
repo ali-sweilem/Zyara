@@ -3,7 +3,7 @@ using Zyara.Domain.Enums;
 
 namespace Zyara.Domain.Entities
 {
-    internal class Payment
+    public class Payment
     {
         public int Id { get; set; }
         public PaymentMethod Method { get; set; }

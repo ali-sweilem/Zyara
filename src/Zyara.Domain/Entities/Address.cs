@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Zyara.Domain.Entities
 {
-    internal class Address
+    public class Address
     {
         public int Id { get; set; }
         public string Lable { get; set; }
