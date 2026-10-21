@@ -5,7 +5,7 @@ using Zyara.Domain.Enums;
 
 namespace Zyara.Domain.Entities
 {
-    internal abstract class User
+    public abstract class User
     {
         public int Id { get; set; }
         public int FullName { get; set; }

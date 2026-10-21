@@ -4,7 +4,7 @@ using Zyara.Domain.Rules;
 
 namespace Zyara.Domain.Entities
 {
-    internal class Booking
+    public class Booking
     {
         public int Id { get; set; }
         public BookingStatus Status { get; set; }

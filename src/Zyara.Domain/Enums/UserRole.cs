@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Zyara.Domain.Enums
 {
-    internal enum UserRole
+    public enum UserRole
     {
         User = 1,
         Doctor = 2,
