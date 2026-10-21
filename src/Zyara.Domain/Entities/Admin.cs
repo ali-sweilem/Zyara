@@ -4,8 +4,8 @@ using System.Text;
 
 namespace Zyara.Domain.Entities
 {
-    internal class Admin : User
+    public class Admin : User
     {
-
+        public List<Provider> Providers { get; set; }
     }
 }

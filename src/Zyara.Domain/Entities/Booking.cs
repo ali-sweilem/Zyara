@@ -22,7 +22,7 @@ namespace Zyara.Domain.Entities
         // Navigation properties
         public Patient? Patient { get; set; }
         // TODO(M2): change to Provider once the class exists
-        public User? Provider { get; set; }
+        public Provider? Provider { get; set; }
         public Service? Service { get; set; }
         public TimeSlot? TimeSlot { get; set; }
         public Payment? Payment { get; set; }
