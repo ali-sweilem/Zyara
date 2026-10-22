@@ -1,0 +1,145 @@
+@model Zyara.Web.Areas.Provider.ViewModels.ProviderProfileViewModel
+@{
+    string currentRole = Model.IsDoctor ? "Doctor" : "Nurse";
+    ViewData["Title"] = "Professional Credentials & Profile";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-person-badge text-primary me-2"></i> Professional Credentials & Profile
+        </h2>
+        <p class="text-muted mb-0">View your verified license, uploaded syndicate credentials, and manage your financial payouts.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Profile Card & Verification -->
+    <div class="col-lg-8">
+        <!-- Personal & Medical Info -->
+        <div class="med-card mb-4">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-person-lines-fill text-primary"></i> Professional Details
+                </h3>
+                <span class="med-badge badge-verified">
+                    <i class="bi bi-patch-check-fill"></i> Ministry Verified
+                </span>
+            </div>
+            <div class="med-card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Full Legal Name</label>
+                        <strong class="fs-6 text-dark">@Model.FullName</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Professional Title / Role</label>
+                        <span class="med-badge @(Model.IsDoctor ? "badge-doctor" : "badge-nurse") fs-6">
+                            <i class="bi @(Model.IsDoctor ? "bi-heart-pulse" : "bi-bandaid")"></i> @Model.Role
+                        </span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Specialty & Field of Practice</label>
+                        <strong class="text-dark">@Model.Specialty</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Years of Clinical Experience</label>
+                        <strong class="text-dark">@Model.ExperienceYears Years</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Official License / Syndicate ID</label>
+                        <strong class="text-teal-700 font-monospace">@Model.LicenseNumber</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Registered Service Territory</label>
+                        <span class="text-dark"><i class="bi bi-geo-alt-fill text-danger me-1"></i> @Model.BaseCity</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Contact Email</label>
+                        <span class="text-dark">@Model.Email</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Phone Number</label>
+                        <span class="text-dark">@Model.Phone</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credentials & Verification Documents -->
+        <div class="med-card">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-file-earmark-medical text-teal-600"></i> Medical Credentials & Certificates
+                </h3>
+            </div>
+            <div class="med-card-body">
+                <p class="text-muted small mb-3">
+                    These documents were audited and approved by the Zyara Medical Administration board prior to account activation.
+                </p>
+
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var doc in Model.Credentials)
+                    {
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-2 bg-white rounded-3 shadow-sm text-danger fs-4">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                </div>
+                                <div>
+                                    <strong class="text-dark d-block">@doc.DocumentType</strong>
+                                    <small class="text-muted font-monospace">@doc.FileName &bull; Uploaded @doc.UploadedAt.ToString("MMM yyyy")</small>
+                                </div>
+                            </div>
+                            <span class="med-badge badge-verified">
+                                <i class="bi bi-check2"></i> Verified
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Wallet & Withdrawal -->
+    <div class="col-lg-4">
+        <!-- Wallet Card -->
+        <div class="med-card mb-4 bg-teal-50 border-teal">
+            <div class="med-card-body p-4 text-center">
+                <div class="kpi-icon-wrap kpi-icon-mint mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="text-muted small text-uppercase fw-bold letter-spacing-1 mb-1">Available Wallet Balance</div>
+                <h3 class="display-6 fw-bold text-teal-900 mb-2">@Model.WalletBalance.ToString("N2") <small class="fs-6">EGP</small></h3>
+                <p class="text-muted small mb-4">Earnings from completed home visits ready for instant payout.</p>
+
+                <form asp-action="RequestPayout" asp-route-role="@currentRole" method="post">
+                    <button type="submit" class="btn btn-med-primary w-100 py-2 shadow-sm">
+                        <i class="bi bi-send-check me-1"></i> Request Payout (InstaPay / Bank)
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Rating Overview -->
+        <div class="med-card">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-star-fill text-warning"></i> Patient Feedback
+                </h3>
+            </div>
+            <div class="med-card-body text-center p-4">
+                <h2 class="display-5 fw-bold text-dark mb-1">@Model.AverageRating.ToString("0.0")</h2>
+                <div class="text-warning mb-2 fs-5">
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-half"></i>
+                </div>
+                <small class="text-muted">Based on @Model.RatingCount verified patient reviews</small>
+            </div>
+        </div>
+    </div>
+</div>
+

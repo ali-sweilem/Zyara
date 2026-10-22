@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Zyara.Domain.Entities;
 
-namespace Zyara.Domain.Entities
+public class Patient : User
 {
-    public class Patient : User
-    {
-        public DateOnly DateOfBirth { get; set; }
-    }
+    public DateOnly? DateOfBirth { get; set; }
+    public List<Address> Addresses { get; set; } = new();
 }

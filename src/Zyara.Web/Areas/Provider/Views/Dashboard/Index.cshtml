@@ -1,0 +1,304 @@
+@model Zyara.Web.Areas.Provider.ViewModels.ProviderDashboardViewModel
+@{
+    ViewData["Title"] = $"{Model.RoleTitle} Dashboard";
+}
+
+<!-- Welcome Medical Banner -->
+<div class="welcome-banner">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge @(Model.IsDoctor ? "badge-doctor" : "badge-nurse") px-3 py-1 text-uppercase fw-semibold" style="letter-spacing: 0.05em;">
+                    @(Model.IsDoctor ? "Doctor Portal - لوحة تحكم الطبيب" : "Nurse Portal - لوحة تحكم التمريض")
+                </span>
+                <span class="badge badge-verified px-3 py-1">
+                    <i class="bi bi-shield-check"></i> Licensed & Verified
+                </span>
+            </div>
+            <h2 class="display-6 fw-bold mb-2">Welcome back, @Model.FullName</h2>
+            <p class="text-white-50 mb-0 fs-6">
+                <i class="bi bi-geo-alt me-1"></i> Base Area: <strong>@Model.BaseCity</strong> &nbsp;|&nbsp; 
+                <i class="bi bi-award me-1"></i> License: <strong>@Model.LicenseNumber</strong>
+            </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-role="@Model.RoleTitle" class="btn btn-light text-dark fw-semibold px-4 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-calendar-plus text-primary me-1"></i> Manage Availability
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Key Performance Metrics (KPIs) -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-teal">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="kpi-label">Today's Visits</div>
+            <div class="kpi-value text-teal">@Model.TodayVisitsCount</div>
+            <div class="kpi-hint text-muted">
+                <i class="bi bi-clock-history me-1"></i> 2 ongoing, 1 remaining
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-amber">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="kpi-label">Pending Approval</div>
+            <div class="kpi-value text-amber">@Model.PendingRequestsCount</div>
+            <div class="kpi-hint text-muted">Requires your confirmation</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-mint">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="kpi-label">Wallet Balance</div>
+            <div class="kpi-value text-success">@Model.WalletBalance.ToString("N2") <small style="font-size: 0.9rem;">EGP</small></div>
+            <div class="kpi-hint text-success fw-semibold">
+                <i class="bi bi-arrow-up-right me-1"></i> Available for withdrawal
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-blue">
+                <i class="bi bi-star-fill text-warning"></i>
+            </div>
+            <div class="kpi-label">Overall Rating</div>
+            <div class="kpi-value">@Model.AverageRating.ToString("0.0") <small class="text-muted fw-normal" style="font-size: 0.95rem;">/ 5.0</small></div>
+            <div class="kpi-hint text-muted">Based on @Model.RatingCount patient reviews</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Section: Upcoming Visits & Schedule -->
+<div class="row g-4">
+    <!-- Today's Visits Table -->
+    <div class="col-lg-8">
+        <div class="med-card mb-4">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-house-heart text-primary"></i> Today's Scheduled Home Visits
+                </h3>
+                <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" asp-route-role="@Model.RoleTitle" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                    View All Visits
+                </a>
+            </div>
+            <div class="med-card-body p-0">
+                @if (Model.UpcomingVisits.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted" style="font-size: 0.8rem; text-transform: uppercase;">
+                                <tr>
+                                    <th class="ps-4">Patient / Location</th>
+                                    <th>Service</th>
+                                    <th>Visit Window</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var visit in Model.UpcomingVisits)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-bold text-dark">@visit.PatientName</div>
+                                            <small class="text-muted d-block">
+                                                <i class="bi bi-geo-alt-fill text-danger me-1"></i> @visit.PatientAddress
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="bi bi-telephone me-1"></i> @visit.PatientPhone
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold text-dark d-block">@visit.ServiceName</span>
+                                            <small class="text-muted">@visit.TotalPrice.ToString("N0") EGP (@visit.PaymentMethod)</small>
+                                        </td>
+                                        <td>
+                                            <div class="badge bg-light text-dark border px-2 py-1">
+                                                <i class="bi bi-clock me-1 text-primary"></i> 
+                                                @DateTime.Today.Add(visit.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(visit.EndTime).ToString("hh:mm tt")
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (visit.Status == BookingStatus.Confirmed)
+                                            {
+                                                <span class="med-badge badge-confirmed">
+                                                    <i class="bi bi-check2"></i> Confirmed
+                                                </span>
+                                            }
+                                            else if (visit.Status == BookingStatus.Started)
+                                            {
+                                                <span class="med-badge badge-started">
+                                                    <i class="bi bi-arrow-repeat spin"></i> In Progress
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a asp-area="Provider" asp-controller="Bookings" asp-action="Details" asp-route-id="@visit.Id" asp-route-role="@Model.RoleTitle" 
+                                               class="btn btn-sm btn-med-primary">
+                                                <span>Manage Visit</span>
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
+                        No visits scheduled for today yet.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Pending Approvals Box -->
+        <div class="med-card">
+            <div class="med-card-header bg-amber-50">
+                <h3 class="med-card-title text-amber-800">
+                    <i class="bi bi-bell-fill text-amber-600"></i> New Booking Requests Requiring Approval
+                </h3>
+                <span class="badge bg-warning text-dark rounded-pill px-3">@Model.PendingRequests.Count New</span>
+            </div>
+            <div class="med-card-body">
+                @if (Model.PendingRequests.Any())
+                {
+                    @foreach (var req in Model.PendingRequests)
+                    {
+                        <div class="p-3 border rounded-3 bg-white mb-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 shadow-sm">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="fw-bold text-dark fs-6">@req.PatientName</span>
+                                    <span class="med-badge badge-pending">Pending Approval</span>
+                                </div>
+                                <div class="text-muted small mb-1">
+                                    <i class="bi bi-activity text-teal-600 me-1"></i> Requested: <strong>@req.ServiceName</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar-event me-1"></i> @req.Date.ToString("dddd, dd MMM yyyy") at @DateTime.Today.Add(req.StartTime).ToString("hh:mm tt")
+                                    &nbsp;|&nbsp;
+                                    <i class="bi bi-cash-stack me-1"></i> <strong>@req.TotalPrice.ToString("N0") EGP</strong> (Net: @req.NetEarnings.ToString("N0") EGP)
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <form asp-area="Provider" asp-controller="Bookings" asp-action="Accept" asp-route-id="@req.Id" asp-route-role="@Model.RoleTitle" method="post">
+                                    <button type="submit" class="btn btn-med-mint btn-sm">
+                                        <i class="bi bi-check-lg"></i> Accept
+                                    </button>
+                                </form>
+                                <form asp-area="Provider" asp-controller="Bookings" asp-action="Reject" asp-route-id="@req.Id" asp-route-role="@Model.RoleTitle" method="post">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-x-lg"></i> Decline
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-check-all text-success fs-2 d-block mb-1"></i>
+                        All booking requests have been answered!
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar: Today's Schedule & Quick Actions -->
+    <div class="col-lg-4">
+        <!-- Quick Schedule Widget -->
+        <div class="med-card mb-4">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-clock text-primary"></i> Availability Slots
+                </h3>
+                <small class="text-muted">Today</small>
+            </div>
+            <div class="med-card-body">
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var slot in Model.TodayTimeSlots)
+                    {
+                        <div class="p-2 px-3 border rounded-3 d-flex align-items-center justify-content-between @(slot.Status == TimeSlotStatus.Booked ? "bg-light border-teal" : "bg-white")">
+                            <div>
+                                <span class="fw-semibold text-dark">
+                                    @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt")
+                                </span>
+                                @if (slot.Status == TimeSlotStatus.Booked)
+                                {
+                                    <small class="text-primary d-block font-monospace">@slot.PatientName</small>
+                                }
+                            </div>
+                            <div>
+                                @if (slot.Status == TimeSlotStatus.Booked)
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Booked</span>
+                                }
+                                else if (slot.Status == TimeSlotStatus.Available)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Available</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="mt-3 text-center">
+                    <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-role="@Model.RoleTitle" class="btn btn-sm btn-outline-secondary w-100 rounded-pill">
+                        Edit Full Schedule
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Specific Features Card -->
+        <div class="med-card">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi @(Model.IsDoctor ? "bi-prescription2 text-primary" : "bi-bandaid text-purple")"></i> 
+                    @(Model.IsDoctor ? "Doctor Clinical Tools" : "Nursing Care Tools")
+                </h3>
+            </div>
+            <div class="med-card-body">
+                @if (Model.IsDoctor)
+                {
+                    <p class="text-muted small mb-3">
+                        As a licensed physician, you have access to digital prescriptions, patient medication charts, and official medical notes.
+                    </p>
+                    <ul class="list-unstyled d-flex flex-column gap-2 small text-muted mb-0">
+                        <li><i class="bi bi-check-circle-fill text-teal-600 me-2"></i> E-Prescriptions with automated dosage</li>
+                        <li><i class="bi bi-check-circle-fill text-teal-600 me-2"></i> Patient diagnostic history review</li>
+                        <li><i class="bi bi-check-circle-fill text-teal-600 me-2"></i> Confidential doctor visit notes</li>
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted small mb-3">
+                        As a registered nurse, you can record vital signs, document wound healing progression, and track administered medications.
+                    </p>
+                    <ul class="list-unstyled d-flex flex-column gap-2 small text-muted mb-0">
+                        <li><i class="bi bi-check-circle-fill text-teal-600 me-2"></i> Real-time vitals monitoring & logging</li>
+                        <li><i class="bi bi-check-circle-fill text-teal-600 me-2"></i> Sterile wound care & dressing checklist</li>
+                        <li><i class="bi bi-check-circle-fill text-teal-600 me-2"></i> IV line & infusion observation charts</li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

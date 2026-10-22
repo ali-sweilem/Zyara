@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Zyara Healthcare Provider Portal</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 & Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Medical Portal Styling -->
+    <link rel="stylesheet" href="~/css/provider-medical.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="provider-body">
+    <div class="provider-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="provider-sidebar" id="providerSidebar">
+            <div class="provider-brand">
+                <div class="brand-icon-pill">
+                    <i class="bi bi-hospital"></i>
+                </div>
+                <div>
+                    <h1 class="brand-name">Zyara <span class="brand-tag">Medical</span></h1>
+                    <small class="text-muted d-block" style="font-size: 0.72rem;">زيارة للرعاية الطبية المنزلية</small>
+                </div>
+            </div>
+
+            <div class="sidebar-menu">
+                <div class="menu-label">Main Menu</div>
+                
+                <a class="nav-item-med @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")" 
+                   asp-area="Provider" asp-controller="Dashboard" asp-action="Index" asp-route-role="@Context.Request.Query["role"]">
+                    <i class="bi bi-grid-1x2"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a class="nav-item-med @(ViewContext.RouteData.Values["controller"]?.ToString() == "Bookings" ? "active" : "")" 
+                   asp-area="Provider" asp-controller="Bookings" asp-action="Index" asp-route-role="@Context.Request.Query["role"]">
+                    <i class="bi bi-calendar2-check"></i>
+                    <span>Home Visits & Bookings</span>
+                </a>
+
+                <a class="nav-item-med @(ViewContext.RouteData.Values["controller"]?.ToString() == "Schedule" ? "active" : "")" 
+                   asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-role="@Context.Request.Query["role"]">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Availability & Schedule</span>
+                </a>
+
+                <div class="menu-label">Services & Finance</div>
+
+                <a class="nav-item-med @(ViewContext.RouteData.Values["controller"]?.ToString() == "Services" ? "active" : "")" 
+                   asp-area="Provider" asp-controller="Services" asp-action="Index" asp-route-role="@Context.Request.Query["role"]">
+                    <i class="bi bi-bag-plus"></i>
+                    <span>My Services & Pricing</span>
+                </a>
+
+                <a class="nav-item-med @(ViewContext.RouteData.Values["controller"]?.ToString() == "Profile" ? "active" : "")" 
+                   asp-area="Provider" asp-controller="Profile" asp-action="Index" asp-route-role="@Context.Request.Query["role"]">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Credentials & Profile</span>
+                </a>
+            </div>
+
+            <!-- Provider Mini Card at bottom of sidebar -->
+            <div class="p-3 border-top bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+                         style="width: 38px; height: 38px; background: #0891b2; font-weight: 700;">
+                        @(Context.Request.Query["role"] == "Nurse" ? "RN" : "Dr")
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="fw-bold text-truncate" style="font-size: 0.85rem;">
+                            @(Context.Request.Query["role"] == "Nurse" ? "Nurse Salma Ibrahim" : "Dr. Hazem El-Menshawy")
+                        </div>
+                        <span class="med-badge @(Context.Request.Query["role"] == "Nurse" ? "badge-nurse" : "badge-doctor")" style="font-size: 0.7rem; padding: 2px 6px;">
+                            @(Context.Request.Query["role"] == "Nurse" ? "Staff Nurse" : "Consultant Physician")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="provider-main">
+            <!-- Top Navbar -->
+            <header class="provider-header">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button" id="sidebarToggle">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
+
+                    <!-- Role Switcher Pill for Demo/Review -->
+                    <div class="role-switcher-pill">
+                        <span class="text-muted small px-2 d-none d-md-inline" style="font-size: 0.75rem;">Viewing as:</span>
+                        <a href="?role=Doctor" class="role-btn @(Context.Request.Query["role"] != "Nurse" ? "active" : "")">
+                            <i class="bi bi-heart-pulse"></i> Doctor
+                        </a>
+                        <a href="?role=Nurse" class="role-btn @(Context.Request.Query["role"] == "Nurse" ? "active" : "")">
+                            <i class="bi bi-bandaid"></i> Nurse
+                        </a>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Verification Badge -->
+                    <span class="med-badge badge-verified d-none d-sm-inline-flex">
+                        <i class="bi bi-patch-check-fill"></i> Verified Medical Provider
+                    </span>
+
+                    <!-- Wallet Quick View -->
+                    <div class="d-flex align-items-center gap-2 px-3 py-1 bg-white rounded-pill border shadow-sm">
+                        <i class="bi bi-wallet2 text-success"></i>
+                        <span class="small text-muted">Wallet:</span>
+                        <strong class="text-dark">2,850.00 EGP</strong>
+                    </div>
+
+                    <!-- Notification Bell -->
+                    <div class="position-relative">
+                        <button class="btn btn-light rounded-circle p-2 border" type="button" title="Notifications">
+                            <i class="bi bi-bell text-secondary"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                <span class="visually-hidden">New alerts</span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Return to public site -->
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-light text-muted border" title="Back to main site">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Alerts Container -->
+            <div class="container-fluid px-4 pt-3">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+            </div>
+
+            <!-- Page Body -->
+            <main class="provider-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.getElementById('providerSidebar')?.classList.toggle('show');
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

@@ -8,7 +8,7 @@ namespace Zyara.Domain.Entities
     {
         public int Id { get; set; }
 
-        public int BookingId { get; set; }
+        public int? BookingId { get; set; }
 
         public int Stars { get; set; }
 

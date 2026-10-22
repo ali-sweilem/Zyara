@@ -6,6 +6,6 @@ namespace Zyara.Domain.Entities
 {
     public class Admin : User
     {
-        public List<Provider> Providers { get; set; }
+        // no attributes of its own; Provider.VerifiedByAdminId holds the relationship
     }
 }
