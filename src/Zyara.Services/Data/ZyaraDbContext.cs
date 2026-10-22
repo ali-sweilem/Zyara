@@ -13,6 +13,9 @@ namespace Zyara.Services.Data
         public DbSet<Nurse> Nurses { get; set; }
         public DbSet<Provider> Providers { get; set; }
         public DbSet<ProviderCredential> ProviderCredentials { get; set; }
+        public DbSet<Service> Services { get; set; }
+        public DbSet<ProviderService> ProviderServices { get; set; }
+        public DbSet<TimeSlot> TimeSlots { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -27,6 +30,9 @@ namespace Zyara.Services.Data
             modelBuilder.ApplyConfiguration(new ProviderCredentialConfiguration());
             modelBuilder.ApplyConfiguration(new BookingConfiguration());
             modelBuilder.ApplyConfiguration(new PaymentConfiguration());
+            modelBuilder.ApplyConfiguration(new ServiceConfiguration());
+            modelBuilder.ApplyConfiguration(new ProviderServiceConfiguration());
+            modelBuilder.ApplyConfiguration(new TimeSlotConfiguration());
         }
     }
 }
