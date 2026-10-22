@@ -46,9 +46,8 @@ namespace Zyara.Services.Data.Configurations
                 .IsRequired();
 
             // Booking (many) -> Provider (1): required, Restrict
-            // TODO(M2): Change User to Provider entity once it exists
             builder.HasOne(b => b.Provider)
-                .WithMany()
+                .WithMany(p => p.Booking)
                 .HasForeignKey(b => b.ProviderId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
@@ -83,11 +82,18 @@ namespace Zyara.Services.Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(false);
 
-            // ServiceNote (0..*) -> Booking (1): one-to-many
-            // TODO(M4): Add navigation to ServiceNotes once ServiceNote entity is created
+            // ServiceNote (0..*) -> Booking (1): one-to-many, Restrict, FK on ServiceNote
+            builder.HasMany<ServiceNote>()
+                .WithOne(sn => sn.Booking)
+                .HasForeignKey(sn => sn.BookingId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Prescription (0..1) <-> Booking (1): one-to-one optional
-            // TODO(M4): Add navigation to Prescription once Prescription entity is created
+            // Prescription (0..1) <-> Booking (1): one-to-one optional, Restrict, FK on Prescription, unique index
+            builder.HasOne<Prescription>()
+                .WithOne()
+                .HasForeignKey<Prescription>(p => p.BookingId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             builder.HasIndex(b => b.PatientId);
             builder.HasIndex(b => b.ProviderId);
