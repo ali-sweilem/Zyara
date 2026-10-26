@@ -468,6 +468,11 @@ namespace Zyara.Services.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -615,7 +620,7 @@ namespace Zyara.Services.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("Zyara.Domain.Entities.Service", "Service")
-                        .WithMany()
+                        .WithMany("Bookings")
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -706,7 +711,7 @@ namespace Zyara.Services.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("Zyara.Domain.Entities.Service", "Service")
-                        .WithMany()
+                        .WithMany("ProviderServices")
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -766,6 +771,13 @@ namespace Zyara.Services.Data.Migrations
             modelBuilder.Entity("Zyara.Domain.Entities.Prescription", b =>
                 {
                     b.Navigation("PrescriptionItems");
+                });
+
+            modelBuilder.Entity("Zyara.Domain.Entities.Service", b =>
+                {
+                    b.Navigation("Bookings");
+
+                    b.Navigation("ProviderServices");
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Patient", b =>

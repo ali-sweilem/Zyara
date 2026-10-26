@@ -9,9 +9,12 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
+        // Table name
         builder.ToTable("Users");
+        // PK
         builder.HasKey(u => u.Id);
 
+        // Properties
         builder.Property(u => u.FullName)
             .IsRequired()
             .HasMaxLength(100);
@@ -30,6 +33,10 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash)
             .IsRequired()
             .HasMaxLength(500);
+
+        builder.Property(u => u.Gender)
+            .HasConversion<string>()
+            .HasMaxLength(10);
 
         builder.Property(u => u.Role)
         .HasConversion<string>()

@@ -54,7 +54,7 @@ namespace Zyara.Services.Data.Configurations
 
             // Booking (many) -> Service (1): required, Restrict
             builder.HasOne(b => b.Service)
-                .WithMany()
+                .WithMany(s => s.Bookings)
                 .HasForeignKey(b => b.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();

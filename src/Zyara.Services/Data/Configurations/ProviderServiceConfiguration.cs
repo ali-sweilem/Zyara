@@ -23,7 +23,7 @@ namespace Zyara.Services.Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(ps => ps.Service)
-                .WithMany()
+                .WithMany(s => s.ProviderServices)
                 .HasForeignKey(ps => ps.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
