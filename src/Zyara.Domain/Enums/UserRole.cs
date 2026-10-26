@@ -6,7 +6,7 @@ namespace Zyara.Domain.Enums
 {
     public enum UserRole
     {
-        User = 1,
+        Patient = 1,
         Doctor = 2,
         Nurse = 3,
         Admin = 4

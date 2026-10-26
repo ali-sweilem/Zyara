@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Zyara.Domain.Entities
 {
-    public class Nurse:Provider
+    public class Nurse : Provider
     {
 
     }

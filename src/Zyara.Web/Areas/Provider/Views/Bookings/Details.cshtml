@@ -1,0 +1,361 @@
+@model Zyara.Web.Areas.Provider.ViewModels.BookingDetailsViewModel
+@{
+    ViewData["Title"] = $"Visit #{Model.Booking.Id} - {Model.Booking.PatientName}";
+    string roleParam = Model.IsNurse ? "Nurse" : "Doctor";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" asp-route-role="@roleParam" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
+        <i class="bi bi-arrow-left"></i> Back to all visits
+    </a>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-3 mb-1">
+                <h2 class="fw-bold mb-0">Home Visit #@Model.Booking.Id</h2>
+                @switch (Model.Booking.Status)
+                {
+                    case BookingStatus.PendingProviderApproval:
+                        <span class="med-badge badge-pending fs-6"><i class="bi bi-hourglass-split"></i> Pending Approval</span>
+                        break;
+                    case BookingStatus.Confirmed:
+                        <span class="med-badge badge-confirmed fs-6"><i class="bi bi-calendar-check"></i> Confirmed</span>
+                        break;
+                    case BookingStatus.Started:
+                        <span class="med-badge badge-started fs-6"><i class="bi bi-play-circle-fill"></i> In Progress</span>
+                        break;
+                    case BookingStatus.Completed:
+                        <span class="med-badge badge-completed fs-6"><i class="bi bi-check-circle-fill"></i> Completed</span>
+                        break;
+                    default:
+                        <span class="badge bg-secondary fs-6">@Model.Booking.Status</span>
+                        break;
+                }
+            </div>
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar-event me-1"></i> @Model.Booking.Date.ToString("dddd, dd MMMM yyyy") 
+                &nbsp;|&nbsp; 
+                <i class="bi bi-clock me-1"></i> @DateTime.Today.Add(Model.Booking.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(Model.Booking.EndTime).ToString("hh:mm tt")
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+            @if (Model.Booking.Status == BookingStatus.PendingProviderApproval)
+            {
+                <form asp-action="Accept" asp-route-id="@Model.Booking.Id" asp-route-role="@roleParam" method="post">
+                    <button type="submit" class="btn btn-med-mint">
+                        <i class="bi bi-check-lg"></i> Accept Booking
+                    </button>
+                </form>
+                <form asp-action="Reject" asp-route-id="@Model.Booking.Id" asp-route-role="@roleParam" method="post">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-x-lg"></i> Decline
+                    </button>
+                </form>
+            }
+            else if (Model.Booking.Status == BookingStatus.Started)
+            {
+                <form asp-action="Complete" asp-route-id="@Model.Booking.Id" asp-route-role="@roleParam" method="post">
+                    <button type="submit" class="btn btn-success shadow-sm">
+                        <i class="bi bi-check-circle-fill me-1"></i> Complete Visit & Finalize
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Patient & Visit Workflow -->
+    <div class="col-lg-7">
+        <!-- Patient Info Card -->
+        <div class="med-card mb-4">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-person-circle text-primary"></i> Patient Information
+                </h3>
+                <span class="badge bg-light text-dark border">Age: @Model.PatientAge years (@Model.PatientGender)</span>
+            </div>
+            <div class="med-card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Full Name</label>
+                        <strong class="fs-6 text-dark">@Model.Booking.PatientName</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small d-block">Contact Phone</label>
+                        <a href="tel:@Model.Booking.PatientPhone" class="fw-semibold text-primary text-decoration-none">
+                            <i class="bi bi-telephone-fill me-1"></i> @Model.Booking.PatientPhone
+                        </a>
+                    </div>
+                    <div class="col-12">
+                        <label class="text-muted small d-block">Home Visit Address</label>
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="d-block text-dark">@Model.Booking.PatientAddress</strong>
+                                <small class="text-muted">@Model.Booking.City, Egypt</small>
+                            </div>
+                            <a href="https://maps.google.com" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
+                                <i class="bi bi-geo-alt"></i> Navigate (Maps)
+                            </a>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PatientNotes))
+                    {
+                        <div class="col-12">
+                            <label class="text-muted small d-block">Medical Chief Complaint / Patient Notes</label>
+                            <div class="p-3 bg-warning-subtle border border-warning-subtle rounded-3 text-dark small">
+                                <i class="bi bi-info-circle-fill text-warning me-1"></i> @Model.PatientNotes
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Home Visit OTP Verification Card -->
+        <div class="med-card mb-4 border-2 @(Model.Booking.Status == BookingStatus.Confirmed ? "border-teal" : "")">
+            <div class="med-card-header bg-teal-50">
+                <h3 class="med-card-title text-teal-900">
+                    <i class="bi bi-shield-lock-fill text-teal-600"></i> Home Visit Arrival Security (OTP Verification)
+                </h3>
+            </div>
+            <div class="med-card-body">
+                @if (Model.Booking.Status == BookingStatus.Confirmed)
+                {
+                    <p class="text-muted small mb-3">
+                        To protect both patient and provider, enter the <strong>5-digit OTP Code</strong> given to the patient upon arrival at their home to start the consultation.
+                    </p>
+
+                    <form asp-action="Start" asp-route-id="@Model.Booking.Id" asp-route-role="@roleParam" method="post" class="row g-2 align-items-center">
+                        <div class="col-sm-6">
+                            <input type="text" name="otp" class="form-control form-control-lg text-center fw-bold font-monospace" 
+                                   placeholder="Enter 5-digit OTP" maxlength="6" required style="letter-spacing: 0.25em;">
+                            <small class="text-muted d-block mt-1">Hint for demo test: Code is <code>@Model.Booking.OtpCode</code></small>
+                        </div>
+                        <div class="col-sm-6">
+                            <button type="submit" class="btn btn-med-primary btn-lg w-100">
+                                <i class="bi bi-unlock-fill"></i> Verify & Start Visit
+                            </button>
+                        </div>
+                    </form>
+                }
+                else if (Model.Booking.Status == BookingStatus.Started)
+                {
+                    <div class="p-3 bg-primary-subtle text-primary border border-primary-subtle rounded-3 d-flex align-items-center gap-3">
+                        <i class="bi bi-play-circle-fill fs-2"></i>
+                        <div>
+                            <strong class="d-block">Visit is Currently IN PROGRESS</strong>
+                            <small>OTP has been verified. You may document prescriptions and clinical care below.</small>
+                        </div>
+                    </div>
+                }
+                else if (Model.Booking.Status == BookingStatus.Completed)
+                {
+                    <div class="p-3 bg-success-subtle text-success border border-success-subtle rounded-3 d-flex align-items-center gap-3">
+                        <i class="bi bi-check-circle-fill fs-2"></i>
+                        <div>
+                            <strong class="d-block">Visit Successfully Completed</strong>
+                            <small>Verified with OTP: <code>@Model.Booking.OtpCode</code>. Earnings have been released to your wallet.</small>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">
+                        OTP verification will be unlocked once this booking request is confirmed.
+                    </p>
+                }
+            </div>
+        </div>
+
+        <!-- Medical Clinical Documentation Section -->
+        @if (Model.IsDoctor)
+        {
+            <!-- Doctor E-Prescription Pad -->
+            <div class="med-card mb-4">
+                <div class="med-card-header">
+                    <h3 class="med-card-title">
+                        <i class="bi bi-prescription2 text-primary"></i> Doctor's Prescription (Rx Pad)
+                    </h3>
+                    <span class="badge bg-primary-subtle text-primary">Doctor Only</span>
+                </div>
+                <div class="med-card-body">
+                    <div class="rx-sheet mb-3">
+                        <div class="rx-header">
+                            <div>
+                                <span class="rx-symbol">℞</span>
+                                <span class="fw-bold fs-6 ms-2">Official Medical Prescription</span>
+                            </div>
+                            <small class="text-muted">Dr. Hazem El-Menshawy (Reg. MD-10492)</small>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="text-muted small">
+                                    <tr>
+                                        <th>Medication</th>
+                                        <th>Dosage</th>
+                                        <th>Frequency</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var rx in Model.Prescriptions)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="text-dark">@rx.MedicationName</strong>
+                                                <small class="d-block text-muted">@rx.Instructions</small>
+                                            </td>
+                                            <td>@rx.Dosage</td>
+                                            <td>@rx.Frequency</td>
+                                            <td>@rx.Duration</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-primary rounded-pill" type="button">
+                        <i class="bi bi-plus-circle me-1"></i> Add Medication Item
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Nurse Vitals & Procedure Care Sheet -->
+            <div class="med-card mb-4">
+                <div class="med-card-header">
+                    <h3 class="med-card-title">
+                        <i class="bi bi-heart-pulse-fill text-danger"></i> Nursing Vitals & Procedure Care Sheet
+                    </h3>
+                    <span class="badge bg-purple-subtle text-purple">Nurse Care Log</span>
+                </div>
+                <div class="med-card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-3 col-6">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <small class="text-muted d-block">Blood Pressure</small>
+                                <strong class="fs-6 text-dark">@Model.ClinicalNotes.BloodPressure</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <small class="text-muted d-block">Heart Rate</small>
+                                <strong class="fs-6 text-dark">@Model.ClinicalNotes.HeartRate</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <small class="text-muted d-block">Temperature</small>
+                                <strong class="fs-6 text-dark">@Model.ClinicalNotes.Temperature</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <small class="text-muted d-block">Blood Sugar</small>
+                                <strong class="fs-6 text-dark">@Model.ClinicalNotes.BloodSugar</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 mb-3">
+                        <label class="text-muted small fw-semibold d-block mb-1">Nursing Care Completed:</label>
+                        <p class="mb-0 text-dark small">@Model.ClinicalNotes.ProceduresDone</p>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-primary rounded-pill" type="button">
+                        <i class="bi bi-pencil me-1"></i> Update Nursing Vitals
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- Clinical Notes Box -->
+        <div class="med-card">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-journal-medical text-teal-600"></i> Clinical Notes & Observations
+                </h3>
+            </div>
+            <div class="med-card-body">
+                <p class="text-dark small mb-3">@Model.ClinicalNotes.GeneralAssessment</p>
+                <div class="form-group">
+                    <textarea class="form-control" rows="2" placeholder="Add additional visit remarks or follow-up recommendations..."></textarea>
+                </div>
+                <button class="btn btn-sm btn-med-secondary mt-2" type="button">Save Notes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Financial & Summary Breakdown -->
+    <div class="col-lg-5">
+        <!-- Financial Card -->
+        <div class="med-card mb-4">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-wallet2 text-success"></i> Payment & Earnings
+                </h3>
+                <span class="med-badge @(Model.Booking.PaymentStatus == PaymentStatus.Captured ? "badge-completed" : "badge-pending")">
+                    @Model.Booking.PaymentStatus
+                </span>
+            </div>
+            <div class="med-card-body">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Payment Method:</span>
+                    <strong class="text-dark">
+                        @if (Model.Booking.PaymentMethod == PaymentMethod.CashOnArrival)
+                        {
+                            <i class="bi bi-cash me-1 text-success"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-credit-card me-1 text-primary"></i>
+                        }
+                        @Model.Booking.PaymentMethod
+                    </strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Total Visit Price:</span>
+                    <strong class="text-dark">@Model.Booking.TotalPrice.ToString("N2") EGP</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Platform Commission (15%):</span>
+                    <span class="text-danger">-@Model.Booking.Commission.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between py-3 bg-light p-3 rounded-3 mt-3">
+                    <span class="fw-bold text-dark fs-6">Provider Net Earnings:</span>
+                    <strong class="text-success fs-5">@Model.Booking.NetEarnings.ToString("N2") EGP</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visit Service Details -->
+        <div class="med-card">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-bookmark-check text-primary"></i> Service Details
+                </h3>
+            </div>
+            <div class="med-card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Requested Service</small>
+                    <strong class="fs-6 text-dark">@Model.Booking.ServiceName</strong>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Service Classification</small>
+                    <span class="badge bg-light text-dark border">@Model.Booking.ServiceType</span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Safety Requirements</small>
+                    <span class="badge bg-success-subtle text-success">
+                        <i class="bi bi-shield-check me-1"></i> OTP Required for Home Visit
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

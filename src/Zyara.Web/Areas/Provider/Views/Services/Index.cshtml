@@ -1,0 +1,132 @@
+@model Zyara.Web.Areas.Provider.ViewModels.ProviderServicesViewModel
+@{
+    bool isNurse = Model.Role == UserRole.Nurse;
+    string currentRole = isNurse ? "Nurse" : "Doctor";
+    ViewData["Title"] = "My Medical Services & Pricing";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-bag-plus text-primary me-2"></i> My Medical Services & Pricing
+        </h2>
+        <p class="text-muted mb-0">Configure your offered healthcare services, set your patient fees, and view net earnings after commission.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="med-card">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-card-checklist text-primary"></i> 
+                    @(isNurse ? "Nursing Procedures & Home Care Services" : "Physician Consultations & Home Services")
+                </h3>
+                <span class="badge @(isNurse ? "badge-nurse" : "badge-doctor")">@Model.Services.Count Available</span>
+            </div>
+            <div class="med-card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Service Name & Scope</th>
+                                <th>Patient Fee</th>
+                                <th>Platform Fee (15%)</th>
+                                <th>Your Net Earning</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.Services)
+                            {
+                                <tr>
+                                    <td class="ps-4" style="max-width: 280px;">
+                                        <strong class="text-dark d-block">@s.Name</strong>
+                                        <small class="text-muted">@s.Description</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold fs-6 text-dark">@s.BaseFee.ToString("N0") EGP</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-danger small">-@((s.BaseFee * 0.15m).ToString("N0")) EGP</span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success fs-6">+@s.ProviderNet.ToString("N0") EGP</strong>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill" 
+                                                data-bs-toggle="modal" data-bs-target="#editFeeModal-@s.Id">
+                                            <i class="bi bi-pencil-square"></i> Edit Fee
+                                        </button>
+
+                                        <!-- Edit Fee Modal -->
+                                        <div class="modal fade" id="editFeeModal-@s.Id" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered text-start">
+                                                <div class="modal-content rounded-4 border-0 shadow">
+                                                    <div class="modal-header border-bottom">
+                                                        <h5 class="modal-title fw-bold">Update Fee: @s.Name</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <form asp-action="UpdateFee" asp-route-id="@s.Id" asp-route-role="@currentRole" method="post">
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label text-muted small fw-semibold">Patient Visit Fee (EGP)</label>
+                                                                <input type="number" name="fee" class="form-control form-control-lg fw-bold" value="@s.BaseFee" step="10" min="50" required />
+                                                            </div>
+                                                            <div class="p-3 bg-light rounded-3 text-muted small">
+                                                                <div class="d-flex justify-content-between mb-1">
+                                                                    <span>Standard platform commission:</span>
+                                                                    <strong>15%</strong>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between text-success fw-semibold">
+                                                                    <span>Estimated net credited to your wallet:</span>
+                                                                    <span>85%</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-top">
+                                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-med-primary">Save Fee</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Pricing Strategy & Tips -->
+    <div class="col-lg-4">
+        <div class="med-card mb-4">
+            <div class="med-card-header">
+                <h3 class="med-card-title">
+                    <i class="bi bi-lightbulb text-warning"></i> Pricing Guidelines
+                </h3>
+            </div>
+            <div class="med-card-body">
+                <ul class="list-unstyled d-flex flex-column gap-3 small text-muted mb-0">
+                    <li class="d-flex gap-2">
+                        <i class="bi bi-check2-circle text-teal-600 fs-6"></i>
+                        <span>Fees include your travel to the patient's home within your registered base city.</span>
+                    </li>
+                    <li class="d-flex gap-2">
+                        <i class="bi bi-check2-circle text-teal-600 fs-6"></i>
+                        <span>Medication and medical consumables (e.g. IV fluids or specialized bandages) can be billed separately or provided by the patient.</span>
+                    </li>
+                    <li class="d-flex gap-2">
+                        <i class="bi bi-check2-circle text-teal-600 fs-6"></i>
+                        <span>Platform commission (15%) covers payment processing, 24/7 emergency dispatch, and patient insurance.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,161 @@
+@model List<Zyara.Web.Areas.Provider.ViewModels.BookingItemViewModel>
+@{
+    string currentRole = ViewBag.CurrentRole as string ?? "Doctor";
+    string currentStatus = ViewBag.CurrentStatusFilter as string ?? "All";
+    ViewData["Title"] = "Home Visits & Bookings";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="bi bi-calendar2-check text-primary me-2"></i> Home Visits & Patient Bookings
+        </h2>
+        <p class="text-muted mb-0">Manage incoming requests, track confirmed home visits, and start sessions with OTP.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-role="@currentRole" class="btn btn-med-secondary">
+            <i class="bi bi-clock"></i> My Availability
+        </a>
+    </div>
+</div>
+
+<!-- Status Filter Tabs -->
+<div class="med-card mb-4">
+    <div class="p-2 border-bottom bg-light">
+        <ul class="nav nav-pills gap-1">
+            <li class="nav-item">
+                <a class="nav-link rounded-pill px-3 py-1 fw-semibold @(currentStatus == "All" ? "active bg-teal" : "text-muted")"
+                   asp-action="Index" asp-route-status="All" asp-route-role="@currentRole">
+                    All Visits (@Model.Count)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link rounded-pill px-3 py-1 fw-semibold @(currentStatus == "PendingProviderApproval" ? "active bg-amber text-dark" : "text-muted")"
+                   asp-action="Index" asp-route-status="PendingProviderApproval" asp-route-role="@currentRole">
+                    Pending Approval
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link rounded-pill px-3 py-1 fw-semibold @(currentStatus == "Confirmed" ? "active bg-teal" : "text-muted")"
+                   asp-action="Index" asp-route-status="Confirmed" asp-route-role="@currentRole">
+                    Confirmed
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link rounded-pill px-3 py-1 fw-semibold @(currentStatus == "Started" ? "active bg-primary" : "text-muted")"
+                   asp-action="Index" asp-route-status="Started" asp-route-role="@currentRole">
+                    In Progress
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link rounded-pill px-3 py-1 fw-semibold @(currentStatus == "Completed" ? "active bg-success" : "text-muted")"
+                   asp-action="Index" asp-route-status="Completed" asp-route-role="@currentRole">
+                    Completed
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Visits Grid / List -->
+    <div class="med-card-body p-4">
+        @if (Model.Any())
+        {
+            <div class="row g-4">
+                @foreach (var visit in Model)
+                {
+                    <div class="col-lg-6">
+                        <div class="med-card med-card-hover h-100 p-4 border @(visit.Status == BookingStatus.Started ? "border-primary" : "")">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span class="text-muted small fw-semibold">Visit #@visit.Id</span>
+                                    <h4 class="fw-bold text-dark mb-0 fs-5">@visit.PatientName</h4>
+                                </div>
+                                <div>
+                                    @switch (visit.Status)
+                                    {
+                                        case BookingStatus.PendingProviderApproval:
+                                            <span class="med-badge badge-pending">
+                                                <i class="bi bi-hourglass-split"></i> Pending Approval
+                                            </span>
+                                            break;
+                                        case BookingStatus.Confirmed:
+                                            <span class="med-badge badge-confirmed">
+                                                <i class="bi bi-calendar-check"></i> Confirmed
+                                            </span>
+                                            break;
+                                        case BookingStatus.Started:
+                                            <span class="med-badge badge-started">
+                                                <i class="bi bi-play-circle-fill"></i> In Progress
+                                            </span>
+                                            break;
+                                        case BookingStatus.Completed:
+                                            <span class="med-badge badge-completed">
+                                                <i class="bi bi-check-circle-fill"></i> Completed
+                                            </span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">@visit.Status</span>
+                                            break;
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="mb-3 p-3 bg-light rounded-3">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-heart-pulse text-teal-600"></i>
+                                    <strong class="text-dark">@visit.ServiceName</strong>
+                                </div>
+                                <div class="text-muted small mb-1">
+                                    <i class="bi bi-clock me-1 text-primary"></i> 
+                                    @visit.Date.ToString("ddd, dd MMM yyyy") &nbsp;|&nbsp; 
+                                    @DateTime.Today.Add(visit.StartTime).ToString("hh:mm tt") - @DateTime.Today.Add(visit.EndTime).ToString("hh:mm tt")
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> 
+                                    @visit.PatientAddress (@visit.City)
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <div>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">Total Fee (Net Earning)</div>
+                                    <strong class="fs-6 text-dark">@visit.TotalPrice.ToString("N0") EGP</strong> 
+                                    <span class="text-success small fw-semibold">(@visit.NetEarnings.ToString("N0") EGP)</span>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    @if (visit.Status == BookingStatus.PendingProviderApproval)
+                                    {
+                                        <form asp-action="Accept" asp-route-id="@visit.Id" asp-route-role="@currentRole" method="post">
+                                            <button type="submit" class="btn btn-sm btn-med-mint">
+                                                <i class="bi bi-check-lg"></i> Accept
+                                            </button>
+                                        </form>
+                                        <form asp-action="Reject" asp-route-id="@visit.Id" asp-route-role="@currentRole" method="post">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@visit.Id" asp-route-role="@currentRole" class="btn btn-sm btn-med-primary">
+                                        <span>Details</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                <h5>No visits found in this category</h5>
+                <p class="small text-muted">Switch filters above to view other visits.</p>
+            </div>
+        }
+    </div>
+</div>
+

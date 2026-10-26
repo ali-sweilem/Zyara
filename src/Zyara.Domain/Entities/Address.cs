@@ -7,11 +7,14 @@ namespace Zyara.Domain.Entities
     public class Address
     {
         public int Id { get; set; }
-        public string Lable { get; set; }
-        public string City { get; set; }
-        public string District { get; set; }
-        public string StreetAndBuilding { get; set; }
-        public decimal? Latitude { get; set; } // Optional GPS latitude for distance filtering
-        public decimal? Longitude { get; set; } // Optional GPS longitude for distance filtering
+        public int PatientId { get; set; }
+        public Patient Patient { get; set; } = null!;
+
+        public string Label { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string District { get; set; } = string.Empty;
+        public string StreetAndBuilding { get; set; } = string.Empty;
+        public double? Latitude { get; set; }   // optional GPS, for the distance filter
+        public double? Longitude { get; set; }
     }
 }

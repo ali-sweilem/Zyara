@@ -47,7 +47,7 @@ namespace Zyara.Services.Data.Configurations
 
             // Booking (many) -> Provider (1): required, Restrict
             builder.HasOne(b => b.Provider)
-                .WithMany(p => p.Booking)
+                .WithMany(p => p.Bookings)
                 .HasForeignKey(b => b.ProviderId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
@@ -82,19 +82,7 @@ namespace Zyara.Services.Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(false);
 
-            // ServiceNote (0..*) -> Booking (1): one-to-many, Restrict, FK on ServiceNote
-            builder.HasMany<ServiceNote>()
-                .WithOne(sn => sn.Booking)
-                .HasForeignKey(sn => sn.BookingId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             // Prescription (0..1) <-> Booking (1): one-to-one optional, Restrict, FK on Prescription, unique index
-            builder.HasOne<Prescription>()
-                .WithOne()
-                .HasForeignKey<Prescription>(p => p.BookingId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);
-
             builder.HasIndex(b => b.PatientId);
             builder.HasIndex(b => b.ProviderId);
             builder.HasIndex(b => b.Status);

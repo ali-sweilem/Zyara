@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Zyara.Domain.Entities;
 
@@ -8,30 +8,15 @@ namespace Zyara.Services.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Doctor> builder)
         {
+            // Inherits from Provider under TPH
             builder.HasBaseType<Provider>();
 
-            builder.HasKey(d => d.AdminID);
+            // Doctor-specific properties (shared properties are configured in User and Provider configurations)
             builder.Property(d => d.licenser)
                 .IsRequired()
                 .HasMaxLength(100);
-            builder.Property(d => d.FullName)
-                .IsRequired(true)
-                .HasMaxLength(100);
-            builder.Property(d => d.Email)
-                .IsRequired(false)
-                .HasMaxLength(100);
-            builder.Property(d => d.Phone)
-                .IsRequired(true)
-                .HasMaxLength(11);
-            builder.Property(d => d.averageRating)
-               .IsRequired(true)
-               .HasColumnType("decimal(18,2)");
-            builder.Property(d => d.experienceYears)
-                .IsRequired(true);
-        builder.Property(d => d.Specilty)
-                .IsRequired(true)
-                .HasMaxLength(100);
-            // Configure the relationships with Prescription
+
+            // Relationship with Prescriptions
             builder.HasMany(d => d.prescriptions)
                 .WithOne(p => p.Doctor)
                 .HasForeignKey(p => p.DoctorId)
@@ -39,3 +24,4 @@ namespace Zyara.Services.Data.Configurations
         }
     }
 }
+

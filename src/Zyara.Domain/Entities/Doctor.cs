@@ -1,12 +1,11 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Zyara.Domain.Entities
 {
-    public class Doctor:Provider
+    public class Doctor : Provider
     {
-        public string licenser { get; set; }
-        public List<Prescription> prescriptions { get; set; }
+        public string licenser { get; set; } = string.Empty;
+        public List<Prescription> prescriptions { get; set; } = new();
     }
 }
+
