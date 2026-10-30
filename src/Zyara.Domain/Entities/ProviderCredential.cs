@@ -9,6 +9,7 @@ namespace Zyara.Domain.Entities
         public string FileUrl { get; set; } = string.Empty;
         public int ProviderID { get; set; }
         public Provider? Provider { get; set; }
+        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     }
 }
 

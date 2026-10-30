@@ -154,6 +154,43 @@ namespace Zyara.Services.Data.Migrations
                     b.ToTable("Notifications", (string)null);
                 });
 
+            modelBuilder.Entity("Zyara.Domain.Entities.PasswordResetCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetCodes");
+                });
+
             modelBuilder.Entity("Zyara.Domain.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -300,6 +337,9 @@ namespace Zyara.Services.Data.Migrations
 
                     b.Property<int>("ProviderID")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -579,6 +619,10 @@ namespace Zyara.Services.Data.Migrations
                 {
                     b.HasBaseType("Zyara.Domain.Entities.Provider");
 
+                    b.Property<string>("LicenseNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("licenser")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -641,6 +685,17 @@ namespace Zyara.Services.Data.Migrations
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("Zyara.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Zyara.Domain.Entities.PasswordResetCode", b =>
                 {
                     b.HasOne("Zyara.Domain.Entities.User", "User")
                         .WithMany()
