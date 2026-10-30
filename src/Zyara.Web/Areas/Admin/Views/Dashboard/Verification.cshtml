@@ -1,0 +1,27 @@
+@using Zyara.Domain.Enums
+@model List<dynamic>
+@{ Layout = "~/Views/Shared/_Layout.cshtml"; }
+<div style="max-width:1280px;margin:0 auto;padding:2rem 1rem;">
+  <h1 style="font-family:inherit;font-weight:700;color:var(--auth-text);font-size:1.5rem;">Provider Verification</h1>
+  <table class="table" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(15,23,42,0.08);">
+    <thead style="background:#0891b2;color:#fff;"><tr><th>Name</th><th>Role</th><th>Phone</th><th>Status</th><th>Rejection Reason</th><th>Actions</th></tr></thead>
+    <tbody>
+    @foreach (var p in Model) {
+      <tr>
+        <td>@p.FullName</td><td>@p.Role</td><td>@p.Phone</td>
+        <td><span class="badge @(p.VerificationStatus == VerificationStatus.Pending ? "bg-warning" : (p.VerificationStatus == VerificationStatus.Rejected ? "bg-danger" : "bg-success"))">@p.VerificationStatus</span></td>
+        <td>@p.RejectionReason</td>
+        <td>
+          <form asp-action="Verify" method="post" style="display:inline;">
+            <input type="hidden" name="id" value="@p.Id" />
+            <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken()" />
+            <button type="submit" name="status" value="Verified" class="btn btn-sm btn-success">Approve</button>
+            <button type="submit" name="status" value="Rejected" onclick="document.getElementById('reason_@p.Id').style.display='inline';return false;" class="btn btn-sm btn-danger">Reject</button>
+          </form>
+          <input id="reason_@p.Id" name="rejectionReason" style="display:none;margin-top:.25rem;" class="form-control" placeholder="Reason required" />
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+</div>

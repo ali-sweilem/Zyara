@@ -1,0 +1,7 @@
+@{ Layout = "~/Views/Shared/_Layout.cshtml"; }
+<div class="auth-page"><div class="auth-card narrow">
+  <h2>@(ViewBag.Rejected ? "Account Rejected" : "Account Under Review")</h2>
+  <p>Your provider account is currently under verification.</p>
+  @if (ViewBag.Rejected) { <p class="auth-error-text">Your previous submission was rejected. Please upload new credentials.</p> }
+  <a asp-action="Login" asp-controller="Account" class="auth-btn">Back to Login</a>
+</div></div>

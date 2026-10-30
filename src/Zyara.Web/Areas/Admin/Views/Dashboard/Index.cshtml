@@ -1,0 +1,20 @@
+@model List<Zyara.Domain.Entities.User>
+@{ Layout = "~/Views/Shared/_Layout.cshtml"; }
+<div style="max-width:1280px;margin:0 auto;padding:2rem 1rem;">
+  <h1 style="font-family:inherit;font-weight:700;color:var(--auth-text);font-size:1.5rem;">Admin Dashboard</h1>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1.5rem;">
+    <div style="background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 20px rgba(15,23,42,0.06);">
+      <div style="font-size:.85rem;color:#475569;">Total Users</div>
+      <div style="font-size:1.75rem;font-weight:700;color:#0F766E;">@ViewBag.UserCount</div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 20px rgba(15,23,42,0.06);">
+      <div style="font-size:.85rem;color:#475569;">Patients</div>
+      <div style="font-size:1.75rem;font-weight:700;color:#0F766E;">@ViewBag.PatientCount</div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 20px rgba(15,23,42,0.06);">
+      <div style="font-size:.85rem;color:#475569;">Providers Pending</div>
+      <div style="font-size:1.75rem;font-weight:700;color:#0891b2;">@ViewBag.PendingVerification</div>
+    </div>
+    <a asp-action="Verification" asp-controller="Dashboard" asp-area="Admin" style="background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;border-radius:16px;padding:1.5rem;text-decoration:none;font-weight:600;">Provider Verification &rarr;</a>
+  </div>
+</div>

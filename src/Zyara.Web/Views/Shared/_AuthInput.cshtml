@@ -1,0 +1,5 @@
+@model string
+<div class="auth-field">
+  <label for="@ViewData["ForName"]">@ViewData["Label"]</label>
+  <input id="@ViewData["ForName"]" name="@ViewData["Name"]" value="@Model" class="auth-input" type="text" aria-required="true" />
+</div>
