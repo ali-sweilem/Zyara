@@ -339,7 +339,7 @@ namespace Zyara.Services.Data.Migrations
                     b.ToTable("ProviderServices", (string)null);
                 });
 
-            modelBuilder.Entity("Zyara.Domain.Entities.Rating", b =>
+            modelBuilder.Entity("Zyara.Domain.Entities.Review", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -347,12 +347,15 @@ namespace Zyara.Services.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("BookingId")
+                    b.Property<int>("BookingId")
                         .HasColumnType("int");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Stars")
                         .HasColumnType("int");
@@ -360,10 +363,12 @@ namespace Zyara.Services.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId")
-                        .IsUnique()
-                        .HasFilter("[BookingId] IS NOT NULL");
+                        .IsUnique();
 
-                    b.ToTable("Ratings", (string)null);
+                    b.ToTable("Reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Review_Stars", "[Stars] BETWEEN 1 AND 5");
+                        });
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Service", b =>
@@ -373,6 +378,10 @@ namespace Zyara.Services.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -538,8 +547,16 @@ namespace Zyara.Services.Data.Migrations
                     b.Property<double?>("BaseLongitude")
                         .HasColumnType("float");
 
+                    b.Property<string>("Bio")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("RatingCount")
                         .HasColumnType("int");
@@ -721,12 +738,15 @@ namespace Zyara.Services.Data.Migrations
                     b.Navigation("Service");
                 });
 
-            modelBuilder.Entity("Zyara.Domain.Entities.Rating", b =>
+            modelBuilder.Entity("Zyara.Domain.Entities.Review", b =>
                 {
-                    b.HasOne("Zyara.Domain.Entities.Booking", null)
-                        .WithOne("Rating")
-                        .HasForeignKey("Zyara.Domain.Entities.Rating", "BookingId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                    b.HasOne("Zyara.Domain.Entities.Booking", "Booking")
+                        .WithOne("Review")
+                        .HasForeignKey("Zyara.Domain.Entities.Review", "BookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.ServiceNote", b =>
@@ -765,7 +785,7 @@ namespace Zyara.Services.Data.Migrations
                 {
                     b.Navigation("Payment");
 
-                    b.Navigation("Rating");
+                    b.Navigation("Review");
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Prescription", b =>

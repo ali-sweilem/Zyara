@@ -75,13 +75,6 @@ namespace Zyara.Services.Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
-            // Booking (1) <-> Rating (0..1): one-to-one optional
-            builder.HasOne(b => b.Rating)
-                .WithOne()
-                .HasForeignKey<Rating>(r => r.BookingId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(false);
-
             // Prescription (0..1) <-> Booking (1): one-to-one optional, Restrict, FK on Prescription, unique index
             builder.HasIndex(b => b.PatientId);
             builder.HasIndex(b => b.ProviderId);

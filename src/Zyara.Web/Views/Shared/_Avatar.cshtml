@@ -1,0 +1,53 @@
+@model Zyara.Web.Models.AvatarViewModel
+@using System.Globalization
+
+@{
+    var size = Model.Size > 0 ? Model.Size : 88;
+    var name = Model.FullName?.Trim() ?? string.Empty;
+    var words = name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+    var elements = new List<string>();
+
+    foreach (var word in words.Take(2))
+    {
+        var enumerator = StringInfo.GetTextElementEnumerator(word);
+        var elementsForWord = 0;
+        while (enumerator.MoveNext() && (words.Length > 1 ? elementsForWord < 1 : elementsForWord < 2))
+        {
+            elements.Add(enumerator.GetTextElement());
+            elementsForWord++;
+        }
+    }
+
+    var initials = elements.Count switch
+    {
+        0 => "?",
+        1 when words.Length == 1 => elements[0],
+        1 => elements[0],
+        _ => string.Concat(elements.Take(2))
+    };
+    initials = initials.ToUpperInvariant();
+    var palettes = new[]
+    {
+        "bg-primary-subtle text-primary-emphasis border-primary-subtle",
+        "bg-info-subtle text-info-emphasis border-info-subtle",
+        "bg-success-subtle text-success-emphasis border-success-subtle",
+        "bg-warning-subtle text-warning-emphasis border-warning-subtle",
+        "bg-danger-subtle text-danger-emphasis border-danger-subtle",
+        "bg-secondary-subtle text-secondary-emphasis border-secondary-subtle"
+    };
+    var colorClass = palettes[(int)((uint)Model.Id % (uint)palettes.Length)];
+}
+
+<div class="avatar-container position-relative d-inline-block" style="width: @(size)px; height: @(size)px;">
+    <div class="avatar-initials rounded-circle d-flex align-items-center justify-content-center border fw-bold shadow-sm @colorClass"
+         style="width: @(size)px; height: @(size)px; font-size: @(Math.Max(size / 3, 14))px; user-select: none;">
+        @initials
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.PhotoUrl))
+    {
+        <img src="@Model.PhotoUrl" alt="@Model.FullName" loading="lazy"
+             class="rounded-circle position-absolute top-0 start-0 border shadow-sm"
+             style="width: @(size)px; height: @(size)px; object-fit: cover;"
+             onerror="this.style.display='none';" />
+    }
+</div>

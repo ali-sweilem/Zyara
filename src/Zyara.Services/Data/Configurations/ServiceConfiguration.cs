@@ -15,6 +15,9 @@ namespace Zyara.Services.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
 
+            builder.Property(s => s.Description)
+                .HasMaxLength(1000);
+
             builder.Property(s => s.Type)
                 .IsRequired()
                 .HasConversion<string>()

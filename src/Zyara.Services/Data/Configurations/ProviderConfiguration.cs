@@ -14,6 +14,8 @@ internal sealed class ProviderConfiguration : IEntityTypeConfiguration<Provider>
         builder.Property(p => p.Specialty).HasMaxLength(100);
         builder.Property(p => p.BaseCity).HasMaxLength(100);
         builder.Property(p => p.RejectionReason).HasMaxLength(500);
+        builder.Property(p => p.Bio).HasMaxLength(2000);
+        builder.Property(p => p.PhotoUrl).HasMaxLength(500);
 
         // Verification status enum stored as string
         builder.Property(p => p.VerificationStatus)

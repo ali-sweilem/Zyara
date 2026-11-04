@@ -1,8 +1,286 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model Zyara.Web.Models.HomeIndexViewModel
+@using Zyara.Domain.Enums
+
+@{
+    ViewData["Title"] = "Find a Healthcare Provider - Zyara";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<!-- Hero / Search Section -->
+<section class="py-4 py-md-5 mb-4 rounded-4 shadow-sm text-white position-relative overflow-hidden"
+         style="background: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #059669 100%);">
+    <div class="container px-4 py-3">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white bg-opacity-25 text-white rounded-pill px-3 py-2 mb-3 fw-semibold small">
+                    <i class="bi bi-shield-check me-1"></i> 100% Ministry Licensed & Verified Providers
+                </span>
+                <h1 class="display-5 fw-bold mb-3 tracking-tight">
+                    Find Trusted Doctors & Nurses
+                </h1>
+                <p class="lead mb-4 text-white-50 fs-6 mx-auto" style="max-width: 620px;">
+                    Book professional home visits, nursing care, and clinical assessments with top-rated medical experts in Egypt.
+                </p>
+
+                <!-- Primary Search Box Form (GET) -->
+                <form method="get" asp-action="Index" class="card border-0 shadow-lg p-2 rounded-pill bg-white text-dark">
+                    <!-- Hidden inputs to preserve existing filter state if user submits just the search bar -->
+                    @if (Model.Criteria.ProviderType.HasValue)
+                    {
+                        <input type="hidden" name="ProviderType" value="@Model.Criteria.ProviderType" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Criteria.Specialty))
+                    {
+                        <input type="hidden" name="Specialty" value="@Model.Criteria.Specialty" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Criteria.City))
+                    {
+                        <input type="hidden" name="City" value="@Model.Criteria.City" />
+                    }
+                    @if (Model.Criteria.Gender.HasValue)
+                    {
+                        <input type="hidden" name="Gender" value="@Model.Criteria.Gender" />
+                    }
+                    @if (Model.Criteria.MinExperience.HasValue)
+                    {
+                        <input type="hidden" name="MinExperience" value="@Model.Criteria.MinExperience" />
+                    }
+                    @if (Model.Criteria.MinRating.HasValue)
+                    {
+                        <input type="hidden" name="MinRating" value="@Model.Criteria.MinRating" />
+                    }
+                    @if (Model.Criteria.MinPrice.HasValue)
+                    {
+                        <input type="hidden" name="MinPrice" value="@Model.Criteria.MinPrice" />
+                    }
+                    @if (Model.Criteria.MaxPrice.HasValue)
+                    {
+                        <input type="hidden" name="MaxPrice" value="@Model.Criteria.MaxPrice" />
+                    }
+                    @if (Model.Criteria.AvailableOnly)
+                    {
+                        <input type="hidden" name="AvailableOnly" value="true" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Criteria.SortBy))
+                    {
+                        <input type="hidden" name="SortBy" value="@Model.Criteria.SortBy" />
+                    }
+
+                    <div class="input-group input-group-lg border-0 align-items-center">
+                        <span class="input-group-text bg-transparent border-0 ps-3 text-muted">
+                            <i class="bi bi-search fs-5 text-primary"></i>
+                        </span>
+                        <input type="text"
+                               name="SearchTerm"
+                               class="form-control border-0 shadow-none ps-2"
+                               placeholder="Search by provider name, specialty, or city..."
+                               value="@Model.Criteria.SearchTerm"
+                               aria-label="Search provider name, specialty or city" />
+                        
+                        @if (!string.IsNullOrWhiteSpace(Model.Criteria.SearchTerm))
+                        {
+                            <a asp-action="Index" class="btn btn-link text-muted text-decoration-none pe-2" title="Clear search">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </a>
+                        }
+
+                        <button class="btn btn-primary rounded-pill px-4 py-2 me-1 fw-semibold shadow-sm" type="submit">
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Filter & Directory Section -->
+<div class="container py-2">
+
+    <!-- Filters Panel (Card) -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            
+            <form method="get" asp-action="Index" id="filterForm">
+                <!-- Keep search term if present -->
+                <input type="hidden" name="SearchTerm" value="@Model.Criteria.SearchTerm" />
+
+                <!-- Filters Header -->
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-funnel-fill text-primary"></i>
+                        <h5 class="fw-bold text-dark mb-0">Filters & Preferences</h5>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Available Only Quick Toggle -->
+                        <div class="form-check form-switch me-3 mb-0">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   role="switch"
+                                   id="availOnlyToggle"
+                                   name="AvailableOnly"
+                                   value="true"
+                                   @(Model.Criteria.AvailableOnly ? "checked" : "")
+                                   onchange="document.getElementById('filterForm').submit();" />
+                            <label class="form-check-label small fw-semibold text-dark" for="availOnlyToggle">
+                                Available Only
+                            </label>
+                        </div>
+
+                        <!-- Reset Link -->
+                        <a asp-action="Index" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Filters Grid -->
+                <div class="row g-3">
+                    
+                    <!-- 1. Provider Type Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Provider Type</label>
+                        <select name="ProviderType" class="form-select rounded-3 shadow-none">
+                            <option value="">All (Doctors & Nurses)</option>
+                            <option value="@UserRole.Doctor" selected="@(Model.Criteria.ProviderType == UserRole.Doctor)">Doctor</option>
+                            <option value="@UserRole.Nurse" selected="@(Model.Criteria.ProviderType == UserRole.Nurse)">Nurse</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. Specialty Dropdown (Populated from DB) -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Specialty</label>
+                        <select name="Specialty" class="form-select rounded-3 shadow-none">
+                            <option value="">All Specialties</option>
+                            @foreach (var spec in Model.Specialties)
+                            {
+                                <option value="@spec" selected="@(string.Equals(Model.Criteria.Specialty, spec, StringComparison.OrdinalIgnoreCase))">
+                                    @spec
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- 3. City Dropdown (Populated from DB) -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">City / Area</label>
+                        <select name="City" class="form-select rounded-3 shadow-none">
+                            <option value="">All Cities</option>
+                            @foreach (var city in Model.Cities)
+                            {
+                                <option value="@city" selected="@(string.Equals(Model.Criteria.City, city, StringComparison.OrdinalIgnoreCase))">
+                                    @city
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- 4. Gender Filter -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Gender</label>
+                        <select name="Gender" class="form-select rounded-3 shadow-none">
+                            <option value="">All Genders</option>
+                            <option value="@Gender.Male" selected="@(Model.Criteria.Gender == Gender.Male)">Male</option>
+                            <option value="@Gender.Female" selected="@(Model.Criteria.Gender == Gender.Female)">Female</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. Minimum Experience -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Min. Experience</label>
+                        <select name="MinExperience" class="form-select rounded-3 shadow-none">
+                            <option value="">Any Experience</option>
+                            <option value="1" selected="@(Model.Criteria.MinExperience == 1)">1+ Year</option>
+                            <option value="3" selected="@(Model.Criteria.MinExperience == 3)">3+ Years</option>
+                            <option value="5" selected="@(Model.Criteria.MinExperience == 5)">5+ Years</option>
+                            <option value="10" selected="@(Model.Criteria.MinExperience == 10)">10+ Years</option>
+                        </select>
+                    </div>
+
+                    <!-- 6. Minimum Rating -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Minimum Rating</label>
+                        <select name="MinRating" class="form-select rounded-3 shadow-none">
+                            <option value="">Any Rating</option>
+                            <option value="3.0" selected="@(Model.Criteria.MinRating == 3.0)">★ 3.0 & above</option>
+                            <option value="4.0" selected="@(Model.Criteria.MinRating == 4.0)">★ 4.0 & above</option>
+                            <option value="4.5" selected="@(Model.Criteria.MinRating == 4.5)">★ 4.5 & above</option>
+                        </select>
+                    </div>
+
+                    <!-- 7. Price Range (Min & Max Fee) -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Price Range (EGP)</label>
+                        <div class="input-group">
+                            <input type="number"
+                                   name="MinPrice"
+                                   class="form-control rounded-start-3 shadow-none"
+                                   placeholder="Min"
+                                   min="0"
+                                   step="50"
+                                   value="@Model.Criteria.MinPrice" />
+                            <span class="input-group-text bg-light border-start-0 border-end-0 text-muted">–</span>
+                            <input type="number"
+                                   name="MaxPrice"
+                                   class="form-control rounded-end-3 shadow-none"
+                                   placeholder="Max"
+                                   min="0"
+                                   step="50"
+                                   value="@Model.Criteria.MaxPrice" />
+                        </div>
+                    </div>
+
+                    <!-- 8. Sort By -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Sort By</label>
+                        <select name="SortBy" class="form-select rounded-3 shadow-none">
+                            <option value="default" selected="@(string.IsNullOrEmpty(Model.Criteria.SortBy) || Model.Criteria.SortBy == "default")">
+                                Recommended (Default)
+                            </option>
+                            <option value="rating" selected="@(Model.Criteria.SortBy == "rating")">
+                                Highest Rated
+                            </option>
+                            <option value="priceasc" selected="@(Model.Criteria.SortBy == "priceasc")">
+                                Lowest Price
+                            </option>
+                            <option value="pricedesc" selected="@(Model.Criteria.SortBy == "pricedesc")">
+                                Highest Price
+                            </option>
+                            <option value="experience" selected="@(Model.Criteria.SortBy == "experience")">
+                                Most Experienced
+                            </option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Submit / Actions row -->
+                <div class="d-flex justify-content-end align-items-center mt-3 pt-3 border-top gap-2">
+                    <a asp-action="Index" class="btn btn-light rounded-pill px-3">
+                        Clear all
+                    </a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-filter me-1"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- Provider Cards Grid & Pagination (Rendered via Partial View) -->
+    <partial name="_ProviderListPartial" model="Model" />
+
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Bootstrap 5 Tooltips (for disabled Coming Soon buttons and badges)
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            const tooltipList = [...tooltipTriggerList].map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}
