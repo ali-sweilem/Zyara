@@ -1,0 +1,162 @@
+@model Zyara.Web.Models.HomeIndexViewModel
+
+@{
+    // Prepare route dictionary to preserve all active filter/search/sort values in pagination links
+    var baseRoute = new Dictionary<string, string>();
+    if (!string.IsNullOrWhiteSpace(Model.Criteria.SearchTerm)) baseRoute["SearchTerm"] = Model.Criteria.SearchTerm;
+    if (Model.Criteria.ProviderType.HasValue) baseRoute["ProviderType"] = Model.Criteria.ProviderType.Value.ToString();
+    if (!string.IsNullOrWhiteSpace(Model.Criteria.Specialty)) baseRoute["Specialty"] = Model.Criteria.Specialty;
+    if (!string.IsNullOrWhiteSpace(Model.Criteria.City)) baseRoute["City"] = Model.Criteria.City;
+    if (Model.Criteria.Gender.HasValue) baseRoute["Gender"] = Model.Criteria.Gender.Value.ToString();
+    if (Model.Criteria.MinExperience.HasValue) baseRoute["MinExperience"] = Model.Criteria.MinExperience.Value.ToString();
+    if (Model.Criteria.MinRating.HasValue) baseRoute["MinRating"] = Model.Criteria.MinRating.Value.ToString();
+    if (Model.Criteria.MinPrice.HasValue) baseRoute["MinPrice"] = Model.Criteria.MinPrice.Value.ToString();
+    if (Model.Criteria.MaxPrice.HasValue) baseRoute["MaxPrice"] = Model.Criteria.MaxPrice.Value.ToString();
+    if (Model.Criteria.AvailableOnly) baseRoute["AvailableOnly"] = "true";
+    if (!string.IsNullOrWhiteSpace(Model.Criteria.SortBy)) baseRoute["SortBy"] = Model.Criteria.SortBy;
+
+    Dictionary<string, string> GetPageRoute(int page)
+    {
+        var dict = new Dictionary<string, string>(baseRoute);
+        dict["PageNumber"] = page.ToString();
+        return dict;
+    }
+}
+
+<!-- Results Summary Header -->
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 pb-2 border-bottom gap-2">
+    <div>
+        <h4 class="fw-bold text-dark mb-0">
+            Available Healthcare Providers
+        </h4>
+        <small class="text-muted">
+            @if (Model.Results.TotalCount > 0)
+            {
+                int start = ((Model.Results.PageNumber - 1) * Model.Results.PageSize) + 1;
+                int end = Math.Min(Model.Results.PageNumber * Model.Results.PageSize, Model.Results.TotalCount);
+                <span>Showing @start–@end of @Model.Results.TotalCount verified providers</span>
+            }
+            else
+            {
+                <span>0 providers found</span>
+            }
+        </small>
+    </div>
+
+    @if (Model.Results.TotalPages > 1)
+    {
+        <div class="text-muted small">
+            Page @Model.Results.PageNumber of @Model.Results.TotalPages
+        </div>
+    }
+</div>
+
+@if (Model.Results.TotalCount == 0)
+{
+    <!-- Empty State -->
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4 bg-light">
+        <div class="mb-3">
+            <span class="rounded-circle d-inline-flex align-items-center justify-content-center bg-white shadow-sm text-muted"
+                  style="width: 72px; height: 72px;">
+                <i class="bi bi-search fs-2 text-primary"></i>
+            </span>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">No providers match your criteria</h4>
+        <p class="text-muted mx-auto mb-4" style="max-width: 480px;">
+            We couldn't find any verified doctors or nurses matching your current search or filter combination.
+            Try relaxing your filters or resetting them to view all available providers.
+        </p>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset all filters
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Responsive 4-Column Grid: 4 on lg, 3 on md, 2 on sm, 1 on mobile -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
+        @foreach (var provider in Model.Results.Items)
+        {
+            <partial name="_ProviderCard" model="provider" />
+        }
+    </div>
+
+    <!-- Server-Side Pagination -->
+    @if (Model.Results.TotalPages > 1)
+    {
+        <nav aria-label="Provider search pages" class="my-4">
+            <ul class="pagination justify-content-center flex-wrap gap-1">
+                
+                <!-- Previous Button -->
+                <li class="page-item @(!Model.Results.HasPreviousPage ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3 @(!Model.Results.HasPreviousPage ? "text-muted" : "")"
+                       asp-action="Index"
+                       asp-all-route-data="GetPageRoute(Model.Results.PageNumber - 1)"
+                       aria-label="Previous">
+                        <i class="bi bi-chevron-left me-1"></i> Prev
+                    </a>
+                </li>
+
+                <!-- Page Numbers with Ellipsis -->
+                @{
+                    int current = Model.Results.PageNumber;
+                    int total = Model.Results.TotalPages;
+                    int window = 2; // window of pages around current
+                    int startPage = Math.Max(1, current - window);
+                    int endPage = Math.Min(total, current + window);
+                }
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link rounded-circle text-center" style="width: 38px; height: 38px; line-height: 22px;"
+                           asp-action="Index" asp-all-route-data="GetPageRoute(1)">1</a>
+                    </li>
+                    @if (startPage > 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link border-0">…</span></li>
+                    }
+                }
+
+                @for (int p = startPage; p <= endPage; p++)
+                {
+                    bool isCurrent = p == current;
+                    <li class="page-item @(isCurrent ? "active" : "")">
+                        <a class="page-link rounded-circle text-center"
+                           style="width: 38px; height: 38px; line-height: 22px;"
+                           asp-action="Index"
+                           asp-all-route-data="GetPageRoute(p)">
+                            @p
+                        </a>
+                    </li>
+                }
+
+                @if (endPage < total)
+                {
+                    @if (endPage < total - 1)
+                    {
+                        <li class="page-item disabled"><span class="page-link border-0">…</span></li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link rounded-circle text-center" style="width: 38px; height: 38px; line-height: 22px;"
+                           asp-action="Index" asp-all-route-data="GetPageRoute(total)">@total</a>
+                    </li>
+                }
+
+                <!-- Next Button -->
+                <li class="page-item @(!Model.Results.HasNextPage ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-3 @(!Model.Results.HasNextPage ? "text-muted" : "")"
+                       asp-action="Index"
+                       asp-all-route-data="GetPageRoute(Model.Results.PageNumber + 1)"
+                       aria-label="Next">
+                        Next <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+    }
+}
+

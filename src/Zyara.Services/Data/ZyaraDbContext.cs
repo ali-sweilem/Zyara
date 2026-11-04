@@ -18,7 +18,7 @@ namespace Zyara.Services.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<TimeSlot> TimeSlots { get; set; }
-        public DbSet<Rating> Ratings { get; set; }
+        public DbSet<Review> Reviews { get; set; }
         public DbSet<Prescription> Prescriptions { get; set; }
         public DbSet<PrescriptionItem> PrescriptionItems { get; set; }
         public DbSet<ServiceNote> ServiceNotes { get; set; }

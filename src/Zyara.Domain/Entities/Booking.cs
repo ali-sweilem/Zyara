@@ -27,7 +27,7 @@ namespace Zyara.Domain.Entities
         public TimeSlot? TimeSlot { get; set; }
         public Payment? Payment { get; set; }
 
-        public Rating? Rating { get; set; }
+        public Review? Review { get; set; }
 
     }
 }

@@ -13,6 +13,8 @@ namespace Zyara.Domain.Entities
         // Professional info
         public string Specialty { get; set; } = string.Empty;
         public int ExperienceYears { get; set; }
+        public string? Bio { get; set; }
+        public string? PhotoUrl { get; set; }
 
         // Verification & admin review
         public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Pending;

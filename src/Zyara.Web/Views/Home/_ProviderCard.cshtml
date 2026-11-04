@@ -1,0 +1,142 @@
+@model Zyara.Services.Features.Providers.ProviderCardDto
+@using Zyara.Domain.Enums
+
+@{
+    // Role display label
+    string roleLabel = Model.Role == UserRole.Nurse ? "Nurse" : "Doctor";
+    string roleBadgeClass = Model.Role == UserRole.Nurse
+        ? "bg-info-subtle text-info-emphasis border-info-subtle"
+        : "bg-primary-subtle text-primary border-primary-subtle";
+
+    var detailsUrl = Url.Action("Details", "Providers", new { id = Model.Id });
+}
+
+<div class="col">
+    <div class="card h-100 rounded-4 border-1 shadow-sm provider-card position-relative @(!Model.IsAvailable ? "provider-card-unavailable" : "")"
+         style="transition: transform 0.2s ease, box-shadow 0.2s ease; @(!Model.IsAvailable ? "opacity: 0.82;" : "")">
+        
+        <div class="card-body p-4 d-flex flex-column text-center">
+            
+            <!-- Top Badges: Provider Type & Availability -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge border rounded-pill px-2 py-1 fw-semibold small @roleBadgeClass">
+                    <i class="bi @(Model.Role == UserRole.Nurse ? "bi-bandaid" : "bi-heart-pulse") me-1"></i>
+                    @roleLabel
+                </span>
+
+                @if (Model.IsAvailable)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 fw-semibold small">
+                        <i class="bi bi-clock-fill me-1"></i> Available
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-1 fw-semibold small">
+                        <i class="bi bi-dash-circle me-1"></i> Unavailable
+                    </span>
+                }
+            </div>
+
+            <!-- Profile Photo with Initials Avatar Fallback -->
+            <div class="mx-auto mb-3">
+                @await Html.PartialAsync("_Avatar", new AvatarViewModel
+                {
+                    FullName = Model.FullName,
+                    PhotoUrl = Model.PhotoUrl,
+                    Id = Model.Id,
+                    Size = 88
+                })
+            </div>
+
+            <!-- Provider Name -->
+            <h5 class="card-title fw-bold text-dark mb-1 text-truncate" title="@Model.FullName">
+                @Model.FullName
+            </h5>
+
+            <!-- Specialty or Role line -->
+            <div class="text-muted small mb-2 text-truncate" title="@(!string.IsNullOrWhiteSpace(Model.Specialty) ? Model.Specialty : roleLabel)">
+                @if (!string.IsNullOrWhiteSpace(Model.Specialty))
+                {
+                    <span>@Model.Specialty</span>
+                }
+                else
+                {
+                    <span>@(Model.Role == UserRole.Nurse ? "Registered General Nurse" : "General Practitioner")</span>
+                }
+            </div>
+
+            <!-- Experience & Location -->
+            <div class="small text-muted mb-3 d-flex align-items-center justify-content-center flex-wrap gap-2">
+                @if (Model.ExperienceYears > 0)
+                {
+                    <span><i class="bi bi-award me-1 text-primary"></i>@Model.ExperienceYears yrs exp.</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.BaseCity))
+                {
+                    <span>&bull;</span>
+                    <span class="text-truncate" style="max-width: 130px;" title="@Model.BaseCity">
+                        <i class="bi bi-geo-alt me-1 text-danger"></i>@Model.BaseCity
+                    </span>
+                }
+            </div>
+
+            <!-- Rating Section -->
+            <div class="mb-3">
+                @if (Model.RatingCount == 0)
+                {
+                    <span class="badge bg-light text-muted border rounded-pill px-2 py-1">New</span>
+                    <small class="text-muted ms-1">(No reviews yet)</small>
+                }
+                else
+                {
+                    <div class="d-inline-flex align-items-center gap-1">
+                        @{
+                            double rating = Math.Clamp(Model.AverageRating, 0, 5);
+                            int fullStars = (int)Math.Floor(rating);
+                            bool hasHalfStar = (rating - fullStars) >= 0.4;
+                            int emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+                        }
+                        <span class="text-warning small" aria-label="@rating.ToString("0.0") out of 5 stars">
+                            @for (int i = 0; i < fullStars; i++)
+                            {
+                                <i class="bi bi-star-fill"></i>
+                            }
+                            @if (hasHalfStar)
+                            {
+                                <i class="bi bi-star-half"></i>
+                            }
+                            @for (int i = 0; i < emptyStars; i++)
+                            {
+                                <i class="bi bi-star"></i>
+                            }
+                        </span>
+                        <strong class="text-dark small ms-1">@rating.ToString("0.0")</strong>
+                        <small class="text-muted">(@Model.RatingCount)</small>
+                    </div>
+                }
+            </div>
+
+            <!-- Price display -->
+            <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted small">Consultation</span>
+                @if (Model.MinFee.HasValue)
+                {
+                    <span class="fw-bold text-dark fs-6">
+                        From @Model.MinFee.Value.ToString("N0") <small class="fw-semibold text-muted">EGP</small>
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted fst-italic small">Price not set</span>
+                }
+            </div>
+
+            <a class="btn btn-primary w-100 rounded-pill py-2 fw-semibold" href="@detailsUrl">
+                <i class="bi bi-person-vcard me-1"></i> View Profile
+            </a>
+
+        </div>
+    </div>
+</div>
+
