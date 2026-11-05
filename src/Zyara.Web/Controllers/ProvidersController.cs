@@ -9,10 +9,12 @@ namespace Zyara.Web.Controllers;
 public sealed class ProvidersController : Controller
 {
     private readonly IProviderDetailsService _providerDetailsService;
+    private readonly IProviderDashboardService _dashboardService;
 
-    public ProvidersController(IProviderDetailsService providerDetailsService)
+    public ProvidersController(IProviderDetailsService providerDetailsService , IProviderDashboardService dashboardService)
     {
         _providerDetailsService = providerDetailsService;
+        _dashboardService = dashboardService;
     }
 
     [HttpGet]
@@ -30,5 +32,21 @@ public sealed class ProvidersController : Controller
             Provider = provider,
             Reviews = reviews
         });
+    }
+     // /Providers/Dashboard
+    public async Task<IActionResult> Dashboard(int providerId = 1, CancellationToken cancellationToken = default)
+    {
+        var dto = await _dashboardService.GetDashboardAsync(providerId, cancellationToken);
+
+        var vm = new ProviderDashboardViewModel
+        {
+            TotalBookings = dto.TotalBookings,
+            PendingRequests = dto.PendingRequests,
+            UpcomingBookings = dto.UpcomingBookings,
+            CompletedBookings = dto.CompletedBookings,
+            TotalEarnings = dto.TotalEarnings
+        };
+
+        return View(vm);
     }
 }
