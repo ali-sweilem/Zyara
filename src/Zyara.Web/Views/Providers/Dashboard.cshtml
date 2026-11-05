@@ -1,0 +1,40 @@
+﻿@model Zyara.Web.Models.ProviderDashboardViewModel
+
+@{
+    ViewData["Title"] = "Provider Dashboard";
+}
+
+<h1 class="mb-4">Provider Dashboard</h1>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h6>Total Bookings</h6>
+            <h2>@Model.TotalBookings</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h6>Pending Requests</h6>
+            <h2>@Model.PendingRequests</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h6>Upcoming Bookings</h6>
+            <h2>@Model.UpcomingBookings</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h6>Completed Bookings</h6>
+            <h2>@Model.CompletedBookings</h2>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h6>Total Earnings</h6>
+            <h2>@Model.TotalEarnings.ToString("N2")</h2>
+        </div>
+    </div>
+</div>

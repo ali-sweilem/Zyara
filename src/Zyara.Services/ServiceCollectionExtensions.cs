@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IProviderSearchService, ProviderSearchService>();
         services.AddScoped<IProviderDetailsService, ProviderDetailsService>();
+        services.AddScoped<IProviderDashboardService, ProviderDashboardService>();
         return services;
     }
 }
