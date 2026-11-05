@@ -77,7 +77,7 @@ namespace Zyara.Services.Data.Configurations
 
             // Booking (1) <-> Rating (0..1): one-to-one optional
             builder.HasOne(b => b.Rating)
-                .WithOne()
+                .WithOne(r => r.Booking)
                 .HasForeignKey<Rating>(r => r.BookingId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired(false);

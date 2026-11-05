@@ -74,6 +74,9 @@ namespace Zyara.Services.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AddressId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Commission")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -108,6 +111,8 @@ namespace Zyara.Services.Data.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AddressId");
 
                     b.HasIndex("PatientId");
 
@@ -607,6 +612,11 @@ namespace Zyara.Services.Data.Migrations
 
             modelBuilder.Entity("Zyara.Domain.Entities.Booking", b =>
                 {
+                    b.HasOne("Zyara.Domain.Entities.Address", "Address")
+                        .WithMany()
+                        .HasForeignKey("AddressId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Zyara.Domain.Entities.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
@@ -630,6 +640,8 @@ namespace Zyara.Services.Data.Migrations
                         .HasForeignKey("Zyara.Domain.Entities.Booking", "TimeSlotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Address");
 
                     b.Navigation("Patient");
 
@@ -723,10 +735,12 @@ namespace Zyara.Services.Data.Migrations
 
             modelBuilder.Entity("Zyara.Domain.Entities.Rating", b =>
                 {
-                    b.HasOne("Zyara.Domain.Entities.Booking", null)
+                    b.HasOne("Zyara.Domain.Entities.Booking", "Booking")
                         .WithOne("Rating")
                         .HasForeignKey("Zyara.Domain.Entities.Rating", "BookingId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Booking");
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.ServiceNote", b =>
