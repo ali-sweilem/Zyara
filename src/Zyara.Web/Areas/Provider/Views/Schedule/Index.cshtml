@@ -1,0 +1,124 @@
+﻿@using Zyara.Domain.Enums
+@model Zyara.Web.Areas.Provider.ViewModels.ProviderTimeSlotIndexVM
+
+@{
+    ViewData["Title"] = "إدارة المواعيد المتاحة (TimeSlots)";
+}
+
+<div class="container-fluid py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-clock-plus me-2"></i>إضافة TimeSlot جديد</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="CreateTimeSlot" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">التاريخ</label>
+                            <input type="date" class="form-control" asp-for="NewTimeSlot.Date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="NewTimeSlot.Date" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">من الساعة</label>
+                            <input type="time" class="form-control" asp-for="NewTimeSlot.StartTime" />
+                            <span asp-validation-for="NewTimeSlot.StartTime" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">إلى الساعة</label>
+                            <input type="time" class="form-control" asp-for="NewTimeSlot.EndTime" />
+                            <span asp-validation-for="NewTimeSlot.EndTime" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">مدة الجلسة (بالدقائق)</label>
+                            <input type="number" class="form-control" asp-for="NewTimeSlot.SlotDurationMinutes" step="5" min="15" max="120" />
+                            <span asp-validation-for="NewTimeSlot.SlotDurationMinutes" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 mt-2 fw-bold">إضافة الـ TimeSlot</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-light py-3">
+                    <h5 class="card-title mb-0 fw-bold text-dark"><i class="bi bi-calendar-week me-2"></i>قائمة المواعيد (TimeSlots)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>الوقت</th>
+                                    <th>الحالة (Status)</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var slot in Model.TimeSlots)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@slot.Date.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") -
+                                            @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt")
+                                        </td>
+                                        <td>
+                                            @if (slot.Status == TimeSlotStatus.Available)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border px-3 py-2 rounded-pill">Available</span>
+                                            }
+                                            else if (slot.Status == TimeSlotStatus.Locked)
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning border px-3 py-2 rounded-pill">Locked</span>
+                                            }
+                                            else if (slot.Status == TimeSlotStatus.Booked)
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger border px-3 py-2 rounded-pill">Booked</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (slot.Status == TimeSlotStatus.Available)
+                                            {
+                                                <form asp-action="DeleteTimeSlot" asp-route-id="@slot.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا الموعد؟')">
+                                                        <i class="bi bi-trash"></i> حذف
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-secondary btn-sm" disabled>محتجز / محجوز</button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
