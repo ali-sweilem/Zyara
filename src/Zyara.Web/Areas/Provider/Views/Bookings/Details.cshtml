@@ -1,0 +1,121 @@
+@model Zyara.Web.Areas.Provider.ViewModels.BookingDetailsViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Booking Details - " + Model.Id;
+}
+
+<div class="container mt-4">
+    <h2>Booking #@Model.Id</h2>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Patient</div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> @Model.PatientName</p>
+                    <p><strong>Phone:</strong> @Model.PatientPhone</p>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">Service & Schedule</div>
+                <div class="card-body">
+                    <p><strong>Service:</strong> @Model.ServiceName</p>
+                    <p><strong>Date:</strong> @Model.Date.ToString("yyyy-MM-dd")</p>
+                    <p><strong>Time:</strong> @Model.StartTime.ToString("hh:mm") - @Model.EndTime.ToString("hh:mm")</p>
+                    <p><strong>Address:</strong> @Model.Address</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Payment & Status</div>
+                <div class="card-body">
+                    <p><strong>Status:</strong> <span class="badge bg-secondary">@Model.Status</span></p>
+                    <p><strong>Service Fee:</strong> @Model.ServiceFee.ToString("C")</p>
+                    <p><strong>Total Price:</strong> @Model.TotalPrice.ToString("C")</p>
+                    <p><strong>Commission:</strong> @Model.Commission.ToString("C")</p>
+                    <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
+                    <p><strong>Payment Status:</strong> @Model.PaymentStatus</p>
+                    @if (Model.RatingStars.HasValue)
+                    {
+                        <p><strong>Rating:</strong> @Model.RatingStars / 5 - @Model.RatingComment</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.CanAccept || Model.CanReject || Model.CanStart || Model.CanComplete || Model.CanCancel)
+    {
+        <div class="mb-3">
+            @if (Model.CanAccept)
+            {
+                <form asp-action="Accept" method="post" class="d-inline"><input type="hidden" name="id" value="@Model.Id" />@Html.AntiForgeryToken()<button type="submit" class="btn btn-success">Accept</button></form>
+            }
+            @if (Model.CanReject)
+            {
+                <form asp-action="Reject" method="post" class="d-inline"><input type="hidden" name="id" value="@Model.Id" />@Html.AntiForgeryToken()<button type="submit" class="btn btn-danger">Reject</button></form>
+            }
+            @if (Model.CanStart)
+            {
+                <form asp-action="Start" method="post" class="d-inline"><input type="hidden" name="id" value="@Model.Id" />@Html.AntiForgeryToken()
+                    @if (Model.IsHomeVisit)
+                    {
+                        <input name="otp" class="form-control d-inline w-auto" placeholder="OTP" required />
+                    }
+                    <button type="submit" class="btn btn-primary">Start</button>
+                </form>
+            }
+            @if (Model.CanComplete)
+            {
+                <form asp-action="Complete" method="post" class="d-inline"><input type="hidden" name="id" value="@Model.Id" />@Html.AntiForgeryToken()<button type="submit" class="btn btn-primary">Complete</button></form>
+            }
+            @if (Model.CanCancel)
+            {
+                <form asp-action="Cancel" method="post" class="d-inline" onsubmit="return confirm('Cancel this booking?');"><input type="hidden" name="id" value="@Model.Id" />@Html.AntiForgeryToken()<button type="submit" class="btn btn-warning">Cancel</button></form>
+            }
+        </div>
+    }
+
+    @if (Model.CanAddNote)
+    {
+        <div class="card mb-3">
+            <div class="card-header">Add Service Note</div>
+            <div class="card-body">
+                <form asp-action="AddNote" method="post">
+                    <input type="hidden" name="BookingId" value="@Model.Id" />
+                    <textarea name="Content" class="form-control" rows="3" required></textarea>
+                    <button type="submit" class="btn btn-sm btn-secondary mt-2">Save Note</button>
+                    @Html.AntiForgeryToken()
+                </form>
+            </div>
+        </div>
+    }
+
+    @if (Model.ServiceNotes.Any())
+    {
+        <div class="card">
+            <div class="card-header">Service Notes</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var note in Model.ServiceNotes)
+                {
+                    <li class="list-group-item">@note.Content</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <a asp-action="Index" class="btn btn-outline-secondary mt-3">Back to List</a>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -86,6 +86,14 @@ namespace Zyara.Services.Data.Configurations
             builder.HasIndex(b => b.PatientId);
             builder.HasIndex(b => b.ProviderId);
             builder.HasIndex(b => b.Status);
+
+            // Booking -> Address (optional)
+            builder.HasOne(b => b.Address)
+                .WithMany()
+                .HasForeignKey(b => b.AddressId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+            builder.HasIndex(b => b.AddressId);
         }
     }
 }

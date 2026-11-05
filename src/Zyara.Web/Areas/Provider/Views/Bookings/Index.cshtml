@@ -1,0 +1,83 @@
+@model Zyara.Web.Areas.Provider.ViewModels.BookingListViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Provider Bookings";
+}
+
+<div class="container mt-4">
+    <h2>Bookings</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <form asp-action="Index" method="get" class="row g-3 mb-3">
+        <div class="col-md-2">
+            <select asp-for="Filter.Status" class="form-select"><option value="">All statuses</option><option>PendingProviderApproval</option><option>Confirmed</option><option>ConfirmedCollectionPending</option><option>Started</option><option>Completed</option><option>Cancelled</option><option>Rejected</option><option>Expired</option></select>
+        </div>
+        <div class="col-md-2">
+            <select asp-for="Filter.PaymentMethod" class="form-select"><option value="">All payments</option><option>CashOnArrival</option><option>OnlinePayment</option></select>
+        </div>
+        <div class="col-md-2">
+            <select asp-for="Filter.ServiceType" class="form-select"><option value="">All services</option><option>DoctorHomeVisit</option><option>NurseHomeVisit</option><option>RemoteConsultation</option></select>
+        </div>
+        <div class="col-md-2">
+            <input asp-for="Filter.SearchText" class="form-control" placeholder="Patient name / phone" />
+        </div>
+        <div class="col-md-2">
+            <input asp-for="Filter.DateFrom" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Patient</th><th>Phone</th><th>Service</th><th>Date</th><th>Time</th><th>Status</th><th>Price</th><th>Payment</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.PatientName</td>
+                    <td>@item.PatientPhone</td>
+                    <td>@item.ServiceName</td>
+                    <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@item.StartTime.ToString("hh:mm") - @item.EndTime.ToString("hh:mm")</td>
+                    <td><span class="badge bg-secondary">@item.Status</span></td>
+                    <td>@item.TotalPrice.ToString("C")</td>
+                    <td>@item.PaymentMethod</td>
+                    <td><a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">View</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="alert alert-info">No bookings found.</div>
+    }
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" asp-action="Index" asp-route-Status="Model.Filter.Status" asp-route-PaymentMethod="Model.Filter.PaymentMethod" asp-route-ServiceType="Model.Filter.ServiceType" asp-route-SearchText="Model.Filter.SearchText" asp-route-DateFrom="Model.Filter.DateFrom" asp-route-DateTo="Model.Filter.DateTo" asp-route-Page="@p">@p</a></li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

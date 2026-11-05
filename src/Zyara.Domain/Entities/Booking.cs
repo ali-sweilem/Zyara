@@ -19,6 +19,9 @@ namespace Zyara.Domain.Entities
         public int ServiceId { get; set; }
         public int TimeSlotId { get; set; }
 
+        public int? AddressId { get; set; }
+        public Address? Address { get; set; }
+
         // Navigation properties
         public Patient? Patient { get; set; }
         // TODO(M2): change to Provider once the class exists

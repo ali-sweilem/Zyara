@@ -14,6 +14,16 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
 }
+
+// TEMP-SEED: remove after seeding
+if (app.Environment.IsDevelopment())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<Zyara.Services.Data.ZyaraDbContext>();
+        Zyara.Web.Dev.DevDataSeeder.Seed(db);
+    }
+}
 app.UseRouting();
 
 app.UseAuthorization();
