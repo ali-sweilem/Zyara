@@ -12,8 +12,8 @@ using Zyara.Services.Data;
 namespace Zyara.Services.Data.Migrations
 {
     [DbContext(typeof(ZyaraDbContext))]
-    [Migration("20261105165723_FixPhotoUrl")]
-    partial class FixPhotoUrl
+    [Migration("20261106203350_AddSlotDurationMinutesToTimeSlot")]
+    partial class AddSlotDurationMinutesToTimeSlot
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -442,6 +442,9 @@ namespace Zyara.Services.Data.Migrations
                         .HasColumnType("time");
 
                     b.Property<int>("ProviderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SlotDurationMinutes")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("StartTime")
