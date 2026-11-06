@@ -22,9 +22,6 @@
     <Folder Include="Areas\Patient\Controllers\" />
     <Folder Include="Areas\Patient\Views\" />
     <Folder Include="Areas\Patient\ViewModels\" />
-    <Folder Include="Areas\Provider\Controllers\" />
-    <Folder Include="Areas\Provider\Views\" />
-    <Folder Include="Areas\Provider\ViewModels\" />
   </ItemGroup>
 
 </Project>
