@@ -1,0 +1,77 @@
+﻿@model EditProfileProviderDto
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+
+<div class="container provider-page my-4">
+    <div class="card provider-card overflow-hidden">
+        <div class="provider-hero text-white p-4 p-md-5">
+            <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 mb-3"><i class="bi bi-pencil-square me-1"></i> Account Settings</span>
+            <h1 class="h2 fw-bold mb-1">Edit Profile</h1>
+            <p class="text-white-50 mb-0">Keep your provider information up to date.</p>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="EditProfile" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="PhotoUrl" />
+
+                <div class="mb-4">
+                    <label asp-for="photofile" class="form-label fw-semibold">Profile Image</label>
+                    <input asp-for="photofile" type="file" class="form-control" accept="image/*" />
+                    <small class="text-muted">Choose an image to update your profile picture.</small>
+                    <span asp-validation-for="photofile" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label"></label>
+                    <input asp-for="FullName" class="form-control" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Gender" class="form-label"></label>
+                    <select asp-for="Gender" class="form-select">
+                        <option value="" disabled>Gender</option>
+                        <option value="1">Male</option>
+                        <option value="2">Female</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Specialty" class="form-label"></label>
+                    <input asp-for="Specialty" class="form-control" />
+                    <span asp-validation-for="Specialty" class="text-danger"></span>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ExperienceYears" class="form-label"></label>
+                        <input asp-for="ExperienceYears" type="number" class="form-control" />
+                        <span asp-validation-for="ExperienceYears" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="BaseCity" class="form-label"></label>
+                        <input asp-for="BaseCity" class="form-control" />
+                        <span asp-validation-for="BaseCity" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="bi bi-check2-circle me-1"></i> Save Changes</button>
+                    <a asp-action="ShowProfile" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
