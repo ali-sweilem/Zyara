@@ -441,6 +441,9 @@ namespace Zyara.Services.Migrations
                     b.Property<int>("ProviderId")
                         .HasColumnType("int");
 
+                    b.Property<int>("SlotDurationMinutes")
+                        .HasColumnType("int");
+
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
 

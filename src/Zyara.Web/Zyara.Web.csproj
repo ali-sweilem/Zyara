@@ -17,4 +17,13 @@
     <ProjectReference Include="..\Zyara.Services\Zyara.Services.csproj" />
   </ItemGroup>
 
-</Project>
+
+  <ItemGroup>
+    <Folder Include="Areas\Admin\" />
+    <Folder Include="Areas\Patient\Controllers\" />
+    <Folder Include="Areas\Patient\Views\" />
+    <Folder Include="Areas\Patient\ViewModels\" />
+  </ItemGroup>
+
+
+</Project> 

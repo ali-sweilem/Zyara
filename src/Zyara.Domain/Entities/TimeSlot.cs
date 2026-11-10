@@ -12,6 +12,7 @@ namespace Zyara.Domain.Entities
         public TimeSlotStatus Status { get; set; } = TimeSlotStatus.Available;
         public int ProviderId { get; set; }
         public Provider? Provider { get; set; }
+        public int SlotDurationMinutes { get; set; }
     }
 }
 
