@@ -33,20 +33,42 @@ public sealed class ProvidersController : Controller
             Reviews = reviews
         });
     }
-     // /Providers/Dashboard
+  
+    // /Providers/Dashboard
     public async Task<IActionResult> Dashboard(int providerId = 1, CancellationToken cancellationToken = default)
     {
         var dto = await _dashboardService.GetDashboardAsync(providerId, cancellationToken);
 
         var vm = new ProviderDashboardViewModel
         {
+            ProviderId = providerId,
             TotalBookings = dto.TotalBookings,
             PendingRequests = dto.PendingRequests,
             UpcomingBookings = dto.UpcomingBookings,
             CompletedBookings = dto.CompletedBookings,
-            TotalEarnings = dto.TotalEarnings
+            TotalEarnings = dto.TotalEarnings,
+            PendingList = dto.PendingList,
+            CompletedList = dto.CompletedList
         };
 
         return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Accept(int providerId, int bookingId, CancellationToken cancellationToken = default)
+    {
+        var result = await _dashboardService.AcceptBookingAsync(providerId, bookingId, cancellationToken);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Request accepted." : result.Error;
+        return RedirectToAction(nameof(Dashboard), new { providerId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reject(int providerId, int bookingId, CancellationToken cancellationToken = default)
+    {
+        var result = await _dashboardService.RejectBookingAsync(providerId, bookingId, cancellationToken);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Request rejected." : result.Error;
+        return RedirectToAction(nameof(Dashboard), new { providerId });
     }
 }
