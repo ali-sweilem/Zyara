@@ -1,4 +1,4 @@
-using System;
+    using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -102,6 +102,9 @@ public sealed class ProviderDetailsService : IProviderDetailsService
             .ThenByDescending(r => r.Id);
 
         var totalCount = await query.CountAsync(cancellationToken);
+        var totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 0;
+        pageNumber = totalPages > 0 ? Math.Min(pageNumber, totalPages) : 1;
+
         var rows = await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -168,6 +171,7 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                     RatingCount = p.RatingCount,
                     WalletBalance = p.WalletBalance,
                     PhotoUrl = p.PhotoUrl,
+                    Bio=p.Bio
 
                 }).FirstOrDefaultAsync();
     }
@@ -187,7 +191,7 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                 BaseCity = p.BaseCity,
                 Email = p.Email,
                 PhotoUrl = p.PhotoUrl,
-
+                Bio = p.Bio,
 
             }).FirstOrDefaultAsync();
 
@@ -208,6 +212,7 @@ public sealed class ProviderDetailsService : IProviderDetailsService
         provider.BaseCity = model.BaseCity;
         provider.Email = model.Email;
         provider.PhotoUrl = model.PhotoUrl;
+        provider.Bio = model.Bio;
 
         await _db.SaveChangesAsync();
         return true;

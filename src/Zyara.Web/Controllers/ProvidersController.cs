@@ -72,18 +72,25 @@ public sealed class ProvidersController : Controller
         {
             return View(model);
         }
-        if(model.photofile is { Length: > 0 })
+        if (model.PhotoFile is { Length: > 0 })
         {
-            var ext = Path.GetExtension(model.photofile.FileName).ToLowerInvariant();
-            var folder = Path.Combine(_env.WebRootPath, "uploads", "providers");
+            var ext = GetImageExtension(model.PhotoFile);
+            if (ext is null)
+            {
+                ModelState.AddModelError(nameof(model.PhotoFile), "Please select a valid image file.");
+                return View(model);
+            }
+
+            var folder = Path.Combine(_env.WebRootPath, "upload", "provider");
             Directory.CreateDirectory(folder);
 
             var filename = $"{Guid.NewGuid()}{ext}";
             using (var stream = new FileStream(Path.Combine(folder, filename), FileMode.Create))
             {
-                await model.photofile.CopyToAsync(stream);
+                await model.PhotoFile.CopyToAsync(stream);
             }
-                model.PhotoUrl = $"/uploads/Providers/{filename}";
+
+            model.PhotoUrl = $"/upload/provider/{filename}";
         }
         var success = await _providerDetailsService.UpdateProfileAsync(model);
         if (!success)
@@ -92,6 +99,24 @@ public sealed class ProvidersController : Controller
         }
         TempData["Success"] = "Profile updated successfully.";
         return RedirectToAction(nameof(showprofile), new { id = model.Id });
+    }
+
+    private static string? GetImageExtension(IFormFile file)
+    {
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (extension is ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp")
+        {
+            return extension;
+        }
+
+        return file.ContentType.ToLowerInvariant() switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            _ => null
+        };
     }
 
 }

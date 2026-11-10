@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Zyara.Domain.Enums;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
@@ -28,10 +29,7 @@ namespace Zyara.Web.Controllers
                 criteria.PageNumber = 1;
             }
 
-            if (criteria.PageSize <= 0)
-            {
-                criteria.PageSize = 12;
-            }
+            criteria.PageSize = Math.Clamp(criteria.PageSize > 0 ? criteria.PageSize : 12, 1, 50);
 
             // Validate Gender enum value
             if (criteria.Gender.HasValue && !Enum.IsDefined(typeof(Gender), criteria.Gender.Value))
@@ -99,5 +97,8 @@ namespace Zyara.Web.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+
+
     }
 }
