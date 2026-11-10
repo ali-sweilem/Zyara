@@ -27,7 +27,7 @@ namespace Zyara.Services.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            // Configured via Dependency Injection
+            optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Zyara;Integrated Security=True;Encrypt=False;Trust Server Certificate=True");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

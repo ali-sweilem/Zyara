@@ -1,18 +1,27 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Zyara.Services.Features.Providers;
+using Zyara.Domain.Enums;
+using Zyara.Services.Features.Providers.Dtos;
+using Zyara.Services.Features.Providers.Interfaces;
 using Zyara.Web.Models;
 
 namespace Zyara.Web.Controllers;
 
+
 public sealed class ProvidersController : Controller
 {
     private readonly IProviderDetailsService _providerDetailsService;
+    private readonly IWebHostEnvironment _env;
+  
 
-    public ProvidersController(IProviderDetailsService providerDetailsService)
+    public ProvidersController(IProviderDetailsService providerDetailsService, IWebHostEnvironment env)
     {
         _providerDetailsService = providerDetailsService;
+        _env = env;
+
     }
 
     [HttpGet]
@@ -31,4 +40,59 @@ public sealed class ProvidersController : Controller
             Reviews = reviews
         });
     }
+    //==============================================profile==============================================
+    //  /Providers/showprofile/5
+    public async Task<IActionResult> showprofile(int id)
+    {
+        var model = await _providerDetailsService.showprofile(id);
+        if (model == null)
+        {
+            return NotFound();
+        }
+        return View(model);
+    }
+
+    [HttpGet]
+
+    public async Task<IActionResult> EditProfile(int id)
+    {
+        var model = await _providerDetailsService.GetForEditAsync(id);
+        if (model == null)
+        {
+            return NotFound();
+        }
+        return View(model);
+    }
+  
+    [HttpPost]
+    public async Task<IActionResult> EditProfile(EditProfileProviderDto model)
+    {
+    
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+        if(model.photofile is { Length: > 0 })
+        {
+            var ext = Path.GetExtension(model.photofile.FileName).ToLowerInvariant();
+            var folder = Path.Combine(_env.WebRootPath, "uploads", "providers");
+            Directory.CreateDirectory(folder);
+
+            var filename = $"{Guid.NewGuid()}{ext}";
+            using (var stream = new FileStream(Path.Combine(folder, filename), FileMode.Create))
+            {
+                await model.photofile.CopyToAsync(stream);
+            }
+                model.PhotoUrl = $"/uploads/Providers/{filename}";
+        }
+        var success = await _providerDetailsService.UpdateProfileAsync(model);
+        if (!success)
+        {
+            return NotFound();
+        }
+        TempData["Success"] = "Profile updated successfully.";
+        return RedirectToAction(nameof(showprofile), new { id = model.Id });
+    }
+
 }
+

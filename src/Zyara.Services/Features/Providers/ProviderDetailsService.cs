@@ -2,9 +2,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Enums;
 using Zyara.Services.Data;
+using Zyara.Services.Features.Providers.Dtos;
+using Zyara.Services.Features.Providers.Interfaces;
 
 namespace Zyara.Services.Features.Providers;
 
@@ -143,4 +146,74 @@ public sealed class ProviderDetailsService : IProviderDetailsService
 
         return $"{parts[0]} {parts[1][..1]}.";
     }
+    //================================================================Provider Profile================================================================
+    public Task<ProviderProfileDto?> showprofile(int providerId)
+    {
+        return _db.Providers
+                .Where(p => p.Id == providerId)
+                .Select(p => new ProviderProfileDto
+                {
+                    Id = p.Id,
+                    FullName = p.FullName,
+                    Email = p.Email,
+                    Phone = p.Phone,
+                    Gender = p.Gender,
+                    CreatedAt = p.CreatedAt,
+                    Specialty = p.Specialty,
+                    ExperienceYears = p.ExperienceYears,
+                    BaseCity = p.BaseCity,
+                    VerificationStatus = p.VerificationStatus,
+                    RejectionReason = p.RejectionReason,
+                    AverageRating = p.AverageRating,
+                    RatingCount = p.RatingCount,
+                    WalletBalance = p.WalletBalance,
+                    PhotoUrl = p.PhotoUrl,
+
+                }).FirstOrDefaultAsync();
+    }
+
+
+    public async Task<EditProfileProviderDto?> GetForEditAsync(int id)
+    {
+        return await _db.Providers
+            .Where(p => p.Id == id)
+            .Select(p => new EditProfileProviderDto {
+                Id = p.Id,
+                FullName = p.FullName,
+                Phone = p.Phone,
+                Gender = p.Gender,
+                Specialty = p.Specialty,
+                ExperienceYears = p.ExperienceYears,
+                BaseCity = p.BaseCity,
+                Email = p.Email,
+                PhotoUrl = p.PhotoUrl,
+
+
+            }).FirstOrDefaultAsync();
+
+    }
+
+    public async Task<bool> UpdateProfileAsync(EditProfileProviderDto model)
+    {
+        var provider = await _db.Providers.FindAsync(model.Id);
+        if (provider is null)
+        {
+            return false;
+        }
+        provider.FullName = model.FullName;
+        provider.Phone = model.Phone;
+        provider.Gender = model.Gender;
+        provider.Specialty = model.Specialty;
+        provider.ExperienceYears = model.ExperienceYears;
+        provider.BaseCity = model.BaseCity;
+        provider.Email = model.Email;
+        provider.PhotoUrl = model.PhotoUrl;
+
+        await _db.SaveChangesAsync();
+        return true;
+
+
+
+
+    } 
 }

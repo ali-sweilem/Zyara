@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Enums;
 using Zyara.Services.Data;
+using Zyara.Services.Features.Providers.Dtos;
+using Zyara.Services.Features.Providers.Interfaces;
 
 namespace Zyara.Services.Features.Providers
 {

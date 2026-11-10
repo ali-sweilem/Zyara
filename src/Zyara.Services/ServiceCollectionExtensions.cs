@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Zyara.Services.Data;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Services;
+using Zyara.Services.Features.Providers.Interfaces;
 
 namespace Zyara.Services;
 
@@ -16,6 +17,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderSearchService, ProviderSearchService>();
         services.AddScoped<IProviderDetailsService, ProviderDetailsService>();
         services.AddScoped<IServiceManagementService, ServiceManagementService>();
+        services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
+        services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
         return services;
     }
 }

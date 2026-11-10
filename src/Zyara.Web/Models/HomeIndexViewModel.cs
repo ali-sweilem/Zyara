@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Zyara.Services.Features.Providers;
+using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Web.Models
 {
