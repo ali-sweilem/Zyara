@@ -1,0 +1,73 @@
+﻿@model List<ProviderCredentialDto>
+@{
+    ViewData["Title"] = "My Credentials";
+}
+
+<div class="container provider-page my-4">
+    <div class="card provider-card overflow-hidden mb-4">
+        <div class="provider-hero text-white p-4 p-md-5">
+            <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 mb-3"><i class="bi bi-folder2-open me-1"></i> Provider Documents</span>
+            <h1 class="h2 fw-bold mb-1">My Credentials</h1>
+            <p class="text-white-50 mb-0">Upload and manage the documents used for verification.</p>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger border-0 rounded-4">@TempData["Error"]</div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success border-0 rounded-4">@TempData["Success"]</div>
+            }
+
+            <form asp-action="Upload" asp-route-providerId="@ViewBag.ProviderId" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold" for="DocumentType">Document type</label>
+                    <select id="DocumentType" name="DocumentType" class="form-select" required>
+                        <option value="">Select document type</option>
+                        <option>Medical License</option>
+                        <option>Graduation Certificate</option>
+                        <option>National ID</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold" for="File">Choose file</label>
+                    <input id="File" type="file" name="File" accept=".pdf,.jpg,.jpeg,.png" class="form-control" required />
+                    <small class="text-muted">PDF / JPG / PNG, max 5 MB</small>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill"><i class="bi bi-upload me-1"></i> Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card provider-card">
+        <div class="card-header p-4"><h2 class="h5 fw-bold mb-0"><i class="bi bi-files me-2 text-primary"></i>Uploaded Documents</h2></div>
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="p-4 text-center text-muted">No documents uploaded yet.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table provider-table align-middle mb-0">
+                        <thead><tr><th class="px-4 py-3">Document</th><th class="py-3">Type</th><th class="py-3 text-end pe-4"></th></tr></thead>
+                        <tbody>
+                            @foreach (var c in Model)
+                            {
+                                <tr>
+                                    <td class="px-4 fw-semibold">@c.DocumentType</td>
+                                    <td class="text-muted">@c.FileExtension</td>
+                                    <td class="text-end pe-4"><a asp-action="Download" asp-route-id="@c.Id" asp-route-providerId="@ViewBag.ProviderId" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-eye me-1"></i> Open</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

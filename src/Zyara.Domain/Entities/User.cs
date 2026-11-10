@@ -14,6 +14,7 @@ namespace Zyara.Domain.Entities
         public UserRole Role { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public String? PhotoUrl { get; set; }
     }
 }
 
