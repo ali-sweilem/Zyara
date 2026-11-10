@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Zyara.Domain.Enums;
 using Zyara.Services.Features.Providers;
+using Zyara.Services.Features.Providers.Interfaces;
 using Zyara.Web.Models;
 
 namespace Zyara.Web.Controllers

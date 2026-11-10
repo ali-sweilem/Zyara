@@ -1,0 +1,40 @@
+﻿@model VerificationStatusDto
+@{
+    ViewData["Title"] = "Verification Status";
+
+    var badge = Model.Status switch
+    {
+        VerificationStatus.Verified => "bg-success",
+        VerificationStatus.Rejected => "bg-danger",
+        _ => "bg-warning text-dark"
+    };
+
+    var message = Model.Status switch
+    {
+        VerificationStatus.Verified => "Your account is verified. You can receive bookings.",
+        VerificationStatus.Rejected => "Your verification was rejected. Update your documents and upload again.",
+        _ => "Your documents are under review. You cannot receive bookings until you are approved."
+    };
+}
+
+<div class="container provider-page my-4">
+    <div class="card provider-card overflow-hidden">
+        <div class="provider-hero text-white p-4 p-md-5">
+            <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 mb-3"><i class="bi bi-shield-check me-1"></i> Provider Verification</span>
+            <h1 class="h2 fw-bold mb-1">Verification Status</h1>
+            <p class="text-white-50 mb-0">Track the review status of your provider documents.</p>
+        </div>
+        <div class="card-body p-4 p-md-5 text-center">
+            <div class="provider-status-icon mx-auto mb-3"><i class="bi bi-shield-check"></i></div>
+            <div><span class="badge @badge rounded-pill px-3 py-2 fs-6">@Model.Status</span></div>
+            <p class="text-muted mt-3 mb-4">@message</p>
+
+            @if (Model.Status == VerificationStatus.Rejected && !string.IsNullOrWhiteSpace(Model.RejectionReason))
+            {
+                <div class="alert alert-danger border-0 rounded-4 text-start mb-4"><strong>Reason:</strong> @Model.RejectionReason</div>
+            }
+
+            <a asp-controller="ProviderCredentials" asp-action="Index" asp-route-providerId="@ViewBag.ProviderId" class="btn btn-primary rounded-pill px-4"><i class="bi bi-folder2-open me-1"></i> Manage My Documents</a>
+        </div>
+    </div>
+</div>

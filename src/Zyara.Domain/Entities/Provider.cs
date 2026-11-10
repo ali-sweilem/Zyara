@@ -27,7 +27,7 @@ namespace Zyara.Domain.Entities
         public double AverageRating { get; set; }
         public int RatingCount { get; set; }
         public decimal WalletBalance { get; set; }
-
+        
         // Location for search & distance filtering
         public string BaseCity { get; set; } = string.Empty;
         public double? BaseLatitude { get; set; }
