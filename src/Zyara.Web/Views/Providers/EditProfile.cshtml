@@ -17,10 +17,15 @@
                 <input type="hidden" asp-for="PhotoUrl" />
 
                 <div class="mb-4">
-                    <label asp-for="photofile" class="form-label fw-semibold">Profile Image</label>
-                    <input asp-for="photofile" type="file" class="form-control" accept="image/*" />
+                    <label asp-for="PhotoFile" class="form-label fw-semibold">Profile Image</label>
+                    <input asp-for="PhotoFile" type="file" class="form-control" accept="image/*" />
                     <small class="text-muted">Choose an image to update your profile picture.</small>
-                    <span asp-validation-for="photofile" class="text-danger"></span>
+                    <span asp-validation-for="PhotoFile" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Bio" class="form-label"></label>
+                    <input asp-for="Bio" class="form-control" />
+                    <span asp-validation-for="Bio" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Email" class="form-label"></label>
@@ -74,4 +79,8 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+
+
 }

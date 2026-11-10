@@ -14,6 +14,7 @@
     if (Model.Criteria.MaxPrice.HasValue) baseRoute["MaxPrice"] = Model.Criteria.MaxPrice.Value.ToString();
     if (Model.Criteria.AvailableOnly) baseRoute["AvailableOnly"] = "true";
     if (!string.IsNullOrWhiteSpace(Model.Criteria.SortBy)) baseRoute["SortBy"] = Model.Criteria.SortBy;
+    baseRoute["PageSize"] = Model.Results.PageSize.ToString();
 
     Dictionary<string, string> GetPageRoute(int page)
     {

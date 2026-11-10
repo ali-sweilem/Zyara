@@ -12,8 +12,8 @@ using Zyara.Services.Data;
 namespace Zyara.Services.Migrations
 {
     [DbContext(typeof(ZyaraDbContext))]
-    [Migration("20261104231620_initclass")]
-    partial class initclass
+    [Migration("20261107164849_initmigration")]
+    partial class initmigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
