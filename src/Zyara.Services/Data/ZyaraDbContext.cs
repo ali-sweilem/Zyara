@@ -25,6 +25,7 @@ namespace Zyara.Services.Data
         public DbSet<PlatformSettings> PlatformSettings { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Apply all entity configurations defined in this assembly

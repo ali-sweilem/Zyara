@@ -6,6 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Member 4 - Adham
+builder.Services.AddScoped<Zyara.Services.Features.Payments.IPaymentService,
+Zyara.Services.Features.Payments.PaymentService>();
+
 builder.Services.AddZyaraServices(builder.Configuration);
 var app = builder.Build();
 

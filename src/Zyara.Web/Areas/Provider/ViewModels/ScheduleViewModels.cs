@@ -9,16 +9,13 @@ namespace Zyara.Web.Areas.Provider.ViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Appointment date is required")]
         [Display(Name = "Date")]
         [DataType(DataType.Date)]
         public DateTime Date { get; set; }
 
-        [Required(ErrorMessage = "Start time is required")]
         [Display(Name = "From")]
         public TimeSpan StartTime { get; set; }
 
-        [Required(ErrorMessage = "End time is required")]
         [Display(Name = "To")]
         public TimeSpan EndTime { get; set; }
 
@@ -30,23 +27,22 @@ namespace Zyara.Web.Areas.Provider.ViewModels
 
     public class CreateTimeSlotVM
     {
-        [Required(ErrorMessage = "Date is required")]
+        [Required(ErrorMessage = "Date is required.")]
         [DataType(DataType.Date)]
+        [Display(Name = "Date")]
         public DateTime Date { get; set; } = DateTime.Today;
 
-        [Required(ErrorMessage = "Appointment start time is required")]
-        public TimeSpan StartTime { get; set; } = new TimeSpan(9, 0, 0);
+        [Required(ErrorMessage = "Start time is required.")]
+        [Display(Name = "Start Time")]
+        public TimeSpan StartTime { get; set; } = new TimeSpan(10, 0, 0); // 10:00 AM default
 
-        [Required(ErrorMessage = "Appointment end time is required")]
-        public TimeSpan EndTime { get; set; } = new TimeSpan(17, 0, 0);
-
-        [Range(15, 120, ErrorMessage = "Session duration must be between 15 and 120 minutes")]
-        public int SlotDurationMinutes { get; set; } = 30;
+        [Display(Name = "Slot Duration (Minutes)")]
+        public int SlotDurationMinutes { get; set; } = 120; // 120 minutes fixed by business rule
     }
 
     public class ProviderTimeSlotIndexVM
     {
-        public List<TimeSlotVM> TimeSlots { get; set; } = new List<TimeSlotVM>();
-        public CreateTimeSlotVM NewTimeSlot { get; set; } = new CreateTimeSlotVM();
+        public List<TimeSlotVM> TimeSlots { get; set; } = new();
+        public CreateTimeSlotVM NewTimeSlot { get; set; } = new();
     }
 }
