@@ -1,4 +1,4 @@
-namespace Zyara.Web.Models
+namespace Zyara.Web.ViewModels
 {
     public class ErrorViewModel
     {

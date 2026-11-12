@@ -1,4 +1,5 @@
-    using System;
+using System;
+using Zyara.Services.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,45 +93,37 @@ public sealed class ProviderDetailsService : IProviderDetailsService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        pageNumber = pageNumber > 0 ? pageNumber : 1;
-        pageSize = Math.Clamp(pageSize > 0 ? pageSize : 5, 1, 20);
-
         var query = _db.Reviews
             .AsNoTracking()
             .Where(r => r.Booking.ProviderId == providerId)
             .OrderByDescending(r => r.CreatedAt)
             .ThenByDescending(r => r.Id);
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 0;
-        pageNumber = totalPages > 0 ? Math.Min(pageNumber, totalPages) : 1;
-
-        var rows = await query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => new
+        var paged = await query.ToPagedAsync(
+            r => new
             {
                 ReviewerName = r.Booking.Patient!.FullName,
                 Rating = r.Stars,
                 r.Comment,
                 r.CreatedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        var items = rows.Select(r => new ProviderReviewDto
-        {
-            ReviewerName = MaskReviewerName(r.ReviewerName),
-            Rating = r.Rating,
-            Comment = r.Comment,
-            CreatedAt = r.CreatedAt
-        }).ToList();
+            },
+            pageNumber,
+            pageSize > 0 ? pageSize : 5,
+            maxPageSize: 20,
+            cancellationToken: cancellationToken);
 
         return new PagedResult<ProviderReviewDto>
         {
-            Items = items,
-            TotalCount = totalCount,
-            PageNumber = pageNumber,
-            PageSize = pageSize
+            Items = paged.Items.Select(r => new ProviderReviewDto
+            {
+                ReviewerName = MaskReviewerName(r.ReviewerName),
+                Rating = r.Rating,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt
+            }).ToList(),
+            TotalCount = paged.TotalCount,
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize
         };
     }
 
@@ -171,7 +164,7 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                     RatingCount = p.RatingCount,
                     WalletBalance = p.WalletBalance,
                     PhotoUrl = p.PhotoUrl,
-                    Bio=p.Bio
+                    Bio = p.Bio
 
                 }).FirstOrDefaultAsync();
     }
@@ -181,7 +174,8 @@ public sealed class ProviderDetailsService : IProviderDetailsService
     {
         return await _db.Providers
             .Where(p => p.Id == id)
-            .Select(p => new EditProfileProviderDto {
+            .Select(p => new EditProfileProviderDto
+            {
                 Id = p.Id,
                 FullName = p.FullName,
                 Phone = p.Phone,
@@ -220,5 +214,5 @@ public sealed class ProviderDetailsService : IProviderDetailsService
 
 
 
-    } 
+    }
 }
