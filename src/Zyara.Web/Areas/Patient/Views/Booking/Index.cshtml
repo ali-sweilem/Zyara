@@ -1,0 +1,89 @@
+﻿@using Zyara.Services.Features.Bookings.Dtos
+@model IEnumerable<PatientBookingDto>
+
+@{
+    ViewData["Title"] = "My Bookings";
+}
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h2 class="fw-bold">My Bookings</h2>
+        <p class="text-muted">
+            Manage and track your appointments.
+        </p>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center py-5">
+                <h4>No Bookings Found</h4>
+                <p class="text-muted mb-0">
+                    You haven't made any bookings yet.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th class="p-3">Service</th>
+                            <th>Provider</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Service Fee</th>
+                            <th>Total Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td class="p-3 fw-semibold">
+                                    @booking.ServiceName
+                                </td>
+
+                                <td>@booking.ProviderName</td>
+
+                                <td>
+                                    @booking.BookingDate.ToString("dd MMM yyyy")
+                                </td>
+
+                                <td>
+                                    @booking.StartTime.ToString(@"hh\:mm")
+                                    -
+                                    @booking.EndTime.ToString(@"hh\:mm")
+                                </td>
+
+                                <td>
+                                    @booking.ServiceFee.ToString("N2")
+                                </td>
+
+                                <td class="fw-semibold">
+                                    @booking.TotalPrice.ToString("N2")
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @booking.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    }
+
+</div>
+

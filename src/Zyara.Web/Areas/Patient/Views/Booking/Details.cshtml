@@ -1,0 +1,90 @@
+﻿@using Zyara.Services.Features.Bookings.Dtos
+@model PatientBookingDto
+
+@{
+    ViewData["Title"] = "Booking Details";
+}
+
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Booking Details</h2>
+            <p class="text-muted mb-0">
+                View your appointment information.
+            </p>
+        </div>
+
+        <a asp-controller="Bookings"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            Back to Bookings
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">Appointment Information</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-4">
+
+                <div class="col-md-6">
+                    <small class="text-muted">Booking ID</small>
+                    <h6 class="fw-semibold">#@Model.Id</h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Booking Status</small>
+                    <h6>
+                        <span class="badge bg-secondary">
+                            @Model.Status
+                        </span>
+                    </h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Service</small>
+                    <h6 class="fw-semibold">@Model.ServiceName</h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Provider</small>
+                    <h6 class="fw-semibold">@Model.ProviderName</h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Booking Date</small>
+                    <h6>
+                        @Model.BookingDate.ToString("dd MMMM yyyy")
+                    </h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Time</small>
+                    <h6>
+                        @Model.StartTime.ToString(@"hh\:mm")
+                        -
+                        @Model.EndTime.ToString(@"hh\:mm")
+                    </h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Service Fee</small>
+                    <h6>@Model.ServiceFee.ToString("N2")</h6>
+                </div>
+
+                <div class="col-md-6">
+                    <small class="text-muted">Total Price</small>
+                    <h5 class="fw-bold text-primary">
+                        @Model.TotalPrice.ToString("N2")
+                    </h5>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
