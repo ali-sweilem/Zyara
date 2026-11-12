@@ -9,11 +9,11 @@ using Zyara.Services.Data;
 
 #nullable disable
 
-namespace Zyara.Services.Migrations
+namespace Zyara.Services.Data.Migrations
 {
     [DbContext(typeof(ZyaraDbContext))]
-    [Migration("20261110150830_FixPendingChanges")]
-    partial class FixPendingChanges
+    [Migration("20261108100000_AddSlotDurationMinutesToTimeSlot")]
+    partial class AddSlotDurationMinutesToTimeSlot
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -501,10 +501,6 @@ namespace Zyara.Services.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("PhotoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -563,6 +559,10 @@ namespace Zyara.Services.Migrations
 
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
+
+                    b.Property<string>("PhotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("RatingCount")
                         .HasColumnType("int");

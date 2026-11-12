@@ -53,7 +53,14 @@ namespace Zyara.Services.Features.Providers
                                  + (BayesianM / ((double)p.RatingCount + BayesianM)) * BayesianC
             });
 
-            // 1. Search term (matches FullName, Specialty, BaseCity)
+            // 1. Provider type is applied before search and pagination.
+            if (criteria.ProviderType.HasValue)
+            {
+                var role = criteria.ProviderType.Value;
+                intermediate = intermediate.Where(x => x.Provider.Role == role);
+            }
+
+            // 2. Search term (matches FullName, Specialty, BaseCity)
             if (!string.IsNullOrWhiteSpace(criteria.SearchTerm))
             {
                 var term = criteria.SearchTerm.Trim();
@@ -61,13 +68,6 @@ namespace Zyara.Services.Features.Providers
                     x.Provider.FullName.Contains(term) ||
                     x.Provider.Specialty.Contains(term) ||
                     x.Provider.BaseCity.Contains(term));
-            }
-
-            // 2. Provider Type (Doctor / Nurse)
-            if (criteria.ProviderType.HasValue)
-            {
-                var role = criteria.ProviderType.Value;
-                intermediate = intermediate.Where(x => x.Provider.Role == role);
             }
 
             // 3. Specialty
@@ -200,11 +200,12 @@ namespace Zyara.Services.Features.Providers
             };
         }
 
-        public async Task<IReadOnlyList<string>> GetSpecialtiesAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<string>> GetSpecialtiesAsync(UserRole providerType, CancellationToken cancellationToken = default)
         {
             return await _db.Providers
                 .AsNoTracking()
                 .PubliclyVisible()
+                .Where(p => p.Role == providerType)
                 .Where(p => p.Specialty != null && p.Specialty != "")
                 .Select(p => p.Specialty.Trim())
                 .Where(s => s != "")
@@ -213,11 +214,12 @@ namespace Zyara.Services.Features.Providers
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<string>> GetCitiesAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<string>> GetCitiesAsync(UserRole providerType, CancellationToken cancellationToken = default)
         {
             return await _db.Providers
                 .AsNoTracking()
                 .PubliclyVisible()
+                .Where(p => p.Role == providerType)
                 .Where(p => p.BaseCity != null && p.BaseCity != "")
                 .Select(p => p.BaseCity.Trim())
                 .Where(c => c != "")
