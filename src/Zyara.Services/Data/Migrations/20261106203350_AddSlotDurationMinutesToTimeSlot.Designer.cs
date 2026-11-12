@@ -12,7 +12,7 @@ using Zyara.Services.Data;
 namespace Zyara.Services.Data.Migrations
 {
     [DbContext(typeof(ZyaraDbContext))]
-    [Migration("20261106203350_AddSlotDurationMinutesToTimeSlot")]
+    [Migration("20261108100000_AddSlotDurationMinutesToTimeSlot")]
     partial class AddSlotDurationMinutesToTimeSlot
     {
         /// <inheritdoc />
