@@ -1,11 +1,8 @@
-﻿
-
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Security.Claims; 
-using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
 using Zyara.Services.Data;
@@ -23,20 +20,15 @@ namespace Zyara.Web.Areas.Provider.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// دالة مركزية لجلب الـ ID الخاص بالطبيب الحالي بناءً على الـ Authentication (Identity)
-        /// </summary>
         private int GetCurrentProviderId()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            // لو تم تسجيل الدخول بنجاح، نحول الـ ID إلى رقم صحيح، وإلا نرجع 0 أو القيمة الافتراضية
             if (int.TryParse(userIdString, out int providerId))
             {
                 return providerId;
             }
 
-            // قيمة افتراضية في حال لم يتم تسجيل الدخول بعد (لتجنب الـ NullReference)
+            // CurrentUser.ProviderId = 1 as per team agreement
             return 1;
         }
 
@@ -47,20 +39,9 @@ namespace Zyara.Web.Areas.Provider.Controllers
 
             var model = new ProviderTimeSlotIndexVM
             {
-                TimeSlots = _context.TimeSlots
-                    .Where(t => t.ProviderId == currentProviderId)
-                    .OrderBy(t => t.Date)
-                    .ThenBy(t => t.StartTime)
-                    .Select(t => new TimeSlotVM
-                    {
-                        Id = t.Id,
-                        Date = t.Date,
-                        StartTime = t.StartTime,
-                        EndTime = t.EndTime,
-                        Status = t.Status,
-                        ProviderId = t.ProviderId
-                    }).ToList()
+                TimeSlots = GetProviderSlots(currentProviderId)
             };
+
             return View(model);
         }
 
@@ -68,42 +49,50 @@ namespace Zyara.Web.Areas.Provider.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CreateTimeSlot(ProviderTimeSlotIndexVM model)
         {
-            var newSlot = model.NewTimeSlot;
             int currentProviderId = GetCurrentProviderId();
+            var newSlot = model.NewTimeSlot;
 
-            if (newSlot.Date < DateTime.Today)
+            // 1. حساب وقت النهاية تلقائياً بناءً على قاعدة الـ 120 دقيقة
+            var duration = TimeSpan.FromMinutes(120);
+            var calculatedEndTime = newSlot.StartTime.Add(duration);
+
+            // 2. التحقق من التاريخ
+            if (newSlot.Date.Date < DateTime.Today)
             {
-                ModelState.AddModelError("NewTimeSlot.Date", "لا يمكنك إضافة مواعيد في تاريخ قديم.");
+                ModelState.AddModelError("NewTimeSlot.Date", "Cannot schedule slots in the past.");
             }
 
-            if (newSlot.EndTime <= newSlot.StartTime)
+            // 3. التحقق من انتهاء اليوم (Midnight overflow)
+            if (calculatedEndTime > TimeSpan.FromHours(24) || calculatedEndTime <= newSlot.StartTime)
             {
-                ModelState.AddModelError("NewTimeSlot.EndTime", "وقت النهاية يجب أن يكون بعد وقت البداية.");
+                ModelState.AddModelError("NewTimeSlot.StartTime", "Slot exceeds the 24-hour day boundary.");
+            }
+
+            // 4. التحقق من التضارب مع مواعيد أخرى لنفس مقدم الخدمة في نفس اليوم
+            bool hasOverlap = _context.TimeSlots
+                .Any(t => t.ProviderId == currentProviderId
+                          && t.Date.Date == newSlot.Date.Date
+                          && t.StartTime < calculatedEndTime
+                          && t.EndTime > newSlot.StartTime);
+
+            if (hasOverlap)
+            {
+                ModelState.AddModelError("NewTimeSlot.StartTime", "This slot overlaps with an existing time slot on this date.");
             }
 
             if (!ModelState.IsValid)
             {
-                model.TimeSlots = _context.TimeSlots
-                    .Where(t => t.ProviderId == currentProviderId)
-                    .Select(t => new TimeSlotVM
-                    {
-                        Id = t.Id,
-                        Date = t.Date,
-                        StartTime = t.StartTime,
-                        EndTime = t.EndTime,
-                        Status = t.Status,
-                        ProviderId = t.ProviderId
-                    }).ToList();
-
+                model.TimeSlots = GetProviderSlots(currentProviderId);
                 return View("Index", model);
             }
 
+            // 5. حفظ الموعد الجديد
             var timeSlotEntity = new TimeSlot
             {
-                Date = newSlot.Date,
+                Date = newSlot.Date.Date,
                 StartTime = newSlot.StartTime,
-                EndTime = newSlot.EndTime,
-                SlotDurationMinutes = newSlot.SlotDurationMinutes,
+                EndTime = calculatedEndTime,
+                SlotDurationMinutes = 120,
                 Status = TimeSlotStatus.Available,
                 ProviderId = currentProviderId
             };
@@ -111,7 +100,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             _context.TimeSlots.Add(timeSlotEntity);
             _context.SaveChanges();
 
-            TempData["SuccessMessage"] = "تم إضافة الـ TimeSlot بنجاح!";
+            TempData["Message"] = "New 2-hour time slot added successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -119,22 +108,49 @@ namespace Zyara.Web.Areas.Provider.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteTimeSlot(int id)
         {
-            var slot = _context.TimeSlots.Find(id);
-            if (slot != null)
+            int currentProviderId = GetCurrentProviderId();
+
+            var slot = _context.TimeSlots
+                .FirstOrDefault(t => t.Id == id && t.ProviderId == currentProviderId);
+
+            if (slot == null)
             {
-                if (slot.Status == TimeSlotStatus.Available)
-                {
-                    _context.TimeSlots.Remove(slot);
-                    _context.SaveChanges();
-                    TempData["SuccessMessage"] = "تم حذف الـ TimeSlot بنجاح.";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "لا يمكن حذف موعد محجوز أو مغلق.";
-                }
+                TempData["Error"] = "Time slot not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // الحذف مسموح فقط إذا كان الموعد متاحاً
+            if (slot.Status == TimeSlotStatus.Available)
+            {
+                _context.TimeSlots.Remove(slot);
+                _context.SaveChanges();
+                TempData["Message"] = "Time slot deleted successfully.";
+            }
+            else
+            {
+                TempData["Error"] = $"Cannot delete a slot that is currently {slot.Status}.";
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private List<TimeSlotVM> GetProviderSlots(int providerId)
+        {
+            return _context.TimeSlots
+                .AsNoTracking()
+                .Where(t => t.ProviderId == providerId)
+                .OrderBy(t => t.Date)
+                .ThenBy(t => t.StartTime)
+                .Select(t => new TimeSlotVM
+                {
+                    Id = t.Id,
+                    Date = t.Date,
+                    StartTime = t.StartTime,
+                    EndTime = t.EndTime,
+                    Status = t.Status,
+                    ProviderId = t.ProviderId
+                })
+                .ToList();
         }
     }
 }

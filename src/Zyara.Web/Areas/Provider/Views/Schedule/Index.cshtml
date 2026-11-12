@@ -3,22 +3,29 @@
 
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Manage Available TimeSlots";
+    ViewData["Title"] = "Manage Working Schedule";
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     .flatpickr-calendar {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
         direction: ltr;
     }
 </style>
 
 <div class="container-fluid py-4" dir="ltr" lang="en">
-    @if (TempData["SuccessMessage"] != null)
+    @if (TempData["Message"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
@@ -29,41 +36,37 @@
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-primary text-white py-3">
                     <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-clock-plus me-2"></i>Add New TimeSlot
+                        <i class="bi bi-clock-plus me-2"></i>Add 2-Hour Time Slot
                     </h5>
                 </div>
                 <div class="card-body p-4">
-                    <!-- التعديل الجذري هنا: استخدام action صريح للمسار -->
                     <form action="/Provider/Schedule/CreateTimeSlot" method="post">
                         @Html.AntiForgeryToken()
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Date</label>
                             <input type="text" id="NewTimeSlot_Date" name="NewTimeSlot.Date" class="form-control datepicker bg-white" placeholder="Select Date" />
-                            <span asp-validation-for="NewTimeSlot.Date" class="text-danger small"></span>
+                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.Date")</span>
                         </div>
 
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="form-label fw-bold">From</label>
-                                <input type="text" id="NewTimeSlot_StartTime" name="NewTimeSlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Time" />
-                                <span asp-validation-for="NewTimeSlot.StartTime" class="text-danger small"></span>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label fw-bold">To</label>
-                                <input type="text" id="NewTimeSlot_EndTime" name="NewTimeSlot.EndTime" class="form-control timepicker bg-white" placeholder="Select Time" />
-                                <span asp-validation-for="NewTimeSlot.EndTime" class="text-danger small"></span>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Start Time</label>
+                            <input type="text" id="NewTimeSlot_StartTime" name="NewTimeSlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Start Time" />
+                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.StartTime")</span>
+                            <div class="form-text text-muted small">
+                                * Slot duration is automatically set to 2 hours (120 minutes).
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Session Duration (Minutes)</label>
-                            <input type="number" class="form-control" asp-for="NewTimeSlot.SlotDurationMinutes" step="5" min="15" max="120" oninput="if(this.value > 120) this.value = 120; if(this.value < 15 && this.value.length > 1) this.value = 15;" />
-                            <span asp-validation-for="NewTimeSlot.SlotDurationMinutes" class="text-danger small"></span>
+                        <div class="mb-4 p-3 bg-light rounded-3">
+                            <span class="text-muted small">Fixed Window:</span>
+                            <div class="fw-bold text-primary mt-1">
+                                <i class="bi bi-hourglass-split me-1"></i> 120 Minutes (Arrival Window)
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
-                            <i class="bi bi-plus-circle me-1"></i> Add TimeSlot
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Add Time Slot
                         </button>
                     </form>
                 </div>
@@ -73,10 +76,13 @@
         <!-- Table: TimeSlots List -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white py-3 border-bottom-0">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 fw-bold text-dark">
-                        <i class="bi bi-calendar-week me-2 text-primary"></i>TimeSlots List
+                        <i class="bi bi-calendar-week me-2 text-primary"></i>My Time Slots
                     </h5>
+                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
+                        Total: @(Model.TimeSlots?.Count ?? 0)
+                    </span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -84,50 +90,49 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Date</th>
-                                    <th>Time</th>
+                                    <th>Window Time</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (Model?.TimeSlots != null && Model.TimeSlots.Any())
+                                @if (Model.TimeSlots != null && Model.TimeSlots.Any())
                                 {
                                     @foreach (var slot in Model.TimeSlots)
                                     {
                                         <tr>
                                             <td class="fw-bold">@slot.Date.ToString("yyyy-MM-dd")</td>
                                             <td>
-                                                @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt", new System.Globalization.CultureInfo("en-US")) -
-                                                @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt", new System.Globalization.CultureInfo("en-US"))
+                                                @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") -
+                                                @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt")
+                                            </td>
+                                            <td>
+                                                @switch (slot.Status)
+                                                {
+                                                    case TimeSlotStatus.Available:
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Available</span>
+                                                        break;
+                                                    case TimeSlotStatus.Locked:
+                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Locked</span>
+                                                        break;
+                                                    case TimeSlotStatus.Booked:
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Booked</span>
+                                                        break;
+                                                }
                                             </td>
                                             <td>
                                                 @if (slot.Status == TimeSlotStatus.Available)
                                                 {
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Available</span>
-                                                }
-                                                else if (slot.Status == TimeSlotStatus.Locked)
-                                                {
-                                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Locked</span>
-                                                }
-                                                else if (slot.Status == TimeSlotStatus.Booked)
-                                                {
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Booked</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (slot.Status == TimeSlotStatus.Available)
-                                                {
-                                                    <!-- التعديل الجذري هنا: استخدام action صريح للمسار مع دمج الـ Id -->
                                                     <form action="/Provider/Schedule/DeleteTimeSlot/@slot.Id" method="post" class="d-inline">
                                                         @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-2" onclick="return confirm('Are you sure you want to delete this time slot?')">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Are you sure you want to delete this available slot?')">
                                                             <i class="bi bi-trash"></i> Delete
                                                         </button>
                                                     </form>
                                                 }
                                                 else
                                                 {
-                                                    <button class="btn btn-secondary btn-sm rounded-2" disabled>Locked / Booked</button>
+                                                    <span class="badge bg-light text-muted border">In Use</span>
                                                 }
                                             </td>
                                         </tr>
@@ -137,7 +142,7 @@
                                 {
                                     <tr>
                                         <td colspan="4" class="text-center py-4 text-muted">
-                                            No time slots available yet.
+                                            No time slots available yet. Add your working hours on the left.
                                         </td>
                                     </tr>
                                 }
@@ -158,8 +163,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             flatpickr(".datepicker", {
                 dateFormat: "Y-m-d",
-                minDate: "today",
-                maxDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+                minDate: "today"
             });
 
             flatpickr(".timepicker", {
