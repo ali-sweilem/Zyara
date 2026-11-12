@@ -1,0 +1,105 @@
+﻿@model Zyara.Web.Models.BookingCreateViewModel
+
+@{
+    ViewData["Title"] = "Book an Appointment";
+}
+
+<h1 class="mb-4">Book an Appointment</h1>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+@if (Model.Slots.Count == 0)
+{
+    <div class="alert alert-info">
+        No available time slots for this provider right now.
+    </div>
+}
+else
+{
+    <form asp-action="Create" method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="ProviderId" />
+        <input type="hidden" asp-for="ServiceId" />
+
+        <h5 class="mt-3">Patient Information</h5>
+
+        <div class="mb-3">
+            <label asp-for="PatientName" class="form-label"></label>
+            <input asp-for="PatientName" class="form-control" />
+            <span asp-validation-for="PatientName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PatientAge" class="form-label"></label>
+            <input asp-for="PatientAge" class="form-control" type="number" />
+            <span asp-validation-for="PatientAge" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PatientPhone" class="form-label"></label>
+            <input asp-for="PatientPhone" class="form-control" />
+            <span asp-validation-for="PatientPhone" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PatientNote" class="form-label"></label>
+            <textarea asp-for="PatientNote" class="form-control"></textarea>
+        </div>
+
+        <h5 class="mt-4">Address Information</h5>
+
+        <div class="mb-3">
+            <label asp-for="Street" class="form-label"></label>
+            <input asp-for="Street" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="City" class="form-label"></label>
+            <input asp-for="City" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="AddressLabel" class="form-label">Address Label</label>
+            <input asp-for="AddressLabel" class="form-control" placeholder="Home" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="District" class="form-label">District</label>
+            <input asp-for="District" class="form-control" placeholder="Enter your district" />
+        </div>
+
+        <h5 class="mt-4">Choose a Time Slot</h5>
+
+        <div class="list-group mb-3">
+            @foreach (var slot in Model.Slots)
+            {
+                <label class="list-group-item">
+                    <input class="form-check-input me-2"
+                           type="radio"
+                           asp-for="SelectedSlotId"
+                           value="@slot.Id" />
+
+                    @slot.Date.ToString("yyyy-MM-dd")
+                    @slot.StartTime - @slot.EndTime
+                </label>
+            }
+        </div>
+
+        <span asp-validation-for="SelectedSlotId"
+              class="text-danger"></span>
+
+        <button type="submit" class="btn btn-primary">
+            Confirm Booking
+        </button>
+
+    </form>
+}

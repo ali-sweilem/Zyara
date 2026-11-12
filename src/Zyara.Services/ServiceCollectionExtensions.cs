@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Zyara.Services.Data;
+using Zyara.Services.Features.Bookings;
+using Zyara.Services.Features.Bookings.Interfaces;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
 
@@ -17,6 +19,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderDetailsService, ProviderDetailsService>();
         services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
+        services.AddScoped<ISlotService, SlotService>();
+        services.AddScoped<IBookingService, BookingService>();
         return services;
     }
 }
