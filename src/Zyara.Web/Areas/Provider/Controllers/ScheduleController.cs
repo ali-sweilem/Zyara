@@ -24,19 +24,19 @@ namespace Zyara.Web.Areas.Provider.Controllers
         }
 
         /// <summary>
-        /// دالة مركزية لجلب الـ ID الخاص بالطبيب الحالي بناءً على الـ Authentication (Identity)
+        /// Gets the current provider ID from the authenticated identity.
         /// </summary>
         private int GetCurrentProviderId()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // لو تم تسجيل الدخول بنجاح، نحول الـ ID إلى رقم صحيح، وإلا نرجع 0 أو القيمة الافتراضية
+            // Return the authenticated provider ID when it can be parsed.
             if (int.TryParse(userIdString, out int providerId))
             {
                 return providerId;
             }
 
-            // قيمة افتراضية في حال لم يتم تسجيل الدخول بعد (لتجنب الـ NullReference)
+            // Use a default value when no provider identity is available.
             return 1;
         }
 
@@ -73,12 +73,12 @@ namespace Zyara.Web.Areas.Provider.Controllers
 
             if (newSlot.Date < DateTime.Today)
             {
-                ModelState.AddModelError("NewTimeSlot.Date", "لا يمكنك إضافة مواعيد في تاريخ قديم.");
+                ModelState.AddModelError("NewTimeSlot.Date", "You cannot add appointments for a past date.");
             }
 
             if (newSlot.EndTime <= newSlot.StartTime)
             {
-                ModelState.AddModelError("NewTimeSlot.EndTime", "وقت النهاية يجب أن يكون بعد وقت البداية.");
+                ModelState.AddModelError("NewTimeSlot.EndTime", "End time must be after start time.");
             }
 
             if (!ModelState.IsValid)
@@ -111,7 +111,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             _context.TimeSlots.Add(timeSlotEntity);
             _context.SaveChanges();
 
-            TempData["SuccessMessage"] = "تم إضافة الـ TimeSlot بنجاح!";
+            TempData["SuccessMessage"] = "The time slot was added successfully!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -126,11 +126,11 @@ namespace Zyara.Web.Areas.Provider.Controllers
                 {
                     _context.TimeSlots.Remove(slot);
                     _context.SaveChanges();
-                    TempData["SuccessMessage"] = "تم حذف الـ TimeSlot بنجاح.";
+                    TempData["SuccessMessage"] = "The time slot was deleted successfully.";
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "لا يمكن حذف موعد محجوز أو مغلق.";
+                    TempData["ErrorMessage"] = "A booked or closed appointment cannot be deleted.";
                 }
             }
 

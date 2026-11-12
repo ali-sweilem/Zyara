@@ -4,47 +4,47 @@
    ========================================================================== */
 
 :root {
-    --med-teal-900: #083344;
-    --med-teal-800: #155e75;
-    --med-teal-700: #0e7490;
-    --med-teal-600: #0891b2;
-    --med-teal-500: #06b6d4;
-    --med-teal-100: #cffafe;
-    --med-teal-50:  #ecfeff;
+    --med-teal-900: var(--zy-primary-700);
+    --med-teal-800: var(--zy-primary-700);
+    --med-teal-700: var(--zy-teal-700);
+    --med-teal-600: var(--zy-teal-600);
+    --med-teal-500: var(--zy-teal-600);
+    --med-teal-100: var(--zy-primary-100);
+    --med-teal-50: var(--zy-teal-50);
 
-    --med-mint-700: #047857;
-    --med-mint-600: #059669;
-    --med-mint-500: #10b981;
-    --med-mint-100: #d1fae5;
-    --med-mint-50:  #ecfdf5;
+    --med-mint-700: var(--zy-teal-700);
+    --med-mint-600: var(--zy-teal-600);
+    --med-mint-500: var(--zy-teal-600);
+    --med-mint-100: var(--zy-primary-100);
+    --med-mint-50: var(--zy-teal-50);
 
-    --med-blue-700: #1d4ed8;
-    --med-blue-600: #2563eb;
-    --med-blue-50:  #eff6ff;
+    --med-blue-700: var(--zy-primary-700);
+    --med-blue-600: var(--zy-primary);
+    --med-blue-50: var(--zy-primary-50);
 
-    --med-amber-700: #b45309;
-    --med-amber-500: #f59e0b;
-    --med-amber-50:  #fffbeb;
+    --med-amber-700: var(--zy-warning);
+    --med-amber-500: var(--zy-warning);
+    --med-amber-50: var(--zy-warning-bg);
 
-    --med-rose-700: #be123c;
-    --med-rose-500: #f43f5e;
-    --med-rose-50:  #fff1f2;
+    --med-rose-700: var(--zy-danger);
+    --med-rose-500: var(--zy-danger);
+    --med-rose-50: var(--zy-danger-bg);
 
-    --med-surface:    #ffffff;
-    --med-background: #f8fafc;
-    --med-border:     #e2e8f0;
-    --med-text-dark:  #0f172a;
-    --med-text-body:  #334155;
-    --med-text-muted: #64748b;
+    --med-surface: var(--zy-surface);
+    --med-background: var(--zy-bg-page);
+    --med-border: var(--zy-border);
+    --med-text-dark: var(--zy-text);
+    --med-text-body: var(--zy-text-2);
+    --med-text-muted: var(--zy-text-muted);
 
     --med-radius-sm: 8px;
     --med-radius-md: 14px;
     --med-radius-lg: 20px;
     --med-radius-xl: 28px;
 
-    --med-shadow-subtle: 0 2px 6px -1px rgba(14, 116, 144, 0.05), 0 2px 4px -2px rgba(14, 116, 144, 0.05);
-    --med-shadow-card:   0 10px 25px -4px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.025);
-    --med-shadow-hover:  0 20px 30px -8px rgba(14, 116, 144, 0.12), 0 8px 10px -4px rgba(14, 116, 144, 0.06);
+    --med-shadow-subtle: var(--zy-shadow-sm);
+    --med-shadow-card: var(--zy-shadow-md);
+    --med-shadow-hover: var(--zy-shadow-hover);
 
     --med-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
@@ -66,14 +66,14 @@ body.provider-body {
 
 .provider-sidebar {
     width: 270px;
-    background: #ffffff;
-    border-right: 1px solid var(--med-border);
+    background: var(--zy-surface);
+    border-inline-end: 1px solid var(--med-border);
     display: flex;
     flex-direction: column;
     position: fixed;
     top: 0;
     bottom: 0;
-    left: 0;
+    inset-inline-start: 0;
     z-index: 1020;
     transition: all 0.3s ease;
 }
@@ -83,20 +83,20 @@ body.provider-body {
     display: flex;
     align-items: center;
     gap: 12px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--zy-slate-100);
 }
 
 .brand-icon-pill {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--med-teal-600), var(--med-mint-500));
-    color: #ffffff;
+    background: var(--zy-primary);
+    color: var(--zy-surface);
     border-radius: var(--med-radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.3rem;
-    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
+    box-shadow: var(--zy-shadow-md);
 }
 
 .brand-name {
@@ -154,7 +154,7 @@ body.provider-body {
 }
 
 .nav-item-med:hover {
-    background-color: #f0fdfa;
+    background-color: var(--zy-teal-50);
     color: var(--med-teal-700);
 }
 
@@ -163,10 +163,10 @@ body.provider-body {
 }
 
 .nav-item-med.active {
-    background: linear-gradient(135deg, var(--med-teal-50), var(--med-mint-50));
+    background: var(--zy-primary-50);
     color: var(--med-teal-800);
     font-weight: 600;
-    border: 1px solid rgba(8, 145, 178, 0.15);
+    border: 1px solid var(--zy-primary-100);
 }
 
 .nav-item-med.active i {
@@ -174,7 +174,7 @@ body.provider-body {
 }
 
 .provider-main {
-    margin-left: 270px;
+    margin-inline-start: 270px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -184,9 +184,7 @@ body.provider-body {
 /* ---------------- Top Navbar ---------------- */
 .provider-header {
     height: 72px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--zy-surface);
     border-bottom: 1px solid var(--med-border);
     position: sticky;
     top: 0;
@@ -198,7 +196,7 @@ body.provider-body {
 }
 
 .role-switcher-pill {
-    background: #f1f5f9;
+    background: var(--zy-slate-100);
     padding: 4px;
     border-radius: 999px;
     display: inline-flex;
@@ -222,9 +220,9 @@ body.provider-body {
 }
 
 .role-btn.active {
-    background: #ffffff;
+    background: var(--zy-surface);
     color: var(--med-teal-800);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--zy-shadow-sm);
 }
 
 .provider-content {
@@ -245,12 +243,12 @@ body.provider-body {
 .med-card-hover:hover {
     transform: translateY(-2px);
     box-shadow: var(--med-shadow-hover);
-    border-color: rgba(8, 145, 178, 0.25);
+    border-color: var(--zy-primary);
 }
 
 .med-card-header {
     padding: 20px 24px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--zy-slate-100);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -274,7 +272,7 @@ body.provider-body {
 .kpi-card {
     padding: 24px;
     border-radius: var(--med-radius-lg);
-    background: #ffffff;
+    background: var(--zy-surface);
     border: 1px solid var(--med-border);
     box-shadow: var(--med-shadow-card);
     position: relative;
@@ -354,61 +352,61 @@ body.provider-body {
 .badge-verified {
     background-color: var(--med-mint-50);
     color: var(--med-mint-700);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    border: 1px solid var(--zy-teal-600);
 }
 
 .badge-pending {
     background-color: var(--med-amber-50);
     color: var(--med-amber-700);
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    border: 1px solid var(--zy-warning);
 }
 
 .badge-rejected {
     background-color: var(--med-rose-50);
     color: var(--med-rose-700);
-    border: 1px solid rgba(244, 63, 94, 0.25);
+    border: 1px solid var(--zy-danger);
 }
 
 .badge-doctor {
-    background-color: #e0f2fe;
-    color: #0369a1;
-    border: 1px solid #bae6fd;
+    background-color: var(--zy-primary-50);
+    color: var(--zy-primary-700);
+    border: 1px solid var(--zy-primary-100);
 }
 
 .badge-nurse {
-    background-color: #f3e8ff;
-    color: #7e22ce;
-    border: 1px solid #e9d5ff;
+    background-color: var(--zy-teal-50);
+    color: var(--zy-teal-700);
+    border: 1px solid var(--zy-primary-100);
 }
 
 .badge-confirmed {
     background-color: var(--med-teal-50);
     color: var(--med-teal-700);
-    border: 1px solid rgba(8, 145, 178, 0.25);
+    border: 1px solid var(--zy-teal-600);
 }
 
 .badge-started {
-    background-color: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background-color: var(--zy-primary-50);
+    color: var(--zy-primary-700);
+    border: 1px solid var(--zy-primary-100);
 }
 
 .badge-completed {
     background-color: var(--med-mint-50);
     color: var(--med-mint-700);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    border: 1px solid var(--zy-teal-600);
 }
 
 /* ---------------- Buttons ---------------- */
 .btn-med-primary {
-    background: linear-gradient(135deg, var(--med-teal-700), var(--med-teal-600));
-    color: #ffffff;
+    background: var(--zy-primary);
+    color: var(--zy-surface);
     border: none;
     padding: 10px 20px;
     border-radius: var(--med-radius-md);
     font-weight: 600;
     font-size: 0.9rem;
-    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.2);
+    box-shadow: var(--zy-shadow-sm);
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
@@ -417,16 +415,16 @@ body.provider-body {
 }
 
 .btn-med-primary:hover {
-    background: linear-gradient(135deg, var(--med-teal-800), var(--med-teal-700));
-    color: #ffffff;
+    background: var(--zy-primary-hover);
+    color: var(--zy-surface);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(14, 116, 144, 0.3);
+    box-shadow: var(--zy-shadow-hover);
 }
 
 .btn-med-secondary {
-    background: #ffffff;
-    color: var(--med-teal-800);
-    border: 1px solid var(--med-border);
+    background: transparent;
+    color: var(--zy-primary);
+    border: 1px solid var(--zy-primary);
     padding: 9px 18px;
     border-radius: var(--med-radius-md);
     font-weight: 600;
@@ -439,20 +437,20 @@ body.provider-body {
 }
 
 .btn-med-secondary:hover {
-    background: #f8fafc;
-    border-color: var(--med-teal-600);
-    color: var(--med-teal-700);
+    background: var(--zy-primary-50);
+    border-color: var(--zy-primary);
+    color: var(--zy-primary-700);
 }
 
 .btn-med-mint {
-    background: linear-gradient(135deg, var(--med-mint-600), var(--med-mint-500));
-    color: #ffffff;
+    background: var(--zy-primary);
+    color: var(--zy-surface);
     border: none;
     padding: 9px 18px;
     border-radius: var(--med-radius-md);
     font-weight: 600;
     font-size: 0.9rem;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    box-shadow: var(--zy-shadow-sm);
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
@@ -461,45 +459,45 @@ body.provider-body {
 }
 
 .btn-med-mint:hover {
-    background: linear-gradient(135deg, var(--med-mint-700), var(--med-mint-600));
-    color: #ffffff;
+    background: var(--zy-primary-hover);
+    color: var(--zy-surface);
 }
 
 /* ---------------- Welcome Banner ---------------- */
 .welcome-banner {
-    background: linear-gradient(135deg, #0e7490, #047857);
-    color: #ffffff;
+    background: var(--zy-primary);
+    color: var(--zy-surface);
     border-radius: var(--med-radius-xl);
     padding: 36px 40px;
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 15px 35px -5px rgba(14, 116, 144, 0.3);
+    box-shadow: var(--zy-shadow-md);
 }
 
 .welcome-banner::after {
     content: '';
     position: absolute;
-    right: -50px;
+    inset-inline-end: -50px;
     top: -50px;
     width: 250px;
     height: 250px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    background: transparent;
     pointer-events: none;
 }
 
 /* ---------------- Prescription & Medical Notes Sheet ---------------- */
 .rx-sheet {
-    background: #ffffff;
-    border: 2px dashed #cbd5e1;
+    background: var(--zy-surface);
+    border: 2px dashed var(--zy-border-strong);
     border-radius: var(--med-radius-lg);
     padding: 24px;
     position: relative;
 }
 
 .rx-header {
-    border-bottom: 2px solid #0891b2;
+    border-bottom: 2px solid var(--zy-primary);
     padding-bottom: 12px;
     margin-bottom: 20px;
     display: flex;
@@ -510,20 +508,20 @@ body.provider-body {
 .rx-symbol {
     font-size: 2rem;
     font-weight: 900;
-    color: #0891b2;
+    color: var(--zy-primary);
     font-family: serif;
 }
 
 .otp-box-display {
-    background: #f8fafc;
-    border: 2px solid #94a3b8;
+    background: var(--zy-slate-100);
+    border: 2px solid var(--zy-border-strong);
     border-radius: var(--med-radius-md);
     padding: 16px;
     text-align: center;
     letter-spacing: 0.35em;
     font-size: 1.6rem;
     font-weight: 800;
-    color: #0e7490;
+    color: var(--zy-primary-700);
     font-family: monospace;
 }
 
@@ -536,7 +534,7 @@ body.provider-body {
         transform: translateX(0);
     }
     .provider-main {
-        margin-left: 0;
+        margin-inline-start: 0;
     }
     .provider-header {
         padding: 0 16px;

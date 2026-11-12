@@ -1,0 +1,23 @@
+@model Zyara.Web.Models.LandingIndexViewModel
+
+@{
+    ViewData["Title"] = "Choose a healthcare service";
+}
+
+<section class="landing-page py-4 py-md-5">
+    <div class="container">
+        <header class="landing-hero text-center mx-auto mb-4 mb-md-5">
+            <h1 class="display-5 fw-bold mb-3">Accessing healthcare is now easier</h1>
+            <p class="lead text-muted mb-0 mx-auto">Book a doctor&apos;s appointment or schedule medical services at home</p>
+        </header>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4 justify-content-center" aria-label="Healthcare services">
+            @foreach (var service in Model.Services)
+            {
+                <div class="col">
+                    <partial name="_ServiceCard" model="service" />
+                </div>
+            }
+        </div>
+    </div>
+</section>

@@ -21,8 +21,25 @@ namespace Zyara.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index([FromQuery] ProviderSearchCriteria criteria, CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(
+            [FromQuery] string? service,
+            [FromQuery] ProviderSearchCriteria criteria,
+            CancellationToken cancellationToken)
         {
+            var serviceRole = service?.Trim().ToLowerInvariant() switch
+            {
+                "doctors" => UserRole.Doctor,
+                "nursing" => UserRole.Nurse,
+                _ => (UserRole?)null
+            };
+
+            if (!serviceRole.HasValue)
+            {
+                return RedirectToAction("Index", "Landing");
+            }
+
+            criteria.ProviderType = serviceRole;
+
             // Input sanitation and validation
             if (criteria.PageNumber < 1)
             {
@@ -73,15 +90,16 @@ namespace Zyara.Web.Controllers
             }
 
             // Populate filter dropdowns from eligible providers in DB
-            var specialties = await _providerSearchService.GetSpecialtiesAsync(cancellationToken);
-            var cities = await _providerSearchService.GetCitiesAsync(cancellationToken);
+            var specialties = await _providerSearchService.GetSpecialtiesAsync(serviceRole.Value, cancellationToken);
+            var cities = await _providerSearchService.GetCitiesAsync(serviceRole.Value, cancellationToken);
 
             var model = new HomeIndexViewModel
             {
                 Criteria = criteria,
                 Results = results,
                 Specialties = specialties,
-                Cities = cities
+                Cities = cities,
+                Service = serviceRole == UserRole.Doctor ? "doctors" : "nursing"
             };
 
             return View(model);

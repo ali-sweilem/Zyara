@@ -9,20 +9,20 @@ namespace Zyara.Web.Areas.Provider.ViewModels
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "تاريخ الموعد مطلوب")]
-        [Display(Name = "التاريخ")]
+        [Required(ErrorMessage = "Appointment date is required")]
+        [Display(Name = "Date")]
         [DataType(DataType.Date)]
         public DateTime Date { get; set; }
 
-        [Required(ErrorMessage = "وقت البداية مطلوب")]
-        [Display(Name = "من الساعة")]
+        [Required(ErrorMessage = "Start time is required")]
+        [Display(Name = "From")]
         public TimeSpan StartTime { get; set; }
 
-        [Required(ErrorMessage = "وقت النهاية مطلوب")]
-        [Display(Name = "إلى الساعة")]
+        [Required(ErrorMessage = "End time is required")]
+        [Display(Name = "To")]
         public TimeSpan EndTime { get; set; }
 
-        [Display(Name = "الحالة")]
+        [Display(Name = "Status")]
         public TimeSlotStatus Status { get; set; } = TimeSlotStatus.Available;
 
         public int ProviderId { get; set; }
@@ -30,17 +30,17 @@ namespace Zyara.Web.Areas.Provider.ViewModels
 
     public class CreateTimeSlotVM
     {
-        [Required(ErrorMessage = "تاريخ اليوم مطلوب")]
+        [Required(ErrorMessage = "Date is required")]
         [DataType(DataType.Date)]
         public DateTime Date { get; set; } = DateTime.Today;
 
-        [Required(ErrorMessage = "وقت بداية الموعد مطلوب")]
+        [Required(ErrorMessage = "Appointment start time is required")]
         public TimeSpan StartTime { get; set; } = new TimeSpan(9, 0, 0);
 
-        [Required(ErrorMessage = "وقت نهاية الموعد مطلوب")]
+        [Required(ErrorMessage = "Appointment end time is required")]
         public TimeSpan EndTime { get; set; } = new TimeSpan(17, 0, 0);
 
-        [Range(15, 120, ErrorMessage = "مدة الجلسة تكون بين 15 و 120 دقيقة")]
+        [Range(15, 120, ErrorMessage = "Session duration must be between 15 and 120 minutes")]
         public int SlotDurationMinutes { get; set; } = 30;
     }
 

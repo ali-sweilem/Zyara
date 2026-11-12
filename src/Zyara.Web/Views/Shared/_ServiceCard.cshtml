@@ -1,0 +1,19 @@
+@model Zyara.Web.Models.ServiceOption
+
+@if (Model.Enabled && !string.IsNullOrWhiteSpace(Model.Service))
+{
+    <a class="service-card card h-100 border-0 shadow-sm text-decoration-none"
+       href="@Url.Action("Index", "Home", new { service = Model.Service })"
+       aria-label="@Model.Label">
+        <partial name="_ServiceCardContent" model="Model" />
+    </a>
+}
+else
+{
+    <div class="service-card service-card-disabled card h-100 border-0 shadow-sm"
+         aria-disabled="true"
+          aria-label="@Model.Label - Coming soon"
+         tabindex="-1">
+        <partial name="_ServiceCardContent" model="Model" />
+    </div>
+}
