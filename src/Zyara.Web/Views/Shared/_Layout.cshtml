@@ -35,19 +35,14 @@
                         <li class="nav-item">
                             <a class="nav-link @(isLanding ? "is-active" : "")" asp-area="" asp-controller="Landing" asp-action="Index" aria-current="@(isLanding ? "page" : null)">Services</a>
                         </li>
-                        <li class="nav-item">
-<<<<<<< Updated upstream
+                        @* <li class="nav-item">
                             <a class="nav-link @(isPrivacy ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="Privacy" aria-current="@(isPrivacy ? "page" : null)">Privacy</a>
-=======
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                        </li> *@
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-action="showprofile" asp-controller="Providers" >Provider</a>
+                            <a class="nav-link text-dark" asp-area="" asp-action="showprofile" asp-controller="Providers" >Provider Profile</a>
                         </li>
                         <li>
                             <a class="nav-link text-dark" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index">Admin</a>
-
->>>>>>> Stashed changes
                         </li>
                     </ul>
                 </div>
