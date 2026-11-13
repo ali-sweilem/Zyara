@@ -1,0 +1,73 @@
+﻿@model PaginationViewModel
+
+@functions {
+    string PageUrl(int page)
+    {
+        var values = new Microsoft.AspNetCore.Routing.RouteValueDictionary();
+        foreach (var kv in Model.RouteValues) values[kv.Key] = kv.Value;
+        values[Model.PageParameter] = page.ToString();
+        var url = Url.Action(Model.Action, Model.Controller, values) ?? "#";
+        return string.IsNullOrEmpty(Model.Fragment) ? url : url + "#" + Model.Fragment;
+    }
+}
+
+@if (Model.TotalPages > 1)
+{
+    int current = Model.Page;
+    int total = Model.TotalPages;
+    int window = 2;
+    int startPage = Math.Max(1, current - window);
+    int endPage = Math.Min(total, current + window);
+
+    <nav aria-label="@Model.AriaLabel" class="my-4">
+        <ul class="pagination justify-content-center flex-wrap gap-1">
+
+            <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                <a class="page-link rounded-pill px-3 @(!Model.HasPreviousPage ? "text-muted" : "")"
+                   href="@(Model.HasPreviousPage ? PageUrl(current - 1) : "#")" aria-label="Previous">
+                    <i class="bi bi-chevron-left me-1"></i> Prev
+                </a>
+            </li>
+
+            @if (startPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link rounded-circle text-center" style="width: 38px; height: 38px; line-height: 22px;"
+                       href="@PageUrl(1)">1</a>
+                </li>
+                @if (startPage > 2)
+                {
+                    <li class="page-item disabled"><span class="page-link border-0">…</span></li>
+                }
+            }
+
+            @for (int p = startPage; p <= endPage; p++)
+            {
+                <li class="page-item @(p == current ? "active" : "")">
+                    <a class="page-link rounded-circle text-center" style="width: 38px; height: 38px; line-height: 22px;"
+                       href="@PageUrl(p)">@p</a>
+                </li>
+            }
+
+            @if (endPage < total)
+            {
+                @if (endPage < total - 1)
+                {
+                    <li class="page-item disabled"><span class="page-link border-0">…</span></li>
+                }
+                <li class="page-item">
+                    <a class="page-link rounded-circle text-center" style="width: 38px; height: 38px; line-height: 22px;"
+                       href="@PageUrl(total)">@total</a>
+                </li>
+            }
+
+            <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                <a class="page-link rounded-pill px-3 @(!Model.HasNextPage ? "text-muted" : "")"
+                   href="@(Model.HasNextPage ? PageUrl(current + 1) : "#")" aria-label="Next">
+                    Next <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+}

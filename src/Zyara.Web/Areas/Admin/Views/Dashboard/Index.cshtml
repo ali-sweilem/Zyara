@@ -1,0 +1,33 @@
+﻿@model Zyara.Services.Features.AdminDashboard.Dtos.AdminDashboardDto
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-6">@Model.TotalUsers</div>
+                <div class="text-muted">Users (@Model.ActiveUsers active)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-6">@Model.PendingProviders</div>
+                <div class="text-muted">Providers waiting for review</div>
+                <a asp-area="Admin" asp-controller="AdminProviders" asp-action="Index">Review now</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-6">@Model.TotalBookings</div>
+                <div class="text-muted">Bookings (@Model.PendingBookings pending, @Model.CompletedBookings completed)</div>
+                <a asp-area="Admin" asp-controller="Bookings" asp-action="Index">View bookings</a>
+            </div>
+        </div>
+    </div>
+</div>

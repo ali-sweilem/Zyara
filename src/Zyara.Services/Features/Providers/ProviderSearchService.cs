@@ -1,4 +1,5 @@
 using System;
+using Zyara.Services.Common;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -165,17 +166,8 @@ namespace Zyara.Services.Features.Providers
                     break;
             }
 
-            // Execute single Count query before Skip/Take
-            var totalCount = await intermediate.CountAsync(cancellationToken);
-
-            var pageNumber = criteria.PageNumber > 0 ? criteria.PageNumber : 1;
-            var pageSize = Math.Clamp(criteria.PageSize > 0 ? criteria.PageSize : 12, 1, 50);
-
-            // Execute Skip/Take in database and project directly to ProviderCardDto
-            var items = await intermediate
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new ProviderCardDto
+            return await intermediate.ToPagedAsync(
+                x => new ProviderCardDto
                 {
                     Id = x.Provider.Id,
                     FullName = x.Provider.FullName,
@@ -188,16 +180,11 @@ namespace Zyara.Services.Features.Providers
                     MinFee = x.MinFee,
                     IsAvailable = x.IsAvailable,
                     PhotoUrl = x.Provider.PhotoUrl
-                })
-                .ToListAsync(cancellationToken);
-
-            return new PagedResult<ProviderCardDto>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
+                },
+                criteria.PageNumber,
+                criteria.PageSize > 0 ? criteria.PageSize : 12,
+                maxPageSize: 50,
+                cancellationToken: cancellationToken);
         }
 
         public async Task<IReadOnlyList<string>> GetSpecialtiesAsync(UserRole providerType, CancellationToken cancellationToken = default)

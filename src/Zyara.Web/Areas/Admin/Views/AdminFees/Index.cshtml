@@ -1,0 +1,36 @@
+﻿@model PlatformSettingsDto
+
+@{
+    ViewData["Title"] = "Platform Fees";
+}
+
+<partial name="_AdminTabs" />
+
+<h2 class="h4 fw-bold mb-3">Platform fees</h2>
+
+@if (TempData["Success"] is string ok)
+{
+    <div class="alert alert-success py-2">@ok</div>
+}
+
+<div class="card border-0 shadow-sm rounded-4" style="max-width: 520px;">
+    <div class="card-body p-4">
+        <form asp-area="Admin" asp-controller="AdminFees" asp-action="Update" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="ServiceFee" class="form-label fw-semibold"></label>
+                <input asp-for="ServiceFee" type="number" step="0.01" min="0" class="form-control" />
+                <span asp-validation-for="ServiceFee" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="CommissionPercentage" class="form-label fw-semibold"></label>
+                <input asp-for="CommissionPercentage" type="number" step="0.01" min="0" max="100" class="form-control" />
+                <span asp-validation-for="CommissionPercentage" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary rounded-pill px-4">Save</button>
+        </form>
+    </div>
+</div>

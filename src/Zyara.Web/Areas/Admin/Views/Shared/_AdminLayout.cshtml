@@ -1,0 +1,27 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var active = ViewContext.RouteData.Values["controller"]?.ToString();
+    var tabs = new[]
+    {
+        ("Dashboard", "Dashboard"), ("Users", "AdminUsers"), ("Services", "AdminServices"),
+        ("Fees", "AdminFees"), ("Bookings", "AdminBookings"),("Providers", "AdminProviders")
+    };
+}
+
+<h1 class="h3 mb-3">Admin Dashboard</h1>
+
+<ul class="nav nav-tabs mb-4">
+    @foreach (var (label, controller) in tabs)
+    {
+        <li class="nav-item">
+            <a class="nav-link @(active == controller ? "active" : "")"
+               asp-area="Admin" asp-controller="@controller" asp-action="Index">@label</a>
+        </li>
+    }
+</ul>
+
+@RenderBody()
+
+@section Scripts {
+    @RenderSection("Scripts", required: false)
+}
