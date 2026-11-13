@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Zyara.Domain.Enums;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
-
 using Zyara.Web.ViewModels;
+using Zyara.Web.Models;
 
 namespace Zyara.Web.Controllers
 {

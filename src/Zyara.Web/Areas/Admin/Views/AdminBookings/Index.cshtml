@@ -1,0 +1,79 @@
+﻿
+@model PagedResult<AdminBookingDto>
+@{
+    ViewData["Title"] = "Bookings";
+    var selected = ViewData["Status"] as BookingStatus?;
+
+    // values that must survive page changes (the page number is added by _Pagination)
+    var routeValues = new Dictionary<string, string> { ["area"] = "Admin" };
+    if (selected.HasValue) routeValues["status"] = selected.Value.ToString();
+
+    var pagination = new PaginationViewModel(Model, "Index", "AdminBookings", routeValues, "page", null, "Bookings pages");
+
+    string BadgeClass(BookingStatus s) => s switch
+    {
+        BookingStatus.Completed => "bg-success",
+        BookingStatus.Started => "bg-info text-dark",
+        BookingStatus.Confirmed or BookingStatus.ConfirmedCollectionPending => "bg-primary",
+        BookingStatus.PendingProviderApproval => "bg-warning text-dark",
+        _ => "bg-secondary"   // Cancelled, Rejected, Expired
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 fw-bold mb-0">Bookings</h2>
+    <span class="text-muted small">@Model.TotalCount total</span>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="status" class="form-select form-select-sm"
+                asp-items="new SelectList(Enum.GetValues<BookingStatus>(), selected)">
+            <option value="">All statuses</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary btn-sm">Filter</button>
+    </div>
+</form>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">No bookings found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Patient</th>
+                    <th>Provider</th>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.Items)
+                {
+                    <tr>
+                        <td>@b.Id</td>
+                        <td>@b.PatientName</td>
+                        <td>@b.ProviderName</td>
+                        <td>@b.ServiceName</td>
+                        <td>@b.Date.ToString("yyyy-MM-dd") @b.StartTime.ToString(@"hh\:mm")</td>
+                        <td>@b.TotalPrice.ToString("0.##")</td>
+                        <td><span class="badge @BadgeClass(b.Status)">@b.Status</span></td>
+                        <td>@(b.PaymentStatus?.ToString() ?? "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Pagination" model="pagination" />
+}

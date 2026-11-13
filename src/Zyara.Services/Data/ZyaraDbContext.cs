@@ -25,14 +25,7 @@ namespace Zyara.Services.Data
         public DbSet<PlatformSettings> PlatformSettings { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
-<<<<<<< Updated upstream
-=======
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-        //    optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Zyara;Integrated Security=True;Encrypt=False;Trust Server Certificate=True");
-        }
 
->>>>>>> Stashed changes
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Apply all entity configurations defined in this assembly

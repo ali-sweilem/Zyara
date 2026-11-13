@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Dtos;
-
+using Zyara.Services.Common;
 namespace Zyara.Web.Models
 {
     public class HomeIndexViewModel
