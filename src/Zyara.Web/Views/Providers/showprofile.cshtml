@@ -31,8 +31,10 @@
                     <p class="mb-0 text-white-50">@Model.Specialty</p>
                     <p class="mb-0 text-white-50">@Model.Bio</p>
                 </div>
-                <a asp-action="EditProfile" asp-route-id="@Model.Id" class="btn btn-light rounded-pill px-4 fw-semibold"><i class="bi bi-pencil-square me-1"></i> Edit Profile</a>
-            </div>
+<a asp-action="EditProfile" asp-route-id="@Model.Id"
+   class="btn bg-white text-dark border-0 shadow-sm rounded-pill px-4 fw-semibold">
+    <i class="bi bi-pencil-square me-1"></i> Edit Profile
+</a>            </div>
         </div>
 
         <div class="card-body p-4 p-md-5">
