@@ -7,6 +7,7 @@ using Zyara.Services.Features.AdminDashboard.Interfaces;
 using Zyara.Services.Features.Administration;
 using Zyara.Services.Features.Administration.Interfaces;
 using Zyara.Services.Features.Providers;
+using Zyara.Services.Features.Services;
 using Zyara.Services.Features.Providers.Interfaces;
 
 namespace Zyara.Services;
@@ -20,6 +21,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IProviderSearchService, ProviderSearchService>();
         services.AddScoped<IProviderDetailsService, ProviderDetailsService>();
+        services.AddScoped<IServiceManagementService, ServiceManagementService>();
         services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
 
