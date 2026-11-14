@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IProviderSearchService, ProviderSearchService>();
         services.AddScoped<IProviderDetailsService, ProviderDetailsService>();
+        services.AddScoped<IProviderDashboardService, ProviderDashboardService>();
         services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
 

@@ -1,9 +1,10 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.Threading;
-using System.Threading.Tasks;
 using Zyara.Domain.Enums;
+using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Dtos;
 using Zyara.Services.Features.Providers.Interfaces;
 using Zyara.Web.ViewModels;
@@ -14,14 +15,17 @@ namespace Zyara.Web.Controllers;
 public sealed class ProvidersController : Controller
 {
     private readonly IProviderDetailsService _providerDetailsService;
+    private readonly IProviderDashboardService _dashboardService;
     private readonly IWebHostEnvironment _env;
-  
 
-    public ProvidersController(IProviderDetailsService providerDetailsService, IWebHostEnvironment env)
+    public ProvidersController(
+        IProviderDetailsService providerDetailsService,
+        IProviderDashboardService dashboardService,
+        IWebHostEnvironment env)
     {
         _providerDetailsService = providerDetailsService;
+        _dashboardService = dashboardService;
         _env = env;
-
     }
 
     [HttpGet]
@@ -40,6 +44,45 @@ public sealed class ProvidersController : Controller
             Reviews = reviews
         });
     }
+  
+    // /Providers/Dashboard
+    public async Task<IActionResult> Dashboard(int providerId = 1, CancellationToken cancellationToken = default)
+    {
+        var dto = await _dashboardService.GetDashboardAsync(providerId, cancellationToken);
+
+        var vm = new ProviderDashboardViewModel
+        {
+            ProviderId = providerId,
+            TotalBookings = dto.TotalBookings,
+            PendingRequests = dto.PendingRequests,
+            UpcomingBookings = dto.UpcomingBookings,
+            CompletedBookings = dto.CompletedBookings,
+            TotalEarnings = dto.TotalEarnings,
+            PendingList = dto.PendingList,
+            CompletedList = dto.CompletedList
+        };
+
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Accept(int providerId, int bookingId, CancellationToken cancellationToken = default)
+    {
+        var result = await _dashboardService.AcceptBookingAsync(providerId, bookingId, cancellationToken);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Request accepted." : result.Error;
+        return RedirectToAction(nameof(Dashboard), new { providerId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reject(int providerId, int bookingId, CancellationToken cancellationToken = default)
+    {
+        var result = await _dashboardService.RejectBookingAsync(providerId, bookingId, cancellationToken);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Request rejected." : result.Error;
+        return RedirectToAction(nameof(Dashboard), new { providerId });
+    }
+
     //==============================================profile==============================================
     //  /Providers/showprofile/5
     public async Task<IActionResult> showprofile(int id)
