@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Zyara.Services.Features.Payments;
+using Zyara.Services.Features.Payments.Interface;
 
 namespace Zyara.Web.Controllers
 {

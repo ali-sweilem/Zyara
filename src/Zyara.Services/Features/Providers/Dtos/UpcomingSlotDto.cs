@@ -9,3 +9,4 @@ public sealed class UpcomingSlotDto
     public TimeSpan StartTime { get; init; }
     public TimeSpan EndTime { get; init; }
 }
+

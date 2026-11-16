@@ -1,4 +1,4 @@
-@model Zyara.Web.ViewModels.BookAppointmentViewModel
+@model Zyara.Services.Features.Bookings.Dtos.BookAppointmentDto
 
 @{
     ViewData["Title"] = $"Book Appointment — {Model.ProviderFullName}";
@@ -15,7 +15,7 @@
     @* ── Provider summary card ── *@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4 d-flex align-items-center gap-4">
-            @await Html.PartialAsync("_Avatar", new AvatarViewModel
+            @await Html.PartialAsync("_Avatar", new AvatarDto
             {
                 FullName = Model.ProviderFullName,
                 PhotoUrl = Model.ProviderPhotoUrl,
@@ -170,4 +170,6 @@
         }());
     </script>
 }
+
+
 

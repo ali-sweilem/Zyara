@@ -1,4 +1,4 @@
-﻿namespace Zyara.Domain.Rules;
+namespace Zyara.Domain.Rules;
 
 public static class CommissionCalculator
 {

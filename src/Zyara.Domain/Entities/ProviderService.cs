@@ -22,3 +22,4 @@ namespace Zyara.Domain.Entities
     }
 }
 
+

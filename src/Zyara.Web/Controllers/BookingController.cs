@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.Bookings.Dtos;
 using Zyara.Services.Features.Bookings.Interfaces;
-using Zyara.Services.Features.Payments;
+using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers.Interfaces;
-using Zyara.Web.ViewModels;
+using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers;
 
@@ -48,7 +48,7 @@ public sealed class BookingController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Book(BookAppointmentViewModel form, CancellationToken cancellationToken)
+    public async Task<IActionResult> Book(BookAppointmentDto form, CancellationToken cancellationToken)
     {
         // --- Security: take providerId from the form's display field (not trusted for
         //               anything financial), validate it against the DB in the service.
@@ -139,10 +139,10 @@ public sealed class BookingController : Controller
     }
 
     /// <summary>
-    /// Loads provider summary + available slots + services and builds the BookAppointmentViewModel.
+    /// Loads provider summary + available slots + services and builds the BookAppointmentDto.
     /// Returns null if the provider is not found.
     /// </summary>
-    private async Task<BookAppointmentViewModel?> BuildViewModelAsync(
+    private async Task<BookAppointmentDto?> BuildViewModelAsync(
         int providerId,
         CancellationToken cancellationToken)
     {
@@ -154,7 +154,7 @@ public sealed class BookingController : Controller
 
         var slots = await _bookingService.GetAvailableSlotsAsync(providerId, cancellationToken);
 
-        return new BookAppointmentViewModel
+        return new BookAppointmentDto
         {
             ProviderId = provider.Id,
             ProviderFullName = provider.FullName,
@@ -166,4 +166,6 @@ public sealed class BookingController : Controller
         };
     }
 }
+
+
 

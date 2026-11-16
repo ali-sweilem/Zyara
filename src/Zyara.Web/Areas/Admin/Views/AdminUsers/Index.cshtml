@@ -1,4 +1,4 @@
-﻿@model AdminUsersIndexViewModel
+@model AdminUsersIndexDto
 
 @{
     ViewData["Title"] = "Manage Users";
@@ -6,7 +6,7 @@
     var routeValues = new Dictionary<string, string> { ["area"] = "Admin" };
     if (Model.Role.HasValue) routeValues["role"] = Model.Role.Value.ToString();
 
-    var pagination = new PaginationViewModel(Model.Users, "Index", "AdminUsers", routeValues, "page", null, "Users pages");
+    var pagination = new PaginationDto(Model.Users, "Index", "AdminUsers", routeValues, "page", null, "Users pages");
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -74,3 +74,4 @@ else
 
     <partial name="_Pagination" model="pagination" />
 }
+

@@ -1,4 +1,4 @@
-﻿@model Zyara.Web.ViewModels.ProviderDetailsViewModel
+@model Zyara.Services.Features.Providers.Dtos.ProviderDetailsPageDto
 
 @{
     var provider = Model.Provider;
@@ -13,7 +13,7 @@
             <section class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4 p-md-5">
                     <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4">
-                        @await Html.PartialAsync("_Avatar", new AvatarViewModel
+                        @await Html.PartialAsync("_Avatar", new AvatarDto
                         {
                             FullName = provider.FullName,
                             PhotoUrl = provider.PhotoUrl,
@@ -110,7 +110,7 @@
                             {
                                 <article class="border-bottom pb-3">
                                     <div class="d-flex gap-3">
-                                        @await Html.PartialAsync("_Avatar", new AvatarViewModel
+                                        @await Html.PartialAsync("_Avatar", new AvatarDto
                                         {
                                             FullName = review.ReviewerName,
                                             PhotoUrl = null,
@@ -230,3 +230,5 @@
         </aside>
     </div>
 </div>
+
+

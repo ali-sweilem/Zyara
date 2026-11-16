@@ -1,5 +1,6 @@
 using Zyara.Services;
-using Zyara.Services.Data;
+using Zyara.Repositories.Data;
+using Zyara.Services.Features.Payments.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // Member 4 - Adham
-builder.Services.AddScoped<Zyara.Services.Features.Payments.IPaymentService,
+builder.Services.AddScoped<IPaymentService,
 Zyara.Services.Features.Payments.PaymentService>();
 
 builder.Services.AddZyaraServices(builder.Configuration);
@@ -47,4 +48,5 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
 

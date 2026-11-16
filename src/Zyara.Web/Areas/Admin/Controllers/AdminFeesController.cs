@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.Administration.Dtos;
@@ -43,3 +43,4 @@ namespace Zyara.Web.Areas.Admin.Controllers
         }
     }
 }
+

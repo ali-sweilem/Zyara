@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Zyara.Domain.Enums;
@@ -18,3 +18,4 @@ namespace Zyara.Domain.Entities
         public List<Booking>? Bookings { get; set; }
     }
 }
+

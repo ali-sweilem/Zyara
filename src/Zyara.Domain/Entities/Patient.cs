@@ -1,4 +1,4 @@
-﻿namespace Zyara.Domain.Entities;
+namespace Zyara.Domain.Entities;
 
 public class Patient : User
 {

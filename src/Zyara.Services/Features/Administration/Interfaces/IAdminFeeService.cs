@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Zyara.Services.Common;
 using Zyara.Services.Features.Administration.Dtos;
@@ -14,3 +14,4 @@ namespace Zyara.Services.Features.Administration.Interfaces
         Task<ServiceResult> UpdateSettingsAsync(PlatformSettingsDto dto, CancellationToken cancellationToken = default);
     }
 }
+

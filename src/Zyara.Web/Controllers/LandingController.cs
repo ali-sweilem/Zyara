@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Zyara.Web.Models;
+using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers;
 
@@ -8,9 +8,11 @@ public class LandingController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        return View(new LandingIndexViewModel
+        return View(new LandingIndexDto
         {
             Services = ServiceCatalog.Options
         });
     }
 }
+
+

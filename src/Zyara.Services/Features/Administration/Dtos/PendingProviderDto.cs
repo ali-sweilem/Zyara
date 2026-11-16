@@ -1,4 +1,4 @@
-﻿using Zyara.Domain.Enums;
+using Zyara.Domain.Enums;
 using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Services.Features.Administration.Dtos

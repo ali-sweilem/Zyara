@@ -1,4 +1,4 @@
-﻿using Zyara.Domain.Enums;
+using Zyara.Domain.Enums;
 
 namespace Zyara.Services.Features.Administration.Dtos
 {
@@ -11,3 +11,4 @@ namespace Zyara.Services.Features.Administration.Dtos
         public bool IsActive { get; init; }
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
-using Zyara.Services.Data;
-using Zyara.Web.Areas.Provider.ViewModels;
+using Zyara.Repositories.Data;
+using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Web.Areas.Provider.Controllers
 {
@@ -38,7 +38,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
         {
             int currentProviderId = GetCurrentProviderId();
 
-            var model = new ProviderTimeSlotIndexVM
+            var model = new ProviderTimeSlotIndexDto
             {
                 TimeSlots = GetProviderSlots(currentProviderId)
             };
@@ -48,7 +48,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateTimeSlot(ProviderTimeSlotIndexVM model)
+        public IActionResult CreateTimeSlot(ProviderTimeSlotIndexDto model)
         {
             int currentProviderId = GetCurrentProviderId();
             var newSlot = model.NewTimeSlot;
@@ -135,14 +135,14 @@ namespace Zyara.Web.Areas.Provider.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private List<TimeSlotVM> GetProviderSlots(int providerId)
+        private List<TimeSlotDto> GetProviderSlots(int providerId)
         {
             return _context.TimeSlots
                 .AsNoTracking()
                 .Where(t => t.ProviderId == providerId)
                 .OrderBy(t => t.Date)
                 .ThenBy(t => t.StartTime)
-                .Select(t => new TimeSlotVM
+                .Select(t => new TimeSlotDto
                 {
                     Id = t.Id,
                     Date = t.Date,
@@ -155,3 +155,4 @@ namespace Zyara.Web.Areas.Provider.Controllers
         }
     }
 }
+

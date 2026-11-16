@@ -1,4 +1,4 @@
-﻿using Zyara.Domain.Enums;
+using Zyara.Domain.Enums;
 
 namespace Zyara.Services.Features.Payments.Dtos
 {

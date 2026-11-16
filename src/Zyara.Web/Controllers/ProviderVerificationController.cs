@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
 

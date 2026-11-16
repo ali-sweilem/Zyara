@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Zyara.Domain.Enums;
 using Zyara.Services.Common;
@@ -15,3 +15,4 @@ namespace Zyara.Services.Features.Administration.Interfaces
         Task<bool> ToggleUserActiveAsync(int id, CancellationToken cancellationToken = default);
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Zyara.Services.Common
@@ -18,3 +18,4 @@ namespace Zyara.Services.Common
         public bool HasNextPage => PageNumber < TotalPages;
     }
 }
+
