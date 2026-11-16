@@ -6,6 +6,8 @@ using Zyara.Services.Features.AdminDashboard;
 using Zyara.Services.Features.AdminDashboard.Interfaces;
 using Zyara.Services.Features.Administration;
 using Zyara.Services.Features.Administration.Interfaces;
+using Zyara.Services.Features.Bookings;
+using Zyara.Services.Features.Bookings.Interfaces;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
 
@@ -22,6 +24,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderDetailsService, ProviderDetailsService>();
         services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
+
+        services.AddScoped<IBookingService, BookingService>();
 
         services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IAdminFeeService, AdminFeeService>();
