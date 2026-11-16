@@ -1,0 +1,22 @@
+using System;
+using System.Collections.Generic;
+using Zyara.Services.Features.Providers;
+using Zyara.Services.Features.Providers.Dtos;
+using Zyara.Services.Common;
+namespace Zyara.Services.Features.Shared.Dtos
+{
+    public class HomeIndexDto
+    {
+        public ProviderSearchCriteria Criteria { get; set; } = new();
+        public PagedResult<ProviderCardDto> Results { get; set; } = new();
+        public IReadOnlyList<string> Specialties { get; set; } = Array.Empty<string>();
+        public IReadOnlyList<string> Cities { get; set; } = Array.Empty<string>();
+        public string Service { get; set; } = string.Empty;
+
+        public string ServiceLabel => Service == "doctors" ? "Doctors" : "Nursing";
+        public string ProviderLabel => Service == "doctors" ? "doctor" : "nurse";
+    }
+}
+
+
+

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Zyara.Services.Features.Administration.Dtos;
@@ -14,3 +14,4 @@ namespace Zyara.Services.Features.Administration.Interfaces
         Task<bool> ToggleServiceAsync(int id, CancellationToken cancellationToken = default);
     }
 }
+

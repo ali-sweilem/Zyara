@@ -14,3 +14,4 @@ public interface IProviderDetailsService
     Task<EditProfileProviderDto?> GetForEditAsync(int id);
     Task<bool> UpdateProfileAsync(EditProfileProviderDto model);
 }
+

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -9,3 +9,4 @@ namespace Zyara.Domain.Entities
         // no attributes of its own; Provider.VerifiedByAdminId holds the relationship
     }
 }
+

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Zyara.Domain.Enums;
@@ -11,3 +11,4 @@ namespace Zyara.Services.Features.Providers.Dtos
         public String? RejectionReason { get; set; }
     }
 }
+

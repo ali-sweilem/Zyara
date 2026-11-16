@@ -38,7 +38,7 @@
 
             <!-- Profile Photo with Initials Avatar Fallback -->
             <div class="mx-auto mb-3">
-                @await Html.PartialAsync("_Avatar", new AvatarViewModel
+                @await Html.PartialAsync("_Avatar", new AvatarDto
                 {
                     FullName = Model.FullName,
                     PhotoUrl = Model.PhotoUrl,
@@ -137,4 +137,6 @@
         </div>
     </div>
 </div>
+
+
 

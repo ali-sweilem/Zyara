@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.AdminDashboard.Interfaces;
 
 namespace Zyara.Web.Areas.Admin.Controllers;

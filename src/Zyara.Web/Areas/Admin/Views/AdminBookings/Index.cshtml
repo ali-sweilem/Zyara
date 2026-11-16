@@ -1,4 +1,4 @@
-﻿
+
 @model PagedResult<AdminBookingDto>
 @{
     ViewData["Title"] = "Bookings";
@@ -8,7 +8,7 @@
     var routeValues = new Dictionary<string, string> { ["area"] = "Admin" };
     if (selected.HasValue) routeValues["status"] = selected.Value.ToString();
 
-    var pagination = new PaginationViewModel(Model, "Index", "AdminBookings", routeValues, "page", null, "Bookings pages");
+    var pagination = new PaginationDto(Model, "Index", "AdminBookings", routeValues, "page", null, "Bookings pages");
 
     string BadgeClass(BookingStatus s) => s switch
     {
@@ -77,3 +77,4 @@ else
 
     <partial name="_Pagination" model="pagination" />
 }
+

@@ -1,4 +1,4 @@
-@model Zyara.Web.Models.ServiceOption
+@model Zyara.Services.Features.Shared.Dtos.ServiceOptionDto
 
 @if (Model.Enabled && !string.IsNullOrWhiteSpace(Model.Service))
 {
@@ -17,3 +17,5 @@ else
         <partial name="_ServiceCardContent" model="Model" />
     </div>
 }
+
+

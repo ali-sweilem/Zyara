@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Zyara.Domain.Enums;
 using Zyara.Services.Features.Providers.Dtos;
 using Zyara.Services.Features.Providers.Interfaces;
-using Zyara.Web.ViewModels;
+using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers;
 
@@ -34,7 +34,7 @@ public sealed class ProvidersController : Controller
         }
 
         var reviews = await _providerDetailsService.GetReviewsAsync(id, reviewsPage, 5, cancellationToken);
-        return View(new ProviderDetailsViewModel
+        return View(new ProviderDetailsPageDto
         {
             Provider = provider,
             Reviews = reviews
@@ -120,4 +120,6 @@ public sealed class ProvidersController : Controller
     }
 
 }
+
+
 

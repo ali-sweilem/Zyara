@@ -1,6 +1,5 @@
-﻿namespace Zyara.Services.Common
+namespace Zyara.Services.Common
 {
-
     public interface IPagedResult
     {
         int Page { get; }

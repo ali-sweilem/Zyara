@@ -1,4 +1,4 @@
-﻿namespace Zyara.Services.Features.Payments.Dtos
+namespace Zyara.Services.Features.Payments.Dtos
 {
     public class PaymentDto
     {

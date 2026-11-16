@@ -16,3 +16,4 @@ public sealed class BookingSlotDto
     public string Label => $"{Date:ddd d MMM} — {StartTime:hh\\:mm} to {EndTime:hh\\:mm}";
 }
 
+

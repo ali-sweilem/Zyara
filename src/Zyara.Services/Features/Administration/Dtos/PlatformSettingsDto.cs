@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Zyara.Services.Features.Administration.Dtos
 {
@@ -13,3 +13,4 @@ namespace Zyara.Services.Features.Administration.Dtos
         public decimal CommissionPercentage { get; set; }
     }
 }
+

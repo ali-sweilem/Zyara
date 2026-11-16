@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Zyara.Services.Features.Providers.Dtos;
@@ -12,3 +12,4 @@ namespace Zyara.Services.Features.Providers.Interfaces
         Task ResetToPendingAsync(int ProviderProfileId);
     }
 }
+

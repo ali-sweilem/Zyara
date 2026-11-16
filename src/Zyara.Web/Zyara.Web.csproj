@@ -5,6 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Areas\Patient\**" />
+    <Content Remove="Areas\Patient\**" />
+    <EmbeddedResource Remove="Areas\Patient\**" />
+    <None Remove="Areas\Patient\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
       <PrivateAssets>all</PrivateAssets>
@@ -15,13 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Zyara.Services\Zyara.Services.csproj" />
-  </ItemGroup>
-
-
-  <ItemGroup>
-    <Folder Include="Areas\Patient\Controllers\" />
-    <Folder Include="Areas\Patient\Views\" />
-    <Folder Include="Areas\Patient\ViewModels\" />
+    <ProjectReference Include="..\Zyara.Repositories\Zyara.Repositories.csproj" />
   </ItemGroup>
 
 

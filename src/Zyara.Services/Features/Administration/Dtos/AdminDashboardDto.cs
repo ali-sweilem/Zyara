@@ -1,4 +1,4 @@
-﻿namespace Zyara.Services.Features.AdminDashboard.Dtos;
+namespace Zyara.Services.Features.AdminDashboard.Dtos;
 
 public class AdminDashboardDto
 {

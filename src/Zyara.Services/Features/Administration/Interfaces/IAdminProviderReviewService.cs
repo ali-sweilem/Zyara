@@ -1,4 +1,4 @@
-﻿using Zyara.Services.Common;
+using Zyara.Services.Common;
 using Zyara.Services.Features.Administration.Dtos;
 
 namespace Zyara.Services.Features.Administration.Interfaces

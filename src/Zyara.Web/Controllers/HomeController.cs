@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 using Zyara.Domain.Enums;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
-using Zyara.Web.ViewModels;
-using Zyara.Web.Models;
+using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers
 {
@@ -94,7 +93,7 @@ namespace Zyara.Web.Controllers
             var specialties = await _providerSearchService.GetSpecialtiesAsync(serviceRole.Value, cancellationToken);
             var cities = await _providerSearchService.GetCitiesAsync(serviceRole.Value, cancellationToken);
 
-            var model = new HomeIndexViewModel
+            var model = new HomeIndexDto
             {
                 Criteria = criteria,
                 Results = results,
@@ -114,10 +113,12 @@ namespace Zyara.Web.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(new ErrorDto { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
 
 
     }
 }
+
+

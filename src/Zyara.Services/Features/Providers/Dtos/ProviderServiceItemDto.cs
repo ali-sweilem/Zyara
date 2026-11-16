@@ -7,3 +7,4 @@ public sealed class ProviderServiceItemDto
     public string? Description { get; init; }
     public decimal Fee { get; init; }
 }
+

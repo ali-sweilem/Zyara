@@ -21,3 +21,4 @@ public sealed class ProviderDetailsDto
     public IReadOnlyList<ProviderServiceItemDto> Services { get; init; } = [];
     public IReadOnlyList<UpcomingSlotDto> UpcomingSlots { get; init; } = [];
 }
+
