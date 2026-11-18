@@ -15,6 +15,12 @@
     if (Model.Criteria.MaxPrice.HasValue) baseRoute["MaxPrice"] = Model.Criteria.MaxPrice.Value.ToString();
     if (Model.Criteria.AvailableOnly) baseRoute["AvailableOnly"] = "true";
     if (!string.IsNullOrWhiteSpace(Model.Criteria.SortBy)) baseRoute["SortBy"] = Model.Criteria.SortBy;
+    if (Model.Criteria.HasLocation)
+    {
+        baseRoute["Lat"] = Model.Criteria.Lat!.Value.ToString(CultureInfo.InvariantCulture);
+        baseRoute["Lng"] = Model.Criteria.Lng!.Value.ToString(CultureInfo.InvariantCulture);
+        if (Model.Criteria.RadiusKm.HasValue) baseRoute["RadiusKm"] = Model.Criteria.RadiusKm.Value.ToString(CultureInfo.InvariantCulture);
+    }
     baseRoute["PageSize"] = Model.Results.PageSize.ToString();
 
     Dictionary<string, string> GetPageRoute(int page)

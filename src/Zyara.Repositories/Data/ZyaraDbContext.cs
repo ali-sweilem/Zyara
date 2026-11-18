@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 
 namespace Zyara.Repositories.Data
 {
-    public class ZyaraDbContext(DbContextOptions<ZyaraDbContext> options) : DbContext(options)
+    // T1: IdentityDbContext provides DbSet<User> Users + the AspNet* tables (Roles, UserRoles, Claims, Logins, Tokens).
+    public class ZyaraDbContext(DbContextOptions<ZyaraDbContext> options)
+        : IdentityDbContext<User, IdentityRole<int>, int>(options)
     {
-        public DbSet<User> Users { get; set; }
         public DbSet<Patient> Patients { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Nurse> Nurses { get; set; }
@@ -28,9 +31,11 @@ namespace Zyara.Repositories.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Identity tables first, then our configurations (so ours can override Identity defaults).
+            base.OnModelCreating(modelBuilder);
+
             // Apply all entity configurations defined in this assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ZyaraDbContext).Assembly);
         }
     }
 }
-

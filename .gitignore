@@ -1,3 +1,12 @@
 bin/
 obj/
 .vs/
+*.user
+
+# Private uploads (provider credentials) - never commit (T6)
+App_Data/
+
+# Secrets - use `dotnet user-secrets`, never files
+secrets.json
+appsettings.*.local.json
+.env

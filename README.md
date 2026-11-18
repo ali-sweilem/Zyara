@@ -93,6 +93,7 @@ and the compiler enforces it because each layer is a separate project.
 ## Tech Stack
 
 - **.NET 10** (LTS), **ASP.NET Core MVC** with Areas
+- **ASP.NET Core Identity** (cookie authentication, roles, lockout, 2FA, Google login)
 - **Entity Framework Core 10** with **SQL Server** (LocalDB for development)
 - **xUnit** for tests, **SQLite in-memory** for service-level tests
 - **Git / GitHub** with pull-request workflow
@@ -137,9 +138,47 @@ Server=(localdb)\MSSQLLocalDB;Database=Zyara;Trusted_Connection=True;TrustServer
 
 ### Database and run
 
-Database migrations and application features are not implemented yet.
-Once migrations are added to the repository, this section will describe how to create the
-database and run the application.
+The project uses **ASP.NET Core Identity** (`IdentityUser<int>`, cookie-based login).
+Roles (`Patient`, `Doctor`, `Nurse`, `Admin`) and the Admin account are seeded on every startup
+(`DbInitializer`: Migrate -> RoleSeeder -> AdminSeeder), so there is no manual SQL.
+
+**1. Set the secrets (once per developer, never commit them)**
+
+```bash
+cd src/Zyara.Web
+dotnet user-secrets set "Seed:Admin:Email" "admin@zyara.local"
+dotnet user-secrets set "Seed:Admin:Password" "Admin@12345"   # min 8 chars, upper + lower + digit
+```
+
+Other secrets used by later tasks (only if you work on them):
+
+```bash
+dotnet user-secrets set "Authentication:Google:ClientId" "<id>"      # T11
+dotnet user-secrets set "Authentication:Google:ClientSecret" "<secret>"
+dotnet user-secrets set "Email:Password" "<smtp password>"           # T7 (Production SMTP)
+```
+
+**2. Create / reset the database**
+
+```bash
+git pull
+dotnet ef database drop -f --project src/Zyara.Repositories --startup-project src/Zyara.Web
+dotnet ef database update  --project src/Zyara.Repositories --startup-project src/Zyara.Web
+```
+
+**3. Run**
+
+```bash
+dotnet run --project src/Zyara.Web
+```
+
+In Development, emails (confirm / reset links) are printed in the console (`ConsoleEmailSender`).
+
+**Add a migration** (only the owner of the change, with a heads-up to the team):
+
+```bash
+dotnet ef migrations add <Name> --project src/Zyara.Repositories --startup-project src/Zyara.Web
+```
 
 ## Testing
 
@@ -147,7 +186,7 @@ database and run the application.
 dotnet test
 ```
 
-Currently the test project covers the commission calculation rule (`CommissionCalculator`).
+Currently the test project covers the commission calculation rule (`CommissionCalculator`) and the geo distance rule (`GeoDistance.Haversine`).
 As features are added, the strategy will be:
 
 - **Domain rule tests** run without a database or a clock.

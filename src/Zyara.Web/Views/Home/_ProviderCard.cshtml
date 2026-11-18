@@ -77,6 +77,13 @@
                         <i class="bi bi-geo-alt me-1 text-danger"></i>@Model.BaseCity
                     </span>
                 }
+                @if (Model.DistanceKm.HasValue)
+                {
+                    <span>&bull;</span>
+                    <span class="text-success fw-semibold" title="Distance from your location">
+                        <i class="bi bi-signpost-2 me-1"></i>@Model.DistanceKm.Value.ToString("0.0", CultureInfo.InvariantCulture) km
+                    </span>
+                }
             </div>
 
             <!-- Rating Section -->

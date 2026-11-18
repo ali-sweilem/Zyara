@@ -15,6 +15,9 @@ namespace Zyara.Services.Features.Providers.Dtos
         public decimal? MinFee { get; set; }
         public bool IsAvailable { get; set; }
 
+        /// <summary>T13: distance from the searcher in km (1 decimal). Null when no location was supplied or the provider has no GPS.</summary>
+        public double? DistanceKm { get; set; }
+
         /// <summary>
         /// Null for now until provider profile photo upload is implemented.
         /// </summary>

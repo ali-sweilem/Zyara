@@ -1,19 +1,23 @@
+using Zyara.Repositories.Data.Seed;
 using Zyara.Services;
-using Zyara.Repositories.Data;
-using Zyara.Services.Features.Payments.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Member 4 - Adham
-builder.Services.AddScoped<IPaymentService,
-Zyara.Services.Features.Payments.PaymentService>();
-
-builder.Services.AddZyaraServices(builder.Configuration);
+// Everything (DbContext, feature services, Identity + its stubs, IPaymentService) is registered here.
+builder.Services.AddZyaraServices(builder.Configuration, builder.Environment);
 var app = builder.Build();
 
+// Migrate -> seed Roles -> seed Admin (credentials come from user-secrets: Seed:Admin:Email / Seed:Admin:Password)
+using (var scope = app.Services.CreateScope())
+{
+    await DbInitializer.InitializeAsync(
+        scope.ServiceProvider,
+        builder.Configuration["Seed:Admin:Email"],
+        builder.Configuration["Seed:Admin:Password"]);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -23,6 +27,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 
+app.UseAuthentication();   // must come before UseAuthorization
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -48,5 +53,3 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
-
-

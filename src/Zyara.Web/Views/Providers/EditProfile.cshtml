@@ -68,6 +68,33 @@
                         <span asp-validation-for="BaseCity" class="text-danger"></span>
                     </div>
                 </div>
+                <!-- T13: optional GPS location of the provider's base -->
+                <div class="mb-4 border rounded-3 p-3 bg-light" data-geo-scope>
+                    <label class="form-label fw-semibold mb-1">Base location (GPS)</label>
+                    <div class="small text-muted mb-2">Optional. Lets patients searching "Near me" find you and see the distance.</div>
+                    <input type="hidden" asp-for="BaseLatitude" data-geo-lat />
+                    <input type="hidden" asp-for="BaseLongitude" data-geo-lng />
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" data-geo-action="detect">
+                            <i class="bi bi-crosshair me-1"></i> Detect my location
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-geo-action="clear">
+                            Clear
+                        </button>
+                        <span class="small text-muted" data-geo-status role="status">
+                            @if (Model.BaseLatitude.HasValue && Model.BaseLongitude.HasValue)
+                            {
+                                <text>Saved: @Model.BaseLatitude.Value.ToString("0.0000", CultureInfo.InvariantCulture), @Model.BaseLongitude.Value.ToString("0.0000", CultureInfo.InvariantCulture)</text>
+                            }
+                            else
+                            {
+                                <text>No location saved.</text>
+                            }
+                        </span>
+                    </div>
+                    <span asp-validation-for="BaseLatitude" class="text-danger"></span>
+                    <span asp-validation-for="BaseLongitude" class="text-danger"></span>
+                </div>
                 <div class="d-flex gap-2 pt-2">
                     <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="bi bi-check2-circle me-1"></i> Save Changes</button>
                     <a asp-action="ShowProfile" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
@@ -81,6 +108,7 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/js/geolocation.js" asp-append-version="true"></script>
 
 
 }

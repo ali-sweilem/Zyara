@@ -67,6 +67,15 @@
                     {
                         <input type="hidden" name="SortBy" value="@Model.Criteria.SortBy" />
                     }
+                    @if (Model.Criteria.HasLocation)
+                    {
+                        <input type="hidden" name="Lat" value="@(Model.Criteria.Lat?.ToString(CultureInfo.InvariantCulture))" />
+                        <input type="hidden" name="Lng" value="@(Model.Criteria.Lng?.ToString(CultureInfo.InvariantCulture))" />
+                        @if (Model.Criteria.RadiusKm.HasValue)
+                        {
+                            <input type="hidden" name="RadiusKm" value="@(Model.Criteria.RadiusKm?.ToString(CultureInfo.InvariantCulture))" />
+                        }
+                    }
 
                     <div class="input-group input-group-lg border-0 align-items-center">
                         <span class="input-group-text bg-transparent border-0 ps-3 text-muted">
@@ -103,10 +112,13 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
             
-            <form method="get" asp-action="Index" id="filterForm">
+            <form method="get" asp-action="Index" id="filterForm" data-geo-scope>
                 <input type="hidden" name="service" value="@Model.Service" />
                 <!-- Keep search term if present -->
                 <input type="hidden" name="SearchTerm" value="@Model.Criteria.SearchTerm" />
+                <!-- T13: filled by geolocation.js ("Near me") -->
+                <input type="hidden" name="Lat" value="@(Model.Criteria.Lat?.ToString(CultureInfo.InvariantCulture))" data-geo-lat />
+                <input type="hidden" name="Lng" value="@(Model.Criteria.Lng?.ToString(CultureInfo.InvariantCulture))" data-geo-lng />
 
                 <!-- Filters Header -->
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
@@ -116,6 +128,18 @@
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
+                        <!-- T13: Near me -->
+                        <span class="small text-muted" data-geo-status role="status"></span>
+                        @if (Model.Criteria.HasLocation)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-geo-action="clear">
+                                <i class="bi bi-x-circle me-1"></i> Clear location
+                            </button>
+                        }
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-geo-action="near-me">
+                            <i class="bi bi-geo-alt-fill me-1"></i> Near me
+                        </button>
+
                         <!-- Available Only Quick Toggle -->
                         <div class="form-check form-switch me-3 mb-0">
                             <input class="form-check-input"
@@ -233,7 +257,7 @@
                     <!-- 8. Sort By -->
                     <div class="col-md-3 col-sm-6">
                         <label class="form-label small fw-semibold text-muted mb-1">Sort By</label>
-                        <select name="SortBy" class="form-select rounded-3 shadow-none">
+                        <select name="SortBy" class="form-select rounded-3 shadow-none" data-geo-sort>
                             <option value="default" selected="@(string.IsNullOrEmpty(Model.Criteria.SortBy) || Model.Criteria.SortBy == "default")">
                                 Recommended (Default)
                             </option>
@@ -249,6 +273,24 @@
                             <option value="experience" selected="@(Model.Criteria.SortBy == "experience")">
                                 Most Experienced
                             </option>
+                            @if (Model.Criteria.HasLocation)
+                            {
+                                <option value="distance" selected="@(Model.Criteria.SortBy == "distance")">
+                                    Nearest First
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- 9. Radius (only used together with a location) -->
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label small fw-semibold text-muted mb-1">Distance (with location)</label>
+                        <select name="RadiusKm" class="form-select rounded-3 shadow-none">
+                            <option value="">Any distance</option>
+                            <option value="5" selected="@(Model.Criteria.RadiusKm == 5)">Within 5 km</option>
+                            <option value="10" selected="@(Model.Criteria.RadiusKm == 10)">Within 10 km</option>
+                            <option value="25" selected="@(Model.Criteria.RadiusKm == 25)">Within 25 km</option>
+                            <option value="50" selected="@(Model.Criteria.RadiusKm == 50)">Within 50 km</option>
                         </select>
                     </div>
 
@@ -277,6 +319,7 @@
 
 
 @section Scripts {
+    <script src="~/js/geolocation.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize Bootstrap 5 Tooltips (for disabled Coming Soon buttons and badges)

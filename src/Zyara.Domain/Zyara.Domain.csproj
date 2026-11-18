@@ -1,7 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- T1: IdentityUser<int> lives here -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.12" />
+  </ItemGroup>
 
 </Project>

@@ -36,6 +36,13 @@ namespace Zyara.Services.Features.Providers.Dtos
         public string Email { get; set; } = string.Empty;
         public string? Bio  { get; set; }
 
+        // T13: optional GPS location of the provider's base ("Detect my location")
+        [Range(-90, 90, ErrorMessage = "Latitude must be between -90 and 90")]
+        public double? BaseLatitude { get; set; }
+
+        [Range(-180, 180, ErrorMessage = "Longitude must be between -180 and 180")]
+        public double? BaseLongitude { get; set; }
+
         public String? PhotoUrl { get; set; }
         public IFormFile? PhotoFile { get; set; }
 
