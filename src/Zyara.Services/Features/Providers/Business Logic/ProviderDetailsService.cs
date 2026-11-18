@@ -151,8 +151,8 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                 {
                     Id = p.Id,
                     FullName = p.FullName,
-                    Email = p.Email,
-                    Phone = p.Phone,
+                    Email = p.Email ?? string.Empty,
+                    Phone = p.PhoneNumber ?? string.Empty,
                     Gender = p.Gender,
                     CreatedAt = p.CreatedAt,
                     Specialty = p.Specialty,
@@ -178,14 +178,16 @@ public sealed class ProviderDetailsService : IProviderDetailsService
             {
                 Id = p.Id,
                 FullName = p.FullName,
-                Phone = p.Phone,
+                Phone = p.PhoneNumber ?? string.Empty,
                 Gender = p.Gender,
                 Specialty = p.Specialty,
                 ExperienceYears = p.ExperienceYears,
                 BaseCity = p.BaseCity,
-                Email = p.Email,
+                Email = p.Email ?? string.Empty,
                 PhotoUrl = p.PhotoUrl,
                 Bio = p.Bio,
+                BaseLatitude = p.BaseLatitude,
+                BaseLongitude = p.BaseLongitude,
 
             }).FirstOrDefaultAsync();
 
@@ -199,12 +201,33 @@ public sealed class ProviderDetailsService : IProviderDetailsService
             return false;
         }
         provider.FullName = model.FullName;
-        provider.Phone = model.Phone;
+        provider.PhoneNumber = model.Phone;
         provider.Gender = model.Gender;
         provider.Specialty = model.Specialty;
         provider.ExperienceYears = model.ExperienceYears;
         provider.BaseCity = model.BaseCity;
-        provider.Email = model.Email;
+
+        // Email is also the login (UserName). Keep Identity's normalized columns in sync,
+        // otherwise the provider can no longer log in with the new address.
+        var newEmail = (model.Email ?? string.Empty).Trim();
+        if (!string.Equals(provider.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            var normalized = newEmail.ToUpperInvariant();
+            var taken = await _db.Users.AnyAsync(u => u.Id != provider.Id && u.NormalizedEmail == normalized);
+            if (taken)
+            {
+                return false;
+            }
+
+            provider.Email = newEmail;
+            provider.NormalizedEmail = normalized;
+            provider.UserName = newEmail;
+            provider.NormalizedUserName = normalized;
+        }
+
+        // T13: GPS (optional)
+        provider.BaseLatitude = model.BaseLatitude;
+        provider.BaseLongitude = model.BaseLongitude;
         provider.PhotoUrl = model.PhotoUrl;
         provider.Bio = model.Bio;
 

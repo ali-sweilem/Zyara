@@ -1,4 +1,5 @@
 using Zyara.Domain.Enums;
+using Zyara.Domain.Rules;
 
 namespace Zyara.Services.Features.Providers
 {
@@ -15,6 +16,15 @@ namespace Zyara.Services.Features.Providers
         public decimal? MaxPrice { get; set; }
         public bool AvailableOnly { get; set; }
         public string? SortBy { get; set; }
+
+        // T13: search near a point. SortBy = "distance" sorts by nearest; RadiusKm limits the results.
+        public double? Lat { get; set; }
+        public double? Lng { get; set; }
+        public double? RadiusKm { get; set; }
+
+        public bool HasLocation =>
+            Lat.HasValue && Lng.HasValue && GeoDistance.IsValidCoordinate(Lat.Value, Lng.Value);
+
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 12;
     }

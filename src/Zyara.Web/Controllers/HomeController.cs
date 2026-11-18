@@ -79,6 +79,25 @@ namespace Zyara.Web.Controllers
                 (criteria.MinPrice, criteria.MaxPrice) = (criteria.MaxPrice, criteria.MinPrice);
             }
 
+            // T13: location (Lat/Lng/RadiusKm come from the "Near me" button). Anything invalid is dropped.
+            if (!criteria.HasLocation)
+            {
+                criteria.Lat = null;
+                criteria.Lng = null;
+                criteria.RadiusKm = null;
+            }
+            else if (criteria.RadiusKm.HasValue)
+            {
+                criteria.RadiusKm = criteria.RadiusKm.Value > 0 ? Math.Min(criteria.RadiusKm.Value, 500) : null;
+            }
+
+            // "distance" sort only makes sense with a location
+            if (!criteria.HasLocation &&
+                string.Equals(criteria.SortBy?.Trim(), "distance", StringComparison.OrdinalIgnoreCase))
+            {
+                criteria.SortBy = null;
+            }
+
             // Execute search
             var results = await _providerSearchService.SearchProvidersAsync(criteria, cancellationToken);
 

@@ -9,9 +9,9 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        // Table name
+        // Table name (kept as "Users" so the existing FKs keep pointing at it)
         builder.ToTable("Users");
-        // PK
+        // PK (Id comes from IdentityUser<int>)
         builder.HasKey(u => u.Id);
 
         // Properties
@@ -26,13 +26,13 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
 
-        builder.Property(u => u.Phone)
+        // T1: Phone -> PhoneNumber (IdentityUser)
+        builder.Property(u => u.PhoneNumber)
             .IsRequired()
             .HasMaxLength(20);
 
-        builder.Property(u => u.PasswordHash)
-            .IsRequired()
-            .HasMaxLength(500);
+        // PasswordHash is owned by Identity and MUST stay nullable
+        // (Google-only accounts are created without a password).
 
         builder.Property(u => u.Gender)
             .HasConversion<string>()
@@ -49,4 +49,3 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasValue<Admin>(UserRole.Admin);
     }
 }
-
