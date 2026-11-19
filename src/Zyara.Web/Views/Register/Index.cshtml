@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Create an account";
+}
+
+<section class="py-4 py-md-5">
+    <div class="text-center mx-auto mb-4" style="max-width: 640px;">
+        <h1 class="h2 fw-bold mb-2">Create your Zyara account</h1>
+        <p class="text-muted mb-0">Choose the type of account you need.</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 g-4 justify-content-center mx-auto" style="max-width: 820px;">
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 text-center d-flex flex-column">
+                    <i class="bi bi-person-heart display-5 text-primary mb-3"></i>
+                    <h2 class="h5 fw-bold">I&apos;m a patient</h2>
+                    <p class="text-muted">Find doctors and nurses and book home visits or consultations.</p>
+                    <a asp-action="Patient" class="btn btn-primary rounded-pill mt-auto">Register as patient</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 text-center d-flex flex-column">
+                    <i class="bi bi-heart-pulse display-5 text-primary mb-3"></i>
+                    <h2 class="h5 fw-bold">I&apos;m a doctor or nurse</h2>
+                    <p class="text-muted">Offer your services. Your account is reviewed after you upload your credentials.</p>
+                    <a asp-action="Provider" class="btn btn-outline-primary rounded-pill mt-auto">Register as provider</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-center text-muted mt-4 mb-0">
+        Already have an account? <a href="/Account/Login">Sign in</a>
+    </p>
+</section>
