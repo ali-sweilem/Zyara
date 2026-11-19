@@ -1,31 +1,19 @@
-<<<<<<< Updated upstream
 using Zyara.Repositories.Data.Seed;
 using Zyara.Services;
-using Zyara.Web.Infrastructure;
-=======
-using Zyara.Repositories.Data;
-using Zyara.Services;
 using Zyara.Services.Features.Payments;
-using Zyara.Services.Features.Payments.Interface;
->>>>>>> Stashed changes
+using Zyara.Web.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews(o => o.Conventions.Add(new AreaAuthorizationConvention()));
 
-<<<<<<< Updated upstream
 // Everything (DbContext, feature services, Identity + its stubs, IPaymentService) is registered here.
 builder.Services.AddZyaraServices(builder.Configuration, builder.Environment);
-=======
-// Member 4 - Adham
-builder.Services.AddScoped<IPaymentService,
-Zyara.Services.Features.Payments.PaymentService>();
 
+// Visa & Card Payments (T12 - Adham)
 builder.Services.AddZyaraCardPayments(builder.Configuration);
 
-builder.Services.AddZyaraServices(builder.Configuration);
->>>>>>> Stashed changes
 var app = builder.Build();
 
 // Migrate -> seed Roles -> seed Admin (credentials come from user-secrets: Seed:Admin:Email / Seed:Admin:Password)
@@ -70,8 +58,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.Run();
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
+app.Run(); 
