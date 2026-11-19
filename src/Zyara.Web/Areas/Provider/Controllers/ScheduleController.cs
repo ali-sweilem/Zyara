@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
 using Zyara.Repositories.Data;
+using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Web.Areas.Provider.Controllers
@@ -15,28 +15,18 @@ namespace Zyara.Web.Areas.Provider.Controllers
     public class ScheduleController : Controller
     {
         private readonly ZyaraDbContext _context;
+        private readonly ICurrentUser _currentUser;
 
-        public ScheduleController(ZyaraDbContext context)
+        public ScheduleController(ZyaraDbContext context, ICurrentUser currentUser)
         {
             _context = context;
-        }
-
-        private int GetCurrentProviderId()
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(userIdString, out int providerId))
-            {
-                return providerId;
-            }
-
-            // CurrentUser.ProviderId = 1 as per team agreement
-            return 1;
+            _currentUser = currentUser;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            int currentProviderId = GetCurrentProviderId();
+            int currentProviderId = _currentUser.RequireUserId();
 
             var model = new ProviderTimeSlotIndexDto
             {
@@ -50,7 +40,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CreateTimeSlot(ProviderTimeSlotIndexDto model)
         {
-            int currentProviderId = GetCurrentProviderId();
+            int currentProviderId = _currentUser.RequireUserId();
             var newSlot = model.NewTimeSlot;
 
             // 1. حساب وقت النهاية تلقائياً بناءً على قاعدة الـ 120 دقيقة
@@ -109,7 +99,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteTimeSlot(int id)
         {
-            int currentProviderId = GetCurrentProviderId();
+            int currentProviderId = _currentUser.RequireUserId();
 
             var slot = _context.TimeSlots
                 .FirstOrDefault(t => t.Id == id && t.ProviderId == currentProviderId);
