@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
 using Zyara.Repositories.Data;
+using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
 
@@ -16,11 +18,16 @@ namespace Zyara.Web.Areas.Provider.Controllers
     {
         private readonly ZyaraDbContext _context;
         private readonly ICurrentUser _currentUser;
+        private readonly IAuthorizationService _auth;
 
-        public ScheduleController(ZyaraDbContext context, ICurrentUser currentUser)
+        public ScheduleController(
+            ZyaraDbContext context,
+            ICurrentUser currentUser,
+            IAuthorizationService auth)
         {
             _context = context;
             _currentUser = currentUser;
+            _auth = auth;
         }
 
         [HttpGet]
@@ -97,17 +104,20 @@ namespace Zyara.Web.Areas.Provider.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteTimeSlot(int id)
+        public async Task<IActionResult> DeleteTimeSlot(int id)
         {
-            int currentProviderId = _currentUser.RequireUserId();
-
-            var slot = _context.TimeSlots
-                .FirstOrDefault(t => t.Id == id && t.ProviderId == currentProviderId);
+            var slot = await _context.TimeSlots
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (slot == null)
             {
-                TempData["Error"] = "Time slot not found.";
-                return RedirectToAction(nameof(Index));
+                return NotFound();
+            }
+
+            var authorization = await _auth.AuthorizeAsync(User, slot, Operations.Manage);
+            if (!authorization.Succeeded)
+            {
+                return NotFound();
             }
 
             // الحذف مسموح فقط إذا كان الموعد متاحاً

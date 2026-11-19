@@ -30,6 +30,13 @@ namespace Zyara.Services.Features.Providers
         private string UploadFolder =>
             Path.Combine(_env.WebRootPath, "PrivateUploads", "credentials");
 
+        public Task<ProviderCredential?> GetCredentialAsync(int id)
+        {
+            return DB.ProviderCredentials
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
         public async Task<List<ProviderCredentialDto>> GetMyCredentialsAsync(int providerId)
         {
             return await DB.ProviderCredentials
@@ -86,17 +93,13 @@ namespace Zyara.Services.Features.Providers
             return CredentialResultDto.Ok();
         }
 
-        public async Task<CredentialFileDto?> GetFileAsync(int credentialId, int? providerId, bool isAdmin)
+        public async Task<CredentialFileDto?> GetFileAsync(int credentialId)
         {
             var credential = await DB.ProviderCredentials
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == credentialId);
 
             if (credential == null) return null;
-
-            var isOwner = providerId != null && credential.ProviderID == providerId;
-            if (!isOwner && !isAdmin)
-                return new CredentialFileDto { IsAllowed = false };
 
             var fullPath = Path.Combine(UploadFolder, credential.FileUrl);
             if (!File.Exists(fullPath)) return null;
