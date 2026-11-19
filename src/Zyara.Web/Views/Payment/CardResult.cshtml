@@ -1,0 +1,58 @@
+﻿@model Zyara.Domain.Entities.Payment
+
+@{
+    ViewData["Title"] = "Payment Status";
+    bool isSuccess = ViewBag.IsSuccess ?? false;
+}
+
+<div class="container py-5" style="max-width: 540px;">
+    <div class="card shadow-sm border-0 rounded-4 text-center p-4">
+        @if (isSuccess)
+        {
+            <div class="text-success mb-3">
+                <i class="bi bi-check-circle-fill" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold text-success mb-1">Payment Successful!</h3>
+            <p class="text-muted">Your online card payment has been authorized.</p>
+
+            <div class="bg-light rounded-3 p-3 text-start my-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-secondary">Booking ID:</span>
+                    <strong>#@Model.BookingId</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-secondary">Amount Paid:</span>
+                    <strong class="text-primary">@Model.Amount.ToString("N2") EGP</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-secondary">Card Used:</span>
+                    <span>@(Model.CardBrand ?? "Visa") •••• @(Model.CardLast4 ?? "4242")</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-secondary">Reference:</span>
+                    <code class="text-dark">@Model.GatewayReference</code>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a asp-controller="Booking" asp-action="Confirmation" asp-route-id="@Model.BookingId" class="btn btn-primary rounded-pill btn-lg">
+                    View Booking Confirmation
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="text-danger mb-3">
+                <i class="bi bi-x-circle-fill" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold text-danger mb-1">Payment Failed</h3>
+            <p class="text-muted">Your payment could not be processed or was cancelled.</p>
+
+            <div class="d-grid gap-2 mt-4">
+                <a href="/Payment/Create?bookingId=@Model.BookingId" class="btn btn-outline-primary rounded-pill">
+                    Try Again
+                </a>
+            </div>
+        }
+    </div>
+</div>
