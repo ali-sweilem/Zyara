@@ -1,0 +1,116 @@
+@model Zyara.Services.Features.Identity.Dtos.RegisterProviderDto
+@{
+    ViewData["Title"] = "Register as a provider";
+}
+
+<section class="py-4 py-md-5">
+    <div class="card shadow-sm border-0 rounded-4 mx-auto" style="max-width: 720px;">
+        <div class="card-body p-4 p-md-5">
+            <h1 class="h3 fw-bold mb-1">Register as a doctor or nurse</h1>
+            <p class="text-muted mb-4">
+                After registering you&apos;ll upload your credentials. Your account stays <strong>pending</strong> until an admin verifies it.
+                Already registered? <a href="/Account/Login">Sign in</a>
+            </p>
+
+            <form asp-action="Provider" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-4"></div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="ProviderType" class="form-label fw-semibold"></label>
+                        <select asp-for="ProviderType" class="form-select" id="ProviderType">
+                            <option value="Doctor">Doctor</option>
+                            <option value="Nurse">Nurse</option>
+                        </select>
+                        <span asp-validation-for="ProviderType" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="FullName" class="form-label fw-semibold"></label>
+                        <input asp-for="FullName" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <input asp-for="Email" type="email" class="form-control" autocomplete="email" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Phone" class="form-label fw-semibold"></label>
+                        <input asp-for="Phone" type="tel" class="form-control" autocomplete="tel" placeholder="01012345678" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Gender" class="form-label fw-semibold"></label>
+                        <select asp-for="Gender" class="form-select">
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                        <span asp-validation-for="Gender" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="BaseCity" class="form-label fw-semibold"></label>
+                        <input asp-for="BaseCity" class="form-control" />
+                        <span asp-validation-for="BaseCity" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-5">
+                        <label asp-for="Specialty" class="form-label fw-semibold"></label>
+                        <input asp-for="Specialty" class="form-control" />
+                        <span asp-validation-for="Specialty" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="ExperienceYears" class="form-label fw-semibold"></label>
+                        <input asp-for="ExperienceYears" type="number" min="0" max="60" class="form-control" />
+                        <span asp-validation-for="ExperienceYears" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4" id="licenseGroup">
+                        <label asp-for="LicenseNumber" class="form-label fw-semibold"></label>
+                        <input asp-for="LicenseNumber" class="form-control" />
+                        <span asp-validation-for="LicenseNumber" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="Password" class="form-label fw-semibold"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                        <div class="form-text">At least 8 characters, with upper-case, lower-case and a digit.</div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill py-2">Create account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // The license number only applies to doctors (Doctor.licenser). Nurses upload their documents later.
+        (function () {
+            var type = document.getElementById('ProviderType');
+            var group = document.getElementById('licenseGroup');
+            function sync() { group.style.display = type.value === 'Doctor' ? '' : 'none'; }
+            type.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

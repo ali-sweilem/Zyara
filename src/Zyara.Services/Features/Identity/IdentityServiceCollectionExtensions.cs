@@ -19,6 +19,7 @@ public static class IdentityServiceCollectionExtensions
     {
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
+        services.AddScoped<IRegistrationService, RegistrationService>();   // T3 (Abdelrhman)
 
         services
             .AddIdentity<User, IdentityRole<int>>(options =>
@@ -40,7 +41,7 @@ public static class IdentityServiceCollectionExtensions
                 options.User.AllowedUserNameCharacters = string.Empty;
 
                 // T7 (Abdelrhman): set to true after merge + testing (tell Ali first)
-                options.SignIn.RequireConfirmedEmail = false;
+                options.SignIn.RequireConfirmedEmail = true;
             })
             .AddEntityFrameworkStores<ZyaraDbContext>()
             .AddDefaultTokenProviders();
