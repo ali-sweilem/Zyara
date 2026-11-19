@@ -1,0 +1,54 @@
+@model Zyara.Services.Features.Identity.Dtos.ExternalLoginCompleteDto
+@{
+    ViewData["Title"] = "Complete Registration";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-2">Associate Google Account</h3>
+                <p class="text-muted text-center mb-4">
+                    You've successfully authenticated with Google. Please confirm your details below to finish creating your Patient account.
+                </p>
+
+                <div class="alert alert-info py-2 mb-4" role="alert">
+                    <small><i class="bi bi-info-circle me-1"></i> Google login registers you as a Patient. Doctor or Nurse accounts require verification credentials via the Register page.</small>
+                </div>
+
+                <form asp-action="Complete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label">Full Name</label>
+                        <input asp-for="FullName" class="form-control" placeholder="Your Full Name" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" class="form-control" readonly />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="e.g. 01012345678" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Complete Registration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
