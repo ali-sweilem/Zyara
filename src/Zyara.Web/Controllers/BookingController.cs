@@ -1,29 +1,35 @@
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.Bookings.Dtos;
 using Zyara.Services.Features.Bookings.Interfaces;
+using Zyara.Services.Features.Authorization;
+using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers.Interfaces;
 using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers;
 
+[Authorize(Policy = PolicyNames.PatientOnly)]
 public sealed class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
     private readonly IProviderDetailsService _providerDetailsService;
     private readonly IPaymentService _paymentService;
+    private readonly ICurrentUser _currentUser;
 
     public BookingController(
         IBookingService bookingService,
         IProviderDetailsService providerDetailsService,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        ICurrentUser currentUser)
     {
         _bookingService = bookingService;
         _providerDetailsService = providerDetailsService;
         _paymentService = paymentService;
+        _currentUser = currentUser;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -71,7 +77,7 @@ public sealed class BookingController : Controller
             return View(refreshed);
         }
 
-        var patientId = GetCurrentPatientId();
+        var patientId = _currentUser.RequireUserId();
 
         var dto = new BookAppointmentDto
         {
@@ -126,17 +132,6 @@ public sealed class BookingController : Controller
     // ─────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Gets the current patient's ID from claims.
-    /// Falls back to 1 when no authentication is configured (dev/demo mode).
-    /// TODO: remove the fallback once a real login system is wired up.
-    /// </summary>
-    private int GetCurrentPatientId()
-    {
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(claim, out var id) ? id : 1;
-    }
 
     /// <summary>
     /// Loads provider summary + available slots + services and builds the BookAppointmentDto.

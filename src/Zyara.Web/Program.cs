@@ -1,10 +1,11 @@
 using Zyara.Repositories.Data.Seed;
 using Zyara.Services;
+using Zyara.Web.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(o => o.Conventions.Add(new AreaAuthorizationConvention()));
 
 // Everything (DbContext, feature services, Identity + its stubs, IPaymentService) is registered here.
 builder.Services.AddZyaraServices(builder.Configuration, builder.Environment);

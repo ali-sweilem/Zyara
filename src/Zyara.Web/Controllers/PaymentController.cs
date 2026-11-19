@@ -1,9 +1,12 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Payments.Interface;
 
 namespace Zyara.Web.Controllers
 {
+    [Authorize(Policy = PolicyNames.PatientOnly)]
     public class PaymentController : Controller
     {
         private readonly IPaymentService _paymentService;
