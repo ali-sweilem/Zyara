@@ -114,11 +114,9 @@ namespace Zyara.Web.Controllers
             }
 
             // Providers go straight to uploading their credentials (verification starts as Pending).
-            // providerId is only kept in the URL because ProviderCredentialsController still reads it
-            // (Mostafa T6 moves it to ICurrentUser, after which this value is simply ignored).
             if (result.Role is UserRole.Doctor or UserRole.Nurse)
             {
-                return RedirectToAction("Index", "ProviderCredentials", new { providerId = result.UserId });
+                return RedirectToAction("Index", "ProviderCredentials");
             }
 
             return RedirectToAction("Index", "Landing");

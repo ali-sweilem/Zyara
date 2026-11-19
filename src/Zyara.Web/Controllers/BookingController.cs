@@ -19,17 +19,20 @@ public sealed class BookingController : Controller
     private readonly IProviderDetailsService _providerDetailsService;
     private readonly IPaymentService _paymentService;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuthorizationService _auth;
 
     public BookingController(
         IBookingService bookingService,
         IProviderDetailsService providerDetailsService,
         IPaymentService paymentService,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IAuthorizationService auth)
     {
         _bookingService = bookingService;
         _providerDetailsService = providerDetailsService;
         _paymentService = paymentService;
         _currentUser = currentUser;
+        _auth = auth;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -120,6 +123,18 @@ public sealed class BookingController : Controller
     [HttpGet]
     public async Task<IActionResult> Confirmation(int id, CancellationToken cancellationToken)
     {
+        var booking = await _bookingService.GetBookingAsync(id, cancellationToken);
+        if (booking is null)
+        {
+            return NotFound();
+        }
+
+        var authorization = await _auth.AuthorizeAsync(User, booking, Operations.View);
+        if (!authorization.Succeeded)
+        {
+            return NotFound();
+        }
+
         var dto = await _paymentService.GetBookingConfirmationAsync(id);
         if (dto is null)
         {
