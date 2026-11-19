@@ -121,9 +121,10 @@ public sealed class BookingController : Controller
     // ─────────────────────────────────────────────────────────────────
 
     [HttpGet]
-    public async Task<IActionResult> Confirmation(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Confirmation(int id, int? bookingId, CancellationToken cancellationToken)
     {
-        var booking = await _bookingService.GetBookingAsync(id, cancellationToken);
+        var targetId = id > 0 ? id : (bookingId ?? 0);
+        var booking = await _bookingService.GetBookingAsync(targetId, cancellationToken);
         if (booking is null)
         {
             return NotFound();
@@ -135,7 +136,7 @@ public sealed class BookingController : Controller
             return NotFound();
         }
 
-        var dto = await _paymentService.GetBookingConfirmationAsync(id);
+        var dto = await _paymentService.GetBookingConfirmationAsync(targetId);
         if (dto is null)
         {
             return NotFound();
