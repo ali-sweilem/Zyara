@@ -1,13 +1,19 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Zyara.Services.Features.Authorization.Handlers;
 
 namespace Zyara.Services.Features.Authorization;
 
-/// <summary>STUB (T1 - Ali). Mostafa fills it in T6: register the resource-based AuthorizationHandlers here.</summary>
 public static class ResourceAuthorizationExtensions
 {
     public static IServiceCollection AddZyaraResourceAuthorization(this IServiceCollection services)
     {
-        // T6 (Mostafa): services.AddScoped<IAuthorizationHandler, BookingAuthorizationHandler>(); ...
+        services.AddScoped<IAuthorizationHandler, BookingAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, CredentialAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, ServiceNoteAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, TimeSlotAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, ProviderProfileAuthorizationHandler>();
+
         return services;
     }
 }

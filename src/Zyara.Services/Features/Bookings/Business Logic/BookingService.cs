@@ -27,6 +27,15 @@ public sealed class BookingService : IBookingService
         _timeProvider = timeProvider;
     }
 
+    public Task<Booking?> GetBookingAsync(
+        int bookingId,
+        CancellationToken cancellationToken = default)
+    {
+        return _db.Bookings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == bookingId, cancellationToken);
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // GetAvailableSlotsAsync
     // ─────────────────────────────────────────────────────────────────
