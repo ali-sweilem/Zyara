@@ -27,7 +27,7 @@ namespace Zyara.Repositories.Data
         public DbSet<ServiceNote> ServiceNotes { get; set; }
         public DbSet<PlatformSettings> PlatformSettings { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-
+        public DbSet<WalletTransaction> WalletTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

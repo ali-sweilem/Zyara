@@ -37,8 +37,17 @@ namespace Zyara.Repositories.Data.Configurations
                 .HasForeignKey<Payment>(p => p.BookingId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
-
+            //---------------
             builder.HasIndex(p => p.BookingId).IsUnique();
+
+            builder.Property(p => p.GatewayReference).HasMaxLength(100);
+            builder.Property(p => p.CardBrand).HasMaxLength(20);
+            builder.Property(p => p.CardLast4).HasMaxLength(4);
+
+            builder.HasIndex(p => p.GatewayReference)
+                   .IsUnique()
+                   .HasFilter("[GatewayReference] IS NOT NULL");
+            //---------------
         }
     }
 }

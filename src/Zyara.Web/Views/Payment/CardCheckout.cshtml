@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Secure Card Checkout";
+}
+
+<div class="container py-5" style="max-width: 520px;">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Zyara Secure Gateway</h5>
+            <small class="opacity-75">Demo / Sandbox Environment</small>
+        </div>
+        <div class="card-body p-4">
+            <div class="alert alert-info py-2 px-3 small rounded-3 mb-4">
+                <i class="bi bi-info-circle me-1"></i> Use test card: <strong class="user-select-all">4242 4242 4242 4242</strong>
+            </div>
+
+            <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                <span class="text-muted">Booking Reference:</span>
+                <strong>#@ViewBag.BookingId</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-4 border-bottom pb-2">
+                <span class="text-muted">Amount Due:</span>
+                <span class="fs-5 fw-bold text-success">@(((decimal)ViewBag.Amount).ToString("N2")) EGP</span>
+            </div>
+
+            <form asp-controller="CardPayment" asp-action="FakeProcess" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="reference" value="@ViewBag.Reference" />
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Card Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-credit-card-2-front"></i></span>
+                        <input type="text" name="cardNumber" class="form-control" value="4242 4242 4242 4242" required />
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Expiry Date</label>
+                        <input type="text" class="form-control" value="12/28" placeholder="MM/YY" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">CVV</label>
+                        <input type="password" class="form-control" value="123" maxlength="3" required />
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" name="actionType" value="pay" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                        <i class="bi bi-check-circle me-1"></i> Pay Now (@(((decimal)ViewBag.Amount).ToString("N2")) EGP)
+                    </button>
+                    <button type="submit" name="actionType" value="cancel" class="btn btn-outline-secondary rounded-pill">
+                        Cancel Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

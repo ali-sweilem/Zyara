@@ -1,0 +1,65 @@
+@using Zyara.Domain.Enums
+@using Zyara.Services.Common
+@using Zyara.Services.Features.Notifications.Dtos
+@using Zyara.Services.Features.Shared.Dtos
+@model PagedResult<NotificationDto>
+
+@{
+    ViewData["Title"] = "Notifications";
+    var pagination = new PaginationDto(Model, "Index", "Notifications", null, "page", null, "Notification pages");
+
+    string Icon(NotificationType t) => t switch
+    {
+        NotificationType.BookingRequested => "bi-calendar-plus",
+        NotificationType.BookingAccepted or NotificationType.VisitCompleted => "bi-check-circle",
+        NotificationType.BookingRejected or NotificationType.BookingCancelled => "bi-x-circle",
+        NotificationType.BookingExpired => "bi-hourglass-bottom",
+        NotificationType.VisitStarted => "bi-play-circle",
+        _ => "bi-bell"
+    };
+}
+
+<section class="py-4" style="max-width: 760px; margin: auto;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 fw-bold mb-0">Notifications</h1>
+        @if (Model.Items.Any(n => !n.IsRead))
+        {
+            <form asp-action="MarkAllRead" method="post">
+                <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill">Mark all as read</button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-bell-slash display-5 d-block mb-2"></i>
+            You have no notifications yet.
+        </div>
+    }
+    else
+    {
+        <div class="list-group shadow-sm rounded-4 overflow-hidden mb-3">
+            @foreach (var n in Model.Items)
+            {
+                <form asp-action="Open" asp-route-id="@n.Id" method="post" class="m-0">
+                    <button type="submit"
+                            class="list-group-item list-group-item-action d-flex gap-3 align-items-start text-start @(n.IsRead ? "" : "bg-primary-subtle")">
+                        <i class="bi @Icon(n.Type) fs-4 text-primary"></i>
+                        <span class="flex-grow-1">
+                            <span class="d-block @(n.IsRead ? "" : "fw-bold")">@n.Title</span>
+                            <span class="d-block small text-muted">@n.Message</span>
+                            <span class="d-block small text-muted mt-1">@n.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</span>
+                        </span>
+                        @if (!n.IsRead)
+                        {
+                            <span class="badge rounded-pill bg-primary align-self-center">New</span>
+                        }
+                    </button>
+                </form>
+            }
+        </div>
+
+        <partial name="_Pagination" model="pagination" />
+    }
+</section>

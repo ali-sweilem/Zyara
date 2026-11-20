@@ -264,8 +264,17 @@ namespace Zyara.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -277,12 +286,19 @@ namespace Zyara.Services.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasDefaultValue("General");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
 
                     b.ToTable("Notifications", (string)null);
                 });
@@ -301,6 +317,18 @@ namespace Zyara.Services.Migrations
 
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
+
+                    b.Property<string>("CardBrand")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CardLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
+                    b.Property<string>("GatewayReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Method")
                         .IsRequired()
@@ -322,6 +350,10 @@ namespace Zyara.Services.Migrations
 
                     b.HasIndex("BookingId")
                         .IsUnique();
+
+                    b.HasIndex("GatewayReference")
+                        .IsUnique()
+                        .HasFilter("[GatewayReference] IS NOT NULL");
 
                     b.ToTable("Payments", (string)null);
                 });
@@ -695,6 +727,47 @@ namespace Zyara.Services.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("Zyara.Domain.Entities.WalletTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique()
+                        .HasFilter("[BookingId] IS NOT NULL");
+
+                    b.HasIndex("ProviderId", "CreatedAt");
+
+                    b.ToTable("WalletTransactions", (string)null);
+                });
+
             modelBuilder.Entity("Zyara.Domain.Entities.Admin", b =>
                 {
                     b.HasBaseType("Zyara.Domain.Entities.User");
@@ -997,6 +1070,24 @@ namespace Zyara.Services.Migrations
                         .HasForeignKey("ProviderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("Zyara.Domain.Entities.WalletTransaction", b =>
+                {
+                    b.HasOne("Zyara.Domain.Entities.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Zyara.Domain.Entities.Provider", "Provider")
+                        .WithMany()
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
 
                     b.Navigation("Provider");
                 });

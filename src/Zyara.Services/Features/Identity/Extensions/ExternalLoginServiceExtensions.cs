@@ -1,15 +1,33 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Zyara.Services.Features.Identity.Business_Logic;
+using Zyara.Services.Features.Identity.Interfaces;
 
 namespace Zyara.Services.Features.Identity;
 
-/// <summary>STUB (T1 - Ali). Omar fills it in T11 (Google).</summary>
+/// <summary>Filled by Omar (T11 - Google OAuth).</summary>
 public static class ExternalLoginServiceExtensions
 {
     public static IServiceCollection AddZyaraExternalLogins(this IServiceCollection services, IConfiguration config)
     {
-        // T11 (Omar): services.AddAuthentication().AddGoogle(...) from Authentication:Google:ClientId/ClientSecret.
-        // Tip: register Google only when ClientId is not empty, otherwise the app fails at startup.
+        services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+        services.AddScoped<IExternalLoginService, ExternalLoginService>();
+
+        var clientId = config["Authentication:Google:ClientId"];
+        var clientSecret = config["Authentication:Google:ClientSecret"];
+
+        // Register Google only when ClientId is present to avoid failing startup when secrets are not yet configured
+        if (!string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret))
+        {
+            services.AddAuthentication()
+                .AddGoogle(options =>
+                {
+                    options.ClientId = clientId;
+                    options.ClientSecret = clientSecret;
+                });
+        }
+
         return services;
     }
 }

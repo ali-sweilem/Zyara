@@ -7,7 +7,9 @@ using Zyara.Repositories.Data.Repositories;
 using Zyara.Services.Common;
 using Zyara.Services.Features.Bookings.Dtos;
 using Zyara.Services.Features.Bookings.Interfaces;
+using Zyara.Services.Features.Notifications.Interfaces;
 using Zyara.Services.Features.Providers;
+using Zyara.Services.Features.Wallet.Interfaces;
 
 namespace Zyara.Services.Features.Bookings;
 
@@ -16,12 +18,18 @@ public sealed class ProviderBookingService : IProviderBookingService
     private readonly IRepository<Booking> _bookings;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
+    private readonly INotificationService _notifications;
+    private readonly IWalletService _wallet;
 
-    public ProviderBookingService(IRepository<Booking> bookings, IUnitOfWork unitOfWork, TimeProvider timeProvider)
+    public ProviderBookingService(
+        IRepository<Booking> bookings, IUnitOfWork unitOfWork, TimeProvider timeProvider,
+        INotificationService notifications, IWalletService wallet)
     {
+        _wallet = wallet;
         _bookings = bookings;
         _unitOfWork = unitOfWork;
         _timeProvider = timeProvider;
+        _notifications = notifications;
     }
 
     // ───────────────────────── lists ─────────────────────────
@@ -105,6 +113,8 @@ public sealed class ProviderBookingService : IProviderBookingService
         }
 
         booking.Status = BookingStatus.Confirmed;
+        NotifyPatient(booking, NotificationType.BookingAccepted, "Booking accepted",
+            $"Your booking #{booking.Id} was accepted by the provider.");
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return ServiceResult.Ok();
     }
@@ -119,6 +129,8 @@ public sealed class ProviderBookingService : IProviderBookingService
 
         booking.Status = BookingStatus.Rejected;
         ReleaseHeldPayment(booking);
+        NotifyPatient(booking, NotificationType.BookingRejected, "Booking rejected",
+            $"Sorry, your booking #{booking.Id} was rejected by the provider.");
 
         // NOTE: the slot stays "Booked": Bookings.TimeSlotId has an unfiltered UNIQUE index, so a new
         // booking on the same slot would be rejected by the database (needs a filtered index + migration).
@@ -148,6 +160,8 @@ public sealed class ProviderBookingService : IProviderBookingService
         }
 
         booking.Status = BookingStatus.Started;
+        NotifyPatient(booking, NotificationType.VisitStarted, "Visit started",
+            $"Your visit for booking #{booking.Id} has started.");
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return ServiceResult.Ok();
     }
@@ -162,8 +176,18 @@ public sealed class ProviderBookingService : IProviderBookingService
 
         booking.Status = BookingStatus.Completed;
         SettlePayment(booking);
+        NotifyPatient(booking, NotificationType.VisitCompleted, "Visit completed",
+            $"Your booking #{booking.Id} is completed. Thank you for using Zyara.");
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // Wallet: ledger line (tracked) + relative balance update, all in ONE transaction with the status change.
+        var delta = _wallet.RecordBookingSettlement(booking);
+
+        await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+            if (delta != 0m) await _wallet.ApplyBalanceDeltaAsync(booking.ProviderId, delta, ct);
+        }, cancellationToken);
+
         return ServiceResult.Ok();
     }
 
@@ -194,11 +218,16 @@ public sealed class ProviderBookingService : IProviderBookingService
         await _unitOfWork.SaveChangesAsync(ct);
     }
 
-    private static void Expire(Booking booking)
+    private void Expire(Booking booking)
     {
         booking.Status = BookingStatus.Expired;
         ReleaseHeldPayment(booking);
+        NotifyPatient(booking, NotificationType.BookingExpired, "Booking expired",
+            $"Your booking #{booking.Id} expired because the provider did not respond in time.");
     }
+
+    private void NotifyPatient(Booking booking, NotificationType type, string title, string message) =>
+        _notifications.Notify(booking.PatientId, type, title, message, $"/Booking/Confirmation?id={booking.Id}");
 
     /// <summary>Online payments are only authorized (held) until the visit is done: give the money back on reject/expire.</summary>
     private static void ReleaseHeldPayment(Booking booking)

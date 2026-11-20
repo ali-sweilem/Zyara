@@ -1,0 +1,9 @@
+@* "Register" button for visitors. Hidden once the user is signed in, and on the register pages themselves. *@
+@{
+    var onRegisterPages = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Register", StringComparison.OrdinalIgnoreCase);
+}
+@if (User.Identity?.IsAuthenticated != true && !onRegisterPages)
+{
+    <a class="btn btn-primary rounded-pill px-4 ms-lg-3 mt-2 mt-lg-0"
+       asp-area="" asp-controller="Register" asp-action="Index">Register</a>
+}

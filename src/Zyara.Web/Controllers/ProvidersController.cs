@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.Threading;
 using System.Threading.Tasks;
 using Zyara.Domain.Enums;
+using Zyara.Services.Features.Authorization;
+using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
 using Zyara.Services.Features.Providers.Interfaces;
 using Zyara.Services.Features.Shared.Dtos;
@@ -15,13 +16,16 @@ public sealed class ProvidersController : Controller
 {
     private readonly IProviderDetailsService _providerDetailsService;
     private readonly IWebHostEnvironment _env;
-  
+    private readonly ICurrentUser _currentUser;
 
-    public ProvidersController(IProviderDetailsService providerDetailsService, IWebHostEnvironment env)
+    public ProvidersController(
+        IProviderDetailsService providerDetailsService,
+        IWebHostEnvironment env,
+        ICurrentUser currentUser)
     {
         _providerDetailsService = providerDetailsService;
         _env = env;
-
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -41,10 +45,11 @@ public sealed class ProvidersController : Controller
         });
     }
     //==============================================profile==============================================
-    //  /Providers/showprofile/5
-    public async Task<IActionResult> showprofile(int id)
+    [Authorize(Policy = PolicyNames.ProviderOnly)]
+    public async Task<IActionResult> showprofile()
     {
-        var model = await _providerDetailsService.showprofile(id);
+        var providerId = _currentUser.RequireUserId();
+        var model = await _providerDetailsService.showprofile(providerId);
         if (model == null)
         {
             return NotFound();
@@ -53,10 +58,11 @@ public sealed class ProvidersController : Controller
     }
 
     [HttpGet]
-
-    public async Task<IActionResult> EditProfile(int id)
+    [Authorize(Policy = PolicyNames.ProviderOnly)]
+    public async Task<IActionResult> EditProfile()
     {
-        var model = await _providerDetailsService.GetForEditAsync(id);
+        var providerId = _currentUser.RequireUserId();
+        var model = await _providerDetailsService.GetForEditAsync(providerId);
         if (model == null)
         {
             return NotFound();
@@ -65,9 +71,11 @@ public sealed class ProvidersController : Controller
     }
   
     [HttpPost]
+    [Authorize(Policy = PolicyNames.ProviderOnly)]
     public async Task<IActionResult> EditProfile(EditProfileProviderDto model)
     {
-    
+        model.Id = _currentUser.RequireUserId();
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -98,7 +106,7 @@ public sealed class ProvidersController : Controller
             return NotFound();
         }
         TempData["Success"] = "Profile updated successfully.";
-        return RedirectToAction(nameof(showprofile), new { id = model.Id });
+        return RedirectToAction(nameof(showprofile));
     }
 
     private static string? GetImageExtension(IFormFile file)

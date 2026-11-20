@@ -1,0 +1,124 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Zyara.Services.Features.MedicalRecords.Dtos
+@model VisitRecordDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Visit record";
+
+    // one medication row (used for saved rows and for the "add row" template)
+    Func<PrescriptionItemInput, object> Row = @<div class="item-row border rounded-4 p-3 mb-2">
+        <div class="row g-2">
+            <div class="col-md-4"><input data-field="MedicationName" name="Items[0].MedicationName" value="@item.MedicationName" maxlength="150" class="form-control" placeholder="Medication *" /></div>
+            <div class="col-md-2"><input data-field="Dosage" name="Items[0].Dosage" value="@item.Dosage" maxlength="100" class="form-control" placeholder="Dosage *" /></div>
+            <div class="col-md-3"><input data-field="Frequency" name="Items[0].Frequency" value="@item.Frequency" maxlength="100" class="form-control" placeholder="Frequency (e.g. 3 times/day)" /></div>
+            <div class="col-md-3"><input data-field="Duration" name="Items[0].Duration" value="@item.Duration" maxlength="100" class="form-control" placeholder="Duration (e.g. 7 days)" /></div>
+            <div class="col-12 d-flex gap-2">
+                <input data-field="Instructions" name="Items[0].Instructions" value="@item.Instructions" maxlength="500" class="form-control" placeholder="Instructions (optional)" />
+                <button type="button" class="btn btn-outline-danger remove-row" aria-label="Remove">&times;</button>
+            </div>
+        </div>
+    </div>;
+
+    var rows = Model.Items.Any() ? Model.Items : new List<PrescriptionItemInput> { new() };
+}
+
+<div class="container-fluid py-4" dir="ltr" lang="en" style="max-width: 900px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 fw-bold mb-0">Visit record</h1>
+        <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary rounded-pill">Back to bookings</a>
+    </div>
+
+    @if (TempData["Message"] != null) { <div class="alert alert-success border-0 shadow-sm">@TempData["Message"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger border-0 shadow-sm">@TempData["Error"]</div> }
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <div class="fw-bold">@Model.PatientName</div>
+            <div class="text-muted small">
+                Booking #@Model.BookingId · @Model.ServiceName · @Model.Date.ToString("ddd, dd MMM yyyy") · @Model.Status
+            </div>
+        </div>
+    </div>
+
+    @* ───────── service note ───────── *@
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h2 class="h5 fw-bold">Service note</h2>
+            <p class="text-muted small">Visible to you and to the patient.</p>
+            <form asp-area="Provider" asp-controller="MedicalRecords" asp-action="SaveNote" method="post">
+                <input type="hidden" name="BookingId" value="@Model.BookingId" />
+                <textarea name="Content" rows="4" maxlength="2000" class="form-control mb-3" placeholder="What was done / observed during the visit...">@Model.Note</textarea>
+                <button type="submit" class="btn btn-primary rounded-pill px-4">Save note</button>
+            </form>
+        </div>
+    </div>
+
+    @* ───────── prescription (doctors only) ───────── *@
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+            <h2 class="h5 fw-bold">Prescription</h2>
+            @if (!Model.CanPrescribe)
+            {
+                <p class="text-muted mb-0">Only doctors can write prescriptions.</p>
+            }
+            else
+            {
+                @if (Model.PrescriptionIssuedAt.HasValue)
+                {
+                    <p class="text-muted small">Issued @Model.PrescriptionIssuedAt.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt"). Saving again replaces the medications below.</p>
+                }
+                <form id="rxForm" asp-area="Provider" asp-controller="MedicalRecords" asp-action="SavePrescription" method="post">
+                    <input type="hidden" name="BookingId" value="@Model.BookingId" />
+
+                    <div id="items">
+                        @foreach (var entry in rows) { @Row(entry) }
+                    </div>
+
+                    <template id="rowTpl">@Row(new PrescriptionItemInput())</template>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" id="addRow" class="btn btn-outline-primary rounded-pill">+ Add medication</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Save prescription</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var list = document.getElementById('items');
+            if (!list) return;
+            var tpl = document.getElementById('rowTpl');
+            var max = 20;
+
+            // keep Items[0], Items[1]... contiguous so model binding never skips a row
+            function reindex() {
+                Array.prototype.forEach.call(list.querySelectorAll('.item-row'), function (row, i) {
+                    Array.prototype.forEach.call(row.querySelectorAll('[data-field]'), function (input) {
+                        input.name = 'Items[' + i + '].' + input.getAttribute('data-field');
+                    });
+                });
+            }
+
+            document.getElementById('addRow').addEventListener('click', function () {
+                if (list.querySelectorAll('.item-row').length >= max) return;
+                list.appendChild(tpl.content.cloneNode(true));
+                reindex();
+            });
+
+            list.addEventListener('click', function (e) {
+                var btn = e.target.closest('.remove-row');
+                if (!btn) return;
+                btn.closest('.item-row').remove();
+                reindex();
+            });
+
+            document.getElementById('rxForm').addEventListener('submit', reindex);
+            reindex();
+        })();
+    </script>
+}

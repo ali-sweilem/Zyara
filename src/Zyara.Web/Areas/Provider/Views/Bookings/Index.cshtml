@@ -33,6 +33,7 @@
         <div class="btn-group rounded-pill">
             <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-primary">Requests</a>
             <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-outline-primary">History</a>
+            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary">Wallet</a>
             <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary">My schedule</a>
         </div>
     </div>
@@ -121,9 +122,13 @@
 
                             @if (b.Status == BookingStatus.Started)
                             {
-                                <form asp-area="Provider" asp-controller="Bookings" asp-action="Complete" asp-route-id="@b.Id" method="post">
-                                    <button type="submit" class="btn btn-success rounded-pill px-4">Complete visit</button>
-                                </form>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form asp-area="Provider" asp-controller="Bookings" asp-action="Complete" asp-route-id="@b.Id" method="post">
+                                        <button type="submit" class="btn btn-success rounded-pill px-4">Complete visit</button>
+                                    </form>
+                                    <a asp-area="Provider" asp-controller="MedicalRecords" asp-action="Edit" asp-route-bookingId="@b.Id"
+                                       class="btn btn-outline-primary rounded-pill px-4">Visit record</a>
+                                </div>
                             }
                             else
                             {

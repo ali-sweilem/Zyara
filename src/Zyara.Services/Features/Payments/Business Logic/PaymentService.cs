@@ -49,8 +49,8 @@ namespace Zyara.Services.Features.Payments
                 var payment = new Payment
                 {
                     BookingId = booking.Id,
-                    Method = PaymentMethod.CashOnArrival, // 0 in SQL
-                    Status = PaymentStatus.Pending,       // 0 in SQL
+                    Method = PaymentMethod.CashOnArrival,
+                    Status = PaymentStatus.Pending,
                     Amount = booking.TotalPrice,
                     RefundedAmount = 0m
                 };
@@ -116,5 +116,123 @@ namespace Zyara.Services.Features.Payments
                 IsHomeVisit = isHomeVisit
             };
         }
+
+        // ==========================================
+        //         VISA & GATEWAY LOGIC
+        // ==========================================
+
+        public async Task<Payment?> GetPaymentByReferenceAsync(string gatewayReference)
+        {
+            if (string.IsNullOrWhiteSpace(gatewayReference)) return null;
+
+            return await _db.Payments
+                .Include(p => p.Booking)
+                .FirstOrDefaultAsync(p => p.GatewayReference == gatewayReference);
+        }
+
+        public async Task<Payment?> GetPaymentByIdAsync(int paymentId)
+        {
+            return await _db.Payments
+                .Include(p => p.Booking)
+                .FirstOrDefaultAsync(p => p.Id == paymentId);
+        }
+
+        public async Task<Payment> CreateOrGetOnlinePaymentAsync(int bookingId)
+        {
+            var booking = await _db.Bookings
+                .Include(b => b.Payment)
+                .FirstOrDefaultAsync(b => b.Id == bookingId)
+                ?? throw new InvalidOperationException($"Booking #{bookingId} not found.");
+
+            if (booking.Payment != null)
+            {
+                booking.Payment.Method = PaymentMethod.OnlinePayment;
+                if (booking.Payment.Status != PaymentStatus.Authorized && booking.Payment.Status != PaymentStatus.Captured)
+                {
+                    booking.Payment.Status = PaymentStatus.Pending;
+                }
+                booking.Payment.Amount = booking.TotalPrice;
+                await _db.SaveChangesAsync();
+                return booking.Payment;
+            }
+
+            var payment = new Payment
+            {
+                BookingId = booking.Id,
+                Method = PaymentMethod.OnlinePayment,
+                Status = PaymentStatus.Pending,
+                Amount = booking.TotalPrice,
+                RefundedAmount = 0m
+            };
+
+            _db.Payments.Add(payment);
+            await _db.SaveChangesAsync();
+            return payment;
+        }
+
+        public async Task<bool> AuthorizePaymentAsync(string gatewayReference, string cardBrand, string cardLast4)
+        {
+            var payment = await GetPaymentByReferenceAsync(gatewayReference);
+            if (payment == null) return false;
+
+            // Idempotent: إذا كانت العملية معتمدة بالفعل، نرجع true دون أي تكرار
+            if (payment.Status == PaymentStatus.Authorized || payment.Status == PaymentStatus.Captured)
+            {
+                return true;
+            }
+
+            if (payment.Status != PaymentStatus.Pending)
+            {
+                return false;
+            }
+
+            payment.CardBrand = cardBrand;
+            payment.CardLast4 = cardLast4;
+            payment.Authorize();
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> CaptureAsync(int paymentId)
+        {
+            var payment = await _db.Payments.FindAsync(paymentId);
+            if (payment == null) return false;
+
+            payment.Capture();
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReleaseAsync(int paymentId)
+        {
+            var payment = await _db.Payments.FindAsync(paymentId);
+            if (payment == null) return false;
+
+            payment.Release();
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RefundAsync(int paymentId, decimal amount)
+        {
+            var payment = await _db.Payments.FindAsync(paymentId);
+            if (payment == null) return false;
+
+            payment.Refund(amount);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateGatewayReferenceAsync(int paymentId, string gatewayReference)
+        {
+            var payment = await _db.Payments.FindAsync(paymentId);
+            if (payment == null) return false;
+
+            payment.GatewayReference = gatewayReference;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

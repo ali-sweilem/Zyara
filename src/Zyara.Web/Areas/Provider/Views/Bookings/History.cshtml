@@ -41,6 +41,7 @@
         <div class="btn-group rounded-pill">
             <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">Requests</a>
             <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-primary">History</a>
+            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary">Wallet</a>
             <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary">My schedule</a>
         </div>
     </div>
@@ -82,6 +83,7 @@
                         <th>Total</th>
                         <th>Payment</th>
                         <th>Status</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,6 +116,13 @@
                                 }
                             </td>
                             <td><span class="badge @Badge(b.Status)">@Label(b.Status)</span></td>
+                            <td>
+                                @if (b.Status is BookingStatus.Started or BookingStatus.Completed)
+                                {
+                                    <a asp-area="Provider" asp-controller="MedicalRecords" asp-action="Edit" asp-route-bookingId="@b.Id"
+                                       class="btn btn-sm btn-outline-primary rounded-pill">Visit record</a>
+                                }
+                            </td>
                         </tr>
                     }
                 </tbody>

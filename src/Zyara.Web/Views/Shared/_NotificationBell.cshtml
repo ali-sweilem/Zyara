@@ -1,0 +1,17 @@
+@* Bell with the unread count. Only for signed-in users. *@
+@inject Zyara.Services.Features.Notifications.Interfaces.INotificationService Notifications
+@inject Zyara.Services.Features.Identity.Interfaces.ICurrentUser CurrentUser
+
+@if (CurrentUser.UserId is int userId)
+{
+    var unread = await Notifications.GetUnreadCountAsync(userId);
+    <a class="nav-link position-relative ms-lg-2" asp-area="" asp-controller="Notifications" asp-action="Index" aria-label="Notifications">
+        <i class="bi bi-bell fs-5"></i>
+        @if (unread > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: .65rem;">
+                @(unread > 99 ? "99+" : unread.ToString())
+            </span>
+        }
+    </a>
+}

@@ -1,0 +1,103 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Zyara.Domain.Enums
+@using Zyara.Services.Features.Shared.Dtos
+@using Zyara.Services.Features.Wallet.Dtos
+@model WalletPageDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "My Wallet";
+    var pagination = new PaginationDto(Model.Transactions, "Index", "Wallet",
+        new Dictionary<string, string> { ["area"] = "Provider" }, "page", null, "Wallet pages");
+
+    string Label(WalletTransactionType t) => t switch
+    {
+        WalletTransactionType.OnlineEarning => "Online payment",
+        WalletTransactionType.CashCommission => "Cash commission",
+        _ => "Withdrawal"
+    };
+}
+
+<div class="container-fluid py-4" dir="ltr" lang="en">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h1 class="h3 fw-bold mb-0">My Wallet</h1>
+        <div class="btn-group rounded-pill">
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">Requests</a>
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-outline-primary">History</a>
+            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-primary">Wallet</a>
+            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary">My schedule</a>
+        </div>
+    </div>
+
+    @if (TempData["Message"] != null) { <div class="alert alert-success border-0 shadow-sm">@TempData["Message"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger border-0 shadow-sm">@TempData["Error"]</div> }
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="text-muted small">Current balance</div>
+                <div class="display-6 fw-bold @(Model.Balance < 0 ? "text-danger" : "text-primary")">@Model.Balance.ToString("N2") <small class="fs-6">EGP</small></div>
+                @if (Model.Balance < 0)
+                {
+                    <div class="small text-danger mt-1">You owe the platform fees from cash visits. They are deducted from your next online earnings.</div>
+                }
+            </div></div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="text-muted small">Earned from online payments</div>
+                <div class="h4 fw-bold mb-0">@Model.TotalEarned.ToString("N2") EGP</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="text-muted small">Withdrawn so far</div>
+                <div class="h4 fw-bold mb-0">@Model.TotalWithdrawn.ToString("N2") EGP</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h2 class="h5 fw-bold">Withdraw</h2>
+            <form asp-area="Provider" asp-controller="Wallet" asp-action="Withdraw" method="post" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <input type="number" name="Amount" step="0.01" min="@Model.MinimumWithdrawal" max="@(Model.Balance > 0 ? Model.Balance : 0)"
+                           class="form-control rounded-pill" placeholder="Amount (EGP)" required />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4" disabled="@(Model.Balance < Model.MinimumWithdrawal)">Request withdrawal</button>
+                </div>
+            </form>
+            <div class="form-text">Minimum @Model.MinimumWithdrawal.ToString("0.##") EGP. The amount leaves your balance immediately and is paid out by the platform.</div>
+        </div>
+    </div>
+
+    <h2 class="h5 fw-bold mb-3">Transactions</h2>
+    @if (!Model.Transactions.Items.Any())
+    {
+        <p class="text-muted">No transactions yet. They appear when you complete a booking.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle bg-white shadow-sm rounded-4">
+                <thead class="table-light"><tr><th>Date</th><th>Type</th><th>Details</th><th class="text-end">Amount</th></tr></thead>
+                <tbody>
+                    @foreach (var t in Model.Transactions.Items)
+                    {
+                        <tr>
+                            <td>@t.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</td>
+                            <td>@Label(t.Type)</td>
+                            <td>@t.Description</td>
+                            <td class="text-end fw-semibold @(t.Amount < 0 ? "text-danger" : "text-success")">
+                                @(t.Amount > 0 ? "+" : "")@t.Amount.ToString("N2")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_Pagination" model="pagination" />
+    }
+</div>
