@@ -32,7 +32,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             // CurrentUser.ProviderId = 1 as per team agreement
             return 1;
         }
-
+        // GET: /Provider/Schedule
         [HttpGet]
         public IActionResult Index()
         {

@@ -13,6 +13,7 @@
     <div class="d-flex gap-2 mb-3">
         <a asp-controller="ProviderCredentials" asp-action="Index" asp-route-providerId="@Model.Id" class="btn btn-outline-primary rounded-pill px-3"><i class="bi bi-folder2-open me-1"></i> My Documents</a>
         <a asp-controller="ProviderVerification" asp-action="Status" asp-route-providerId="@Model.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-shield-check me-1"></i> Verification Status</a>
+        <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-providerId="@Model.Id" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-shield-check me-1"></i> My Schedule</a>
     </div>
 
     @if (TempData["Success"] != null)

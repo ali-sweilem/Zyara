@@ -34,6 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
 
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<IProviderBookingService, ProviderBookingService>();   // provider booking lifecycle
 
         // Moved here from Program.cs (T1)
         services.AddScoped<IPaymentService, PaymentService>();
