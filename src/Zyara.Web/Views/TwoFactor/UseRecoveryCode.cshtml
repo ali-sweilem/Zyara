@@ -1,0 +1,46 @@
+@model Zyara.Services.Features.Identity.Dtos.TwoFactorVerifyDto
+@{
+    ViewData["Title"] = "Use a recovery code";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-2">Use a recovery code</h3>
+                <p class="text-muted text-center mb-4">
+                    Enter one of the recovery codes you saved when you set up two-factor authentication.
+                    Each code works only once.
+                </p>
+
+                <form asp-controller="TwoFactor" asp-action="UseRecoveryCode" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Code" class="form-label">Recovery code</label>
+                        <input asp-for="Code" class="form-control form-control-lg text-center"
+                               autocomplete="off" autofocus maxlength="20" />
+                        <span asp-validation-for="Code" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Sign in</button>
+                    </div>
+                </form>
+
+                <p class="text-center text-muted mt-4 mb-0">
+                    <a asp-action="Verify" asp-route-returnUrl="@Model.ReturnUrl" class="text-decoration-none">
+                        Back to the authenticator code
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

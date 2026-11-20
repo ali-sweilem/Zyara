@@ -23,6 +23,9 @@
             <a class="btn btn-sm btn-outline-primary" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin</a>
         }
 
+        @* T10 entry point for the 2FA setup/manage page. *@
+        <a class="nav-link text-dark px-0" asp-controller="TwoFactor" asp-action="Manage">Security</a>
+
         <span class="navbar-text text-dark fw-semibold">@displayName</span>
 
         <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
