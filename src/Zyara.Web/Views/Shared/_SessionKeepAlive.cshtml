@@ -1,0 +1,7 @@
+@*
+    T9 (Adham): Session keep-alive partial view.
+    Loads session-keepalive.js for authenticated users and provides the antiforgery token.
+    Included by _LoginPartial.cshtml for signed-in users only.
+*@
+@Html.AntiForgeryToken()
+<script src="~/js/session-keepalive.js" asp-append-version="true"></script>
