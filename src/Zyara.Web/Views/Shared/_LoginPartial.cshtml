@@ -1,0 +1,43 @@
+@using Microsoft.AspNetCore.Identity
+@using Zyara.Domain.Entities
+@using Zyara.Domain.Enums
+@using Zyara.Services.Features.Identity.Interfaces
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+@inject ICurrentUser CurrentUser
+
+@*
+    Navbar account area (T4).
+    Guest  -> Login / Register
+    Signed -> name + Logout (POST form, so a link cannot log the user out)
+    Admin  -> an extra Admin link
+*@
+@if (SignInManager.IsSignedIn(User))
+{
+    var account = await UserManager.GetUserAsync(User);
+    var displayName = account?.FullName ?? User.Identity?.Name ?? "My account";
+
+    <div class="d-flex align-items-center gap-2">
+        @if (CurrentUser.Role == UserRole.Admin)
+        {
+            <a class="btn btn-sm btn-outline-primary" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin</a>
+        }
+
+        @* T10 entry point for the 2FA setup/manage page. *@
+        <a class="nav-link text-dark px-0" asp-controller="TwoFactor" asp-action="Manage">Security</a>
+
+        <span class="navbar-text text-dark fw-semibold">@displayName</span>
+
+        <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Logout</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="d-flex align-items-center gap-2">
+        <a class="btn btn-sm btn-outline-primary" asp-controller="Account" asp-action="Login">Login</a>
+        <a class="btn btn-sm btn-primary" asp-controller="Register" asp-action="Index">Register</a>
+    </div>
+}

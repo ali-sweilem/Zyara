@@ -1,0 +1,62 @@
+@model Zyara.Services.Features.Identity.Dtos.TwoFactorSetupDto
+@{
+    ViewData["Title"] = "Security";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-1">Two-factor authentication</h3>
+                <p class="text-muted">Add an authenticator app as a second step when you sign in.</p>
+
+                @if (TempData["StatusMessage"] is string statusMessage)
+                {
+                    <div class="alert alert-success" role="status">@statusMessage</div>
+                }
+                @if (TempData["ErrorMessage"] is string errorMessage)
+                {
+                    <div class="alert alert-danger" role="alert">@errorMessage</div>
+                }
+
+                @if (Model.IsTwoFactorEnabled)
+                {
+                    <p>
+                        Status: <span class="badge bg-success">Enabled</span>
+                        <span class="text-muted ms-2">Recovery codes left: @Model.RecoveryCodesLeft</span>
+                    </p>
+
+                    <hr />
+
+                    <h5 class="mb-2">Turn off two-factor authentication</h5>
+                    <p class="text-muted">
+                        You will need to confirm your password. Your authenticator key will be removed,
+                        so setting it up again shows a new QR code.
+                    </p>
+
+                    <form asp-controller="TwoFactor" asp-action="Disable" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-2 align-items-end">
+                            <div class="col-sm-8">
+                                <label for="password" class="form-label">Password</label>
+                                <input id="password" name="password" type="password" class="form-control"
+                                       autocomplete="current-password" required />
+                            </div>
+                            <div class="col-sm-4 d-grid">
+                                <button type="submit" class="btn btn-outline-danger">Disable 2FA</button>
+                            </div>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <p>Status: <span class="badge bg-secondary">Disabled</span></p>
+
+                    <a asp-controller="TwoFactor" asp-action="Setup" class="btn btn-primary mt-2">
+                        Set up two-factor authentication
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

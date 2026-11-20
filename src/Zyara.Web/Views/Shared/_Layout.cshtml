@@ -41,10 +41,9 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-action="showprofile" asp-controller="Providers" >Provider Profile</a>
                         </li>
-                        <li>
-                            <a class="nav-link text-dark" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index">Admin</a>
-                        </li>
                     </ul>
+                    @* T4: account area (guest: Login/Register, signed in: name + Logout, Admin: Admin link). *@
+                    <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
