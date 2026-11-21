@@ -1,29 +1,38 @@
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.Bookings.Dtos;
 using Zyara.Services.Features.Bookings.Interfaces;
+using Zyara.Services.Features.Authorization;
+using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers.Interfaces;
 using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers;
 
+[Authorize(Policy = PolicyNames.PatientOnly)]
 public sealed class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
     private readonly IProviderDetailsService _providerDetailsService;
     private readonly IPaymentService _paymentService;
+    private readonly ICurrentUser _currentUser;
+    private readonly IAuthorizationService _auth;
 
     public BookingController(
         IBookingService bookingService,
         IProviderDetailsService providerDetailsService,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        ICurrentUser currentUser,
+        IAuthorizationService auth)
     {
         _bookingService = bookingService;
         _providerDetailsService = providerDetailsService;
         _paymentService = paymentService;
+        _currentUser = currentUser;
+        _auth = auth;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -71,7 +80,7 @@ public sealed class BookingController : Controller
             return View(refreshed);
         }
 
-        var patientId = GetCurrentPatientId();
+        var patientId = _currentUser.RequireUserId();
 
         var dto = new BookAppointmentDto
         {
@@ -112,9 +121,22 @@ public sealed class BookingController : Controller
     // ─────────────────────────────────────────────────────────────────
 
     [HttpGet]
-    public async Task<IActionResult> Confirmation(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Confirmation(int id, int? bookingId, CancellationToken cancellationToken)
     {
-        var dto = await _paymentService.GetBookingConfirmationAsync(id);
+        var targetId = id > 0 ? id : (bookingId ?? 0);
+        var booking = await _bookingService.GetBookingAsync(targetId, cancellationToken);
+        if (booking is null)
+        {
+            return NotFound();
+        }
+
+        var authorization = await _auth.AuthorizeAsync(User, booking, Operations.View);
+        if (!authorization.Succeeded)
+        {
+            return NotFound();
+        }
+
+        var dto = await _paymentService.GetBookingConfirmationAsync(targetId);
         if (dto is null)
         {
             return NotFound();
@@ -126,17 +148,6 @@ public sealed class BookingController : Controller
     // ─────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Gets the current patient's ID from claims.
-    /// Falls back to 1 when no authentication is configured (dev/demo mode).
-    /// TODO: remove the fallback once a real login system is wired up.
-    /// </summary>
-    private int GetCurrentPatientId()
-    {
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(claim, out var id) ? id : 1;
-    }
 
     /// <summary>
     /// Loads provider summary + available slots + services and builds the BookAppointmentDto.

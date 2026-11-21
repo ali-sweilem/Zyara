@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Zyara.Domain.Entities;
 using Zyara.Services.Common;
 using Zyara.Services.Features.Bookings.Dtos;
 
@@ -8,6 +9,8 @@ namespace Zyara.Services.Features.Bookings.Interfaces;
 
 public interface IBookingService
 {
+    Task<Booking?> GetBookingAsync(int bookingId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Returns available (unbooked) time slots for the given provider.
     /// Excludes slots that are already Booked or Locked, and excludes past slots for today.

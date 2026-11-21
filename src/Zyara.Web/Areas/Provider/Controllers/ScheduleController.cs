@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
 using Zyara.Repositories.Data;
+using Zyara.Services.Features.Authorization;
+using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Web.Areas.Provider.Controllers
@@ -15,28 +17,23 @@ namespace Zyara.Web.Areas.Provider.Controllers
     public class ScheduleController : Controller
     {
         private readonly ZyaraDbContext _context;
+        private readonly ICurrentUser _currentUser;
+        private readonly IAuthorizationService _auth;
 
-        public ScheduleController(ZyaraDbContext context)
+        public ScheduleController(
+            ZyaraDbContext context,
+            ICurrentUser currentUser,
+            IAuthorizationService auth)
         {
             _context = context;
-        }
-
-        private int GetCurrentProviderId()
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(userIdString, out int providerId))
-            {
-                return providerId;
-            }
-
-            // CurrentUser.ProviderId = 1 as per team agreement
-            return 1;
+            _currentUser = currentUser;
+            _auth = auth;
         }
         // GET: /Provider/Schedule
         [HttpGet]
         public IActionResult Index()
         {
-            int currentProviderId = GetCurrentProviderId();
+            int currentProviderId = _currentUser.RequireUserId();
 
             var model = new ProviderTimeSlotIndexDto
             {
@@ -50,7 +47,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CreateTimeSlot(ProviderTimeSlotIndexDto model)
         {
-            int currentProviderId = GetCurrentProviderId();
+            int currentProviderId = _currentUser.RequireUserId();
             var newSlot = model.NewTimeSlot;
 
             // 1. حساب وقت النهاية تلقائياً بناءً على قاعدة الـ 120 دقيقة
@@ -107,17 +104,20 @@ namespace Zyara.Web.Areas.Provider.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteTimeSlot(int id)
+        public async Task<IActionResult> DeleteTimeSlot(int id)
         {
-            int currentProviderId = GetCurrentProviderId();
-
-            var slot = _context.TimeSlots
-                .FirstOrDefault(t => t.Id == id && t.ProviderId == currentProviderId);
+            var slot = await _context.TimeSlots
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (slot == null)
             {
-                TempData["Error"] = "Time slot not found.";
-                return RedirectToAction(nameof(Index));
+                return NotFound();
+            }
+
+            var authorization = await _auth.AuthorizeAsync(User, slot, Operations.Manage);
+            if (!authorization.Succeeded)
+            {
+                return NotFound();
             }
 
             // الحذف مسموح فقط إذا كان الموعد متاحاً

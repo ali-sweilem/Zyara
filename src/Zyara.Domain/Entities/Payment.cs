@@ -13,6 +13,11 @@ namespace Zyara.Domain.Entities
 
         public int BookingId { get; set; }
         public Booking? Booking { get; set; }
+        //---------------
+        public string? GatewayReference { get; set; }
+        public string? CardBrand { get; set; }
+        public string? CardLast4 { get; set; }
+        //---------------
 
         public void Authorize()
         {

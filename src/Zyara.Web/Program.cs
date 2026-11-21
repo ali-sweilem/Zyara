@@ -1,13 +1,19 @@
 using Zyara.Repositories.Data.Seed;
 using Zyara.Services;
+using Zyara.Services.Features.Payments;
+using Zyara.Web.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(o => o.Conventions.Add(new AreaAuthorizationConvention()));
 
 // Everything (DbContext, feature services, Identity + its stubs, IPaymentService) is registered here.
 builder.Services.AddZyaraServices(builder.Configuration, builder.Environment);
+
+// Visa & Card Payments (T12 - Adham)
+builder.Services.AddZyaraCardPayments(builder.Configuration);
+
 var app = builder.Build();
 
 // Migrate -> seed Roles -> seed Admin (credentials come from user-secrets: Seed:Admin:Email / Seed:Admin:Password)
@@ -52,4 +58,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.Run();
+app.Run(); 
