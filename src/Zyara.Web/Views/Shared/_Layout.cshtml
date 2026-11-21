@@ -42,6 +42,8 @@
                             <a class="nav-link text-dark" asp-area="" asp-action="showprofile" asp-controller="Providers" >Provider Profile</a>
                         </li>
                     </ul>
+                    <partial name="_RegisterButton" />
+                    <partial name="_NotificationBell" />
                     @* T4: account area (guest: Login/Register, signed in: name + Logout, Admin: Admin link). *@
                     <partial name="_LoginPartial" />
                 </div>

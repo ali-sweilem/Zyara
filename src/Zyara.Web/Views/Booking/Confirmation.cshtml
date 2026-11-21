@@ -47,6 +47,13 @@
                 <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
                     Return to Home
                 </a>
+                @if (Model.Status is BookingStatus.Started or BookingStatus.Completed)
+{
+    <a asp-controller="MedicalRecords" asp-action="Details" asp-route-bookingId="@Model.BookingId"
+       class="btn btn-outline-primary px-4 rounded-pill">
+        Prescription &amp; notes
+    </a>
+}
             </div>
         </div>
     </div>

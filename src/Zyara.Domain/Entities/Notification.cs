@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Zyara.Domain.Enums;
 
 namespace Zyara.Domain.Entities
 {
@@ -14,8 +13,14 @@ namespace Zyara.Domain.Entities
 
         public bool IsRead { get; set; }
 
+        public NotificationType Type { get; set; } = NotificationType.General;
+
+        /// <summary>Local page to open when the notification is clicked (always starts with "/").</summary>
+        public string? Link { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         public int UserId { get; set; }
         public User User { get; set; } = null!;
     }
 }
-

@@ -29,6 +29,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             _currentUser = currentUser;
             _auth = auth;
         }
+        // GET: /Provider/Schedule
 
         [HttpGet]
         public IActionResult Index()

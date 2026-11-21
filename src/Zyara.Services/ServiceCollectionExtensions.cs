@@ -11,10 +11,16 @@ using Zyara.Services.Features.Administration.Interfaces;
 using Zyara.Services.Features.Bookings;
 using Zyara.Services.Features.Bookings.Interfaces;
 using Zyara.Services.Features.Identity;
+using Zyara.Services.Features.MedicalRecords;
+using Zyara.Services.Features.MedicalRecords.Interfaces;
+using Zyara.Services.Features.Notifications;
+using Zyara.Services.Features.Notifications.Interfaces;
 using Zyara.Services.Features.Payments;
 using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
+using Zyara.Services.Features.Wallet;
+using Zyara.Services.Features.Wallet.Interfaces;
 
 namespace Zyara.Services;
 
@@ -34,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
 
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<IProviderBookingService, ProviderBookingService>();   // provider booking lifecycle
 
         // Moved here from Program.cs (T1)
         services.AddScoped<IPaymentService, PaymentService>();
@@ -44,6 +51,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminBookingService, AdminBookingService>();
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IAdminProviderReviewService, AdminProviderReviewService>();
+        services.AddScoped<IWalletService, WalletService>();
+        services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         // Identity + the 5 stubs (T1)
         services.AddZyaraIdentity(config, env);
