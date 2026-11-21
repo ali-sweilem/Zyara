@@ -30,6 +30,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             _auth = auth;
         }
         // GET: /Provider/Schedule
+
         [HttpGet]
         public IActionResult Index()
         {
