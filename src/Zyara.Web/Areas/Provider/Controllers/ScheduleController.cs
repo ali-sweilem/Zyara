@@ -1,158 +1,120 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.AspNetCore.Authorization;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Zyara.Domain.Entities;
-using Zyara.Domain.Enums;
-using Zyara.Repositories.Data;
-using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
+using Zyara.Services.Features.Providers.Interfaces;
 
-namespace Zyara.Web.Areas.Provider.Controllers
+namespace Zyara.Web.Areas.Provider.Controllers;
+
+public class ScheduleController : ProviderAreaController
 {
-    [Area("Provider")]
-    public class ScheduleController : Controller
+    private readonly IProviderScheduleService _scheduleService;
+
+    public ScheduleController(
+        IProviderScheduleService scheduleService,
+        ICurrentUser currentUser,
+        IWebHostEnvironment env) : base(currentUser, env)
     {
-        private readonly ZyaraDbContext _context;
-        private readonly ICurrentUser _currentUser;
-        private readonly IAuthorizationService _auth;
+        _scheduleService = scheduleService;
+    }
 
-        public ScheduleController(
-            ZyaraDbContext context,
-            ICurrentUser currentUser,
-            IAuthorizationService auth)
+    [HttpGet]
+    public async Task<IActionResult> Index(bool includePast = false, CancellationToken cancellationToken = default)
+    {
+        var authCheck = RequireProvider(out var providerId);
+        if (authCheck != null) return authCheck;
+
+        var vm = await _scheduleService.GetScheduleAsync(providerId, includePast, cancellationToken);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Generate(GenerateScheduleCommand command, CancellationToken cancellationToken)
+    {
+        var authCheck = RequireProvider(out var providerId);
+        if (authCheck != null) return authCheck;
+
+        var result = await _scheduleService.GenerateAsync(providerId, command, cancellationToken);
+        if (!result.Succeeded)
         {
-            _context = context;
-            _currentUser = currentUser;
-            _auth = auth;
+            TempData["Error"] = result.Error;
+        }
+        else
+        {
+            var res = result.Value;
+            var summary = $"Generated {res.Created} arrival window(s) successfully.";
+            if (res.SkippedOverlap > 0) summary += $" ({res.SkippedOverlap} skipped due to overlap)";
+            if (res.SkippedPast > 0) summary += $" ({res.SkippedPast} skipped in the past)";
+            if (res.SkippedBeyondHorizon > 0) summary += $" ({res.SkippedBeyondHorizon} skipped beyond 30-day horizon)";
+            if (res.DroppedPartial > 0) summary += $" ({res.DroppedPartial} trailing partial window dropped)";
+
+            TempData["Success"] = summary;
         }
 
-        [HttpGet]
-        public IActionResult Index()
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddSingle(AddSingleSlotCommand command, CancellationToken cancellationToken)
+    {
+        var authCheck = RequireProvider(out var providerId);
+        if (authCheck != null) return authCheck;
+
+        var result = await _scheduleService.AddSingleAsync(providerId, command, cancellationToken);
+        if (!result.Succeeded)
         {
-            int currentProviderId = _currentUser.RequireUserId();
-
-            var model = new ProviderTimeSlotIndexDto
-            {
-                TimeSlots = GetProviderSlots(currentProviderId)
-            };
-
-            return View(model);
+            TempData["Error"] = result.Error;
+        }
+        else
+        {
+            TempData["Success"] = "Time slot window added successfully.";
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult CreateTimeSlot(ProviderTimeSlotIndexDto model)
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int slotId, CancellationToken cancellationToken)
+    {
+        var authCheck = RequireProvider(out var providerId);
+        if (authCheck != null) return authCheck;
+
+        var result = await _scheduleService.DeleteAsync(providerId, slotId, cancellationToken);
+        if (!result.Succeeded)
         {
-            int currentProviderId = _currentUser.RequireUserId();
-            var newSlot = model.NewTimeSlot;
-
-            // 1. حساب وقت النهاية تلقائياً بناءً على قاعدة الـ 120 دقيقة
-            var duration = TimeSpan.FromMinutes(120);
-            var calculatedEndTime = newSlot.StartTime.Add(duration);
-
-            // 2. التحقق من التاريخ
-            if (newSlot.Date.Date < DateTime.Today)
-            {
-                ModelState.AddModelError("NewTimeSlot.Date", "Cannot schedule slots in the past.");
-            }
-
-            // 3. التحقق من انتهاء اليوم (Midnight overflow)
-            if (calculatedEndTime > TimeSpan.FromHours(24) || calculatedEndTime <= newSlot.StartTime)
-            {
-                ModelState.AddModelError("NewTimeSlot.StartTime", "Slot exceeds the 24-hour day boundary.");
-            }
-
-            // 4. التحقق من التضارب مع مواعيد أخرى لنفس مقدم الخدمة في نفس اليوم
-            bool hasOverlap = _context.TimeSlots
-                .Any(t => t.ProviderId == currentProviderId
-                          && t.Date.Date == newSlot.Date.Date
-                          && t.StartTime < calculatedEndTime
-                          && t.EndTime > newSlot.StartTime);
-
-            if (hasOverlap)
-            {
-                ModelState.AddModelError("NewTimeSlot.StartTime", "This slot overlaps with an existing time slot on this date.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                model.TimeSlots = GetProviderSlots(currentProviderId);
-                return View("Index", model);
-            }
-
-            // 5. حفظ الموعد الجديد
-            var timeSlotEntity = new TimeSlot
-            {
-                Date = newSlot.Date.Date,
-                StartTime = newSlot.StartTime,
-                EndTime = calculatedEndTime,
-                SlotDurationMinutes = 120,
-                Status = TimeSlotStatus.Available,
-                ProviderId = currentProviderId
-            };
-
-            _context.TimeSlots.Add(timeSlotEntity);
-            _context.SaveChanges();
-
-            TempData["Message"] = "New 2-hour time slot added successfully.";
-            return RedirectToAction(nameof(Index));
+            TempData["Error"] = result.Error;
+        }
+        else
+        {
+            TempData["Success"] = "Time slot deleted.";
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteTimeSlot(int id)
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearDay(DateTime date, CancellationToken cancellationToken)
+    {
+        var authCheck = RequireProvider(out var providerId);
+        if (authCheck != null) return authCheck;
+
+        var result = await _scheduleService.ClearDayAsync(providerId, date, cancellationToken);
+        if (!result.Succeeded)
         {
-            var slot = await _context.TimeSlots
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (slot == null)
-            {
-                return NotFound();
-            }
-
-            var authorization = await _auth.AuthorizeAsync(User, slot, Operations.Manage);
-            if (!authorization.Succeeded)
-            {
-                return NotFound();
-            }
-
-            // الحذف مسموح فقط إذا كان الموعد متاحاً
-            if (slot.Status == TimeSlotStatus.Available)
-            {
-                _context.TimeSlots.Remove(slot);
-                _context.SaveChanges();
-                TempData["Message"] = "Time slot deleted successfully.";
-            }
-            else
-            {
-                TempData["Error"] = $"Cannot delete a slot that is currently {slot.Status}.";
-            }
-
-            return RedirectToAction(nameof(Index));
+            TempData["Error"] = result.Error;
+        }
+        else
+        {
+            TempData["Success"] = $"Cleared {result.Value} available window(s) for {date:ddd, d MMM yyyy}.";
         }
 
-        private List<TimeSlotDto> GetProviderSlots(int providerId)
-        {
-            return _context.TimeSlots
-                .AsNoTracking()
-                .Where(t => t.ProviderId == providerId)
-                .OrderBy(t => t.Date)
-                .ThenBy(t => t.StartTime)
-                .Select(t => new TimeSlotDto
-                {
-                    Id = t.Id,
-                    Date = t.Date,
-                    StartTime = t.StartTime,
-                    EndTime = t.EndTime,
-                    Status = t.Status,
-                    ProviderId = t.ProviderId
-                })
-                .ToList();
-        }
+        return RedirectToAction(nameof(Index));
     }
 }
-

@@ -1,0 +1,358 @@
+@model Zyara.Services.Features.Providers.Dtos.ProviderDashboardDto
+
+@{
+    ViewData["Title"] = "Clinical Dashboard";
+}
+
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="h3 fw-bold text-dark mb-0">Welcome back, @Model.FullName</h2>
+                @if (Model.VerificationStatus == VerificationStatus.Verified)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-patch-check-fill me-1"></i> Verified
+                    </span>
+                }
+                else if (Model.VerificationStatus == VerificationStatus.Pending)
+                {
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-hourglass-split me-1"></i> Under Review
+                    </span>
+                }
+                else if (Model.VerificationStatus == VerificationStatus.Rejected)
+                {
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-x-circle-fill me-1"></i> Verification Rejected
+                    </span>
+                }
+            </div>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-calendar3 me-1"></i> Today is @Model.TodayDateEgyptFormatted (Cairo Time)
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn-med-primary text-decoration-none">
+                <i class="bi bi-calendar-plus"></i> Manage Schedule
+            </a>
+            <a asp-area="" asp-controller="Providers" asp-action="showprofile" class="btn-med-outline text-decoration-none">
+                <i class="bi bi-pencil-square"></i> Edit Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (Model.VerificationStatus == VerificationStatus.Pending)
+{
+    <div class="alert alert-warning rounded-4 border-0 shadow-sm d-flex align-items-center gap-3 p-3 mb-4" role="alert">
+        <i class="bi bi-shield-exclamation fs-3 text-warning"></i>
+        <div>
+            <div class="fw-bold">Your profile is currently under review by our medical board.</div>
+            <div class="small text-muted">You will not appear in public patient search results until verification is complete.</div>
+        </div>
+    </div>
+}
+else if (Model.VerificationStatus == VerificationStatus.Rejected)
+{
+    <div class="alert alert-danger rounded-4 border-0 shadow-sm d-flex align-items-center gap-3 p-3 mb-4" role="alert">
+        <i class="bi bi-exclamation-octagon-fill fs-3 text-danger"></i>
+        <div class="flex-grow-1">
+            <div class="fw-bold">Your verification was not approved.</div>
+            <div class="small">Reason: @(Model.RejectionReason ?? "Incomplete credentials. Please re-upload valid documents.")</div>
+        </div>
+        <a asp-area="" asp-controller="ProviderCredentials" asp-action="Index" class="btn btn-sm btn-outline-danger rounded-pill">
+            Update Credentials
+        </a>
+    </div>
+}
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Pending Requests</span>
+                <div class="kpi-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-inbox-fill"></i>
+                </div>
+            </div>
+            <div class="kpi-val text-warning">@Model.PendingRequestsCount</div>
+            <small class="text-muted">Awaiting your confirmation</small>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Today's Visits</span>
+                <div class="kpi-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-calendar2-day-fill"></i>
+                </div>
+            </div>
+            <div class="kpi-val text-primary">@Model.TodayVisitsCount</div>
+            <small class="text-muted">Confirmed or in progress</small>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Completed (This Month)</span>
+                <div class="kpi-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+            <div class="kpi-val text-success">@Model.CompletedThisMonthCount</div>
+            <small class="text-muted">Delivered medical visits</small>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Net Earnings (Month)</span>
+                <div class="kpi-icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+            <div class="kpi-val text-dark">@Model.NetEarningsThisMonth.ToString("N0") <span class="fs-6 text-muted fw-normal">EGP</span></div>
+            <div class="d-flex justify-content-between align-items-center small text-muted mt-1">
+                <span><i class="bi bi-wallet2 me-1"></i> Balance: @Model.WalletBalance.ToString("N0") EGP</span>
+                @if (Model.RatingCount > 0)
+                {
+                    <span class="text-warning"><i class="bi bi-star-fill"></i> @Model.AverageRating.ToString("0.0")</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Left Column: Pending Requests (Latest 5) -->
+    <div class="col-lg-7">
+        <div class="med-card h-100">
+            <div class="med-card-header d-flex justify-content-between align-items-center">
+                <h3 class="h6 fw-bold mb-0 text-dark">
+                    <i class="bi bi-bell-fill text-warning me-2"></i>Requests Waiting For You
+                </h3>
+                <a asp-area="Provider" asp-controller="Requests" asp-action="Index" class="small text-decoration-none fw-semibold">
+                    View all (@Model.PendingRequestsCount) <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="p-3">
+                @if (Model.RequestsWaiting.Count == 0)
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-check2-circle fs-2 text-success d-block mb-2"></i>
+                        No pending booking requests right now. You're all caught up!
+                    </div>
+                }
+                else
+                {
+                    <div class="vstack gap-3">
+                        @foreach (var req in Model.RequestsWaiting)
+                        {
+                            <div class="p-3 border rounded-3 bg-white">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h4 class="h6 fw-bold text-dark mb-1">@req.PatientName</h4>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-bandaid me-1 text-primary"></i>@req.ServiceName
+                                            <span class="mx-1">·</span>
+                                            <i class="bi bi-clock me-1"></i>@req.DayLabel, @req.FormattedWindow
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 small">
+                                        <i class="bi bi-hourglass-bottom me-1"></i>@req.TimeLeftDisplay
+                                    </span>
+                                </div>
+
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
+                                    <div class="small">
+                                        <span class="badge @(req.PaymentMethod == PaymentMethod.CashOnArrival ? "bg-light text-dark border" : "bg-primary-subtle text-primary border") rounded-pill me-2">
+                                            @(req.PaymentMethod == PaymentMethod.CashOnArrival ? "Cash on Arrival" : "Card Hold Placed")
+                                        </span>
+                                        <span class="fw-semibold text-dark">Your Net: @req.NetEarnings.ToString("N0") EGP</span>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <form asp-area="Provider" asp-controller="Dashboard" asp-action="Accept" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="bookingId" value="@req.BookingId" />
+                                            <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                                <i class="bi bi-check2"></i> Accept
+                                            </button>
+                                        </form>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#rejectModal-@req.BookingId">
+                                            Decline
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reject Modal -->
+                            <div class="modal fade" id="rejectModal-@req.BookingId" tabindex="-1" aria-labelledby="rejectModalLabel-@req.BookingId" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0">
+                                        <form asp-area="Provider" asp-controller="Dashboard" asp-action="Reject" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="bookingId" value="@req.BookingId" />
+                                            <div class="modal-header border-bottom-0 pb-0">
+                                                <h5 class="modal-title fw-bold" id="rejectModalLabel-@req.BookingId">Decline Booking Request</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="text-muted small mb-3">
+                                                    Declining this request will immediately release the time slot and any card pre-authorization hold for the patient. Please provide a reason (10 to 300 characters):
+                                                </p>
+                                                <div class="mb-3">
+                                                    <textarea name="reason" rows="3" class="form-control rounded-3" placeholder="e.g. Schedule emergency conflict, outside service area..." required minlength="10" maxlength="300"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-top-0 pt-0">
+                                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Keep Request</button>
+                                                <button type="submit" class="btn btn-danger rounded-pill">Confirm Decline</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Today & Upcoming Visits (Next 7 Days) + Schedule Health -->
+    <div class="col-lg-5">
+        <!-- Schedule Health Card -->
+        <div class="med-card mb-4 p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="h6 fw-bold mb-0 text-dark">
+                    <i class="bi bi-speedometer2 text-primary me-2"></i>Schedule Health
+                </h3>
+                <span class="badge @(Model.AvailableWindowsNext7Days > 0 ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger border border-danger-subtle") rounded-pill px-3 py-1">
+                    @(Model.AvailableWindowsNext7Days > 0 ? $"{Model.AvailableWindowsNext7Days} available windows" : "No open slots")
+                </span>
+            </div>
+            @if (Model.AvailableWindowsNext7Days == 0)
+            {
+                <p class="text-danger small mb-3">
+                    <i class="bi bi-exclamation-circle me-1"></i> You have no available time slots in the next 7 days. Patients cannot book appointments with you!
+                </p>
+                <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-primary btn-sm rounded-pill w-100">
+                    <i class="bi bi-plus-circle me-1"></i> Open Arrival Windows Now
+                </a>
+            }
+            else
+            {
+                <p class="text-muted small mb-3">
+                    You have @Model.AvailableWindowsNext7Days bookable windows in the next 7 days. Keep your schedule fresh to maximize bookings.
+                </p>
+                <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-pill">
+                    <i class="bi bi-calendar-range me-1"></i> Add More Windows
+                </a>
+            }
+        </div>
+
+        <!-- Upcoming Visits Timeline -->
+        <div class="med-card">
+            <div class="med-card-header d-flex justify-content-between align-items-center">
+                <h3 class="h6 fw-bold mb-0 text-dark">
+                    <i class="bi bi-calendar-event-fill text-primary me-2"></i>Visits (Next 7 Days)
+                </h3>
+                <a asp-area="Provider" asp-controller="Visits" asp-action="Index" class="small text-decoration-none fw-semibold">
+                    All Visits <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="p-3">
+                @if (Model.TodayAndUpcomingVisits.Count == 0)
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-calendar-x fs-2 text-muted d-block mb-2"></i>
+                        No visits scheduled for the next 7 days.
+                    </div>
+                }
+                else
+                {
+                    <div class="vstack gap-3">
+                        @foreach (var visit in Model.TodayAndUpcomingVisits)
+                        {
+                            <div class="p-3 border rounded-3 bg-white d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="fw-bold text-dark mb-1">@visit.PatientName</div>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-clock me-1"></i>@visit.DayLabel, @visit.FormattedWindow
+                                    </div>
+                                    <div class="small text-primary mt-1">@visit.ServiceName</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge @(visit.Status == BookingStatus.Started ? "bg-info text-dark" : "bg-primary") rounded-pill mb-2 d-inline-block">
+                                        @visit.Status
+                                    </span>
+                                    <div>
+                                        <a asp-area="Provider" asp-controller="Visits" asp-action="Details" asp-route-id="@visit.BookingId" class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-3">
+                                            Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Latest Reviews Section -->
+<div class="med-card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h6 fw-bold mb-0 text-dark">
+            <i class="bi bi-star-fill text-warning me-2"></i>Latest Patient Reviews
+        </h3>
+        @if (Model.RatingCount > 0)
+        {
+            <span class="text-warning small fw-bold">
+                <i class="bi bi-star-fill"></i> @Model.AverageRating.ToString("0.0") (@Model.RatingCount total reviews)
+            </span>
+        }
+    </div>
+
+    @if (Model.LatestReviews.Count == 0)
+    {
+        <div class="p-4 text-center text-muted">
+            <i class="bi bi-chat-heart fs-3 text-muted d-block mb-2"></i>
+            No reviews yet. Completed visits will collect patient reviews here.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var rev in Model.LatestReviews)
+            {
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark small">@rev.ReviewerName</span>
+                            <div class="text-warning small">
+                                @for (int i = 0; i < rev.Rating; i++)
+                                {
+                                    <i class="bi bi-star-fill"></i>
+                                }
+                            </div>
+                        </div>
+                        <p class="small text-muted mb-0">
+                            @(string.IsNullOrWhiteSpace(rev.Comment) ? "No comment provided." : rev.Comment)
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

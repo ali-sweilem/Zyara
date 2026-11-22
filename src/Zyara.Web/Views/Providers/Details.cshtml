@@ -1,234 +1,394 @@
+@using Zyara.Domain.Enums
+@using Zyara.Services.Common
+@using Zyara.Services.Features.Providers
 @model Zyara.Services.Features.Providers.Dtos.ProviderDetailsPageDto
 
 @{
     var provider = Model.Provider;
     var reviewPage = Model.Reviews;
     var roleLabel = provider.Role == UserRole.Nurse ? "Nurse" : "Doctor";
-    var slotDays = provider.UpcomingSlots.GroupBy(slot => slot.Date.Date);
+    var slotDays = provider.UpcomingSlots.GroupBy(slot => slot.Date.Date).Take(5).ToList();
+    var firstSlot = provider.UpcomingSlots.FirstOrDefault();
+    var egyptNow = EgyptTime.Now();
+    ViewData["Title"] = $"{provider.FullName} — {provider.Specialty}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/provider-details.css" asp-append-version="true" />
 }
 
 <div class="container py-4 py-lg-5">
-    <div class="row g-4 align-items-start">
-        <main class="col-lg-8">
-            <section class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4 p-md-5">
-                    <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4">
-                        @await Html.PartialAsync("_Avatar", new AvatarDto
-                        {
-                            FullName = provider.FullName,
-                            PhotoUrl = provider.PhotoUrl,
-                            Id = provider.Id,
-                            Size = 112
-                        })
-                        <div class="text-center text-sm-start flex-grow-1">
-                            <div class="d-flex flex-wrap justify-content-center justify-content-sm-start gap-2 mb-2">
-                                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill">@roleLabel</span>
-                                @if (provider.IsAvailable)
-                                {
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Available</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Currently unavailable</span>
-                                }
-                            </div>
-                            <h1 class="h2 fw-bold mb-1">@provider.FullName</h1>
-                            <p class="text-muted mb-2">@(string.IsNullOrWhiteSpace(provider.Specialty) ? roleLabel : provider.Specialty)</p>
-                            <div class="small text-muted d-flex flex-wrap justify-content-center justify-content-sm-start gap-3">
-                                @if (provider.ExperienceYears > 0)
-                                {
-                                    <span><i class="bi bi-award me-1 text-primary"></i>@provider.ExperienceYears years experience</span>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(provider.BaseCity))
-                                {
-                                    <span><i class="bi bi-geo-alt me-1 text-danger"></i>@provider.BaseCity</span>
-                                }
-                            </div>
+    <div class="provider-details-grid">
+        <!-- Main Content Column -->
+        <main class="provider-main-col">
+            <!-- Hero Card -->
+            <section class="provider-hero-card">
+                <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4">
+                    @await Html.PartialAsync("_Avatar", new AvatarDto
+                    {
+                        FullName = provider.FullName,
+                        PhotoUrl = provider.PhotoUrl,
+                        Id = provider.Id,
+                        Size = 120
+                    })
+                    <div class="text-center text-sm-start flex-grow-1">
+                        <div class="d-flex flex-wrap justify-content-center justify-content-sm-start gap-2 mb-2">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-semibold">
+                                @roleLabel
+                            </span>
+                            @if (provider.IsAvailable)
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> Available for Bookings
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1">
+                                    Currently Unavailable
+                                </span>
+                            }
+                        </div>
+
+                        <h1 class="h2 fw-bold text-dark mb-1">@provider.FullName</h1>
+                        <p class="text-muted mb-0">@(string.IsNullOrWhiteSpace(provider.Specialty) ? roleLabel : provider.Specialty)</p>
+
+                        <!-- Stats Row -->
+                        <div class="provider-stats-bar">
+                            @if (provider.RatingCount > 0)
+                            {
+                                <div class="provider-stat-item">
+                                    <span class="text-warning fw-bold"><i class="bi bi-star-fill"></i> @provider.AverageRating.ToString("0.0")</span>
+                                    <span class="text-muted small">(@provider.RatingCount reviews)</span>
+                                </div>
+                            }
+                            @if (provider.ExperienceYears > 0)
+                            {
+                                <div class="provider-stat-item">
+                                    <i class="bi bi-award text-primary"></i>
+                                    <span>@provider.ExperienceYears yrs experience</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(provider.BaseCity))
+                            {
+                                <div class="provider-stat-item">
+                                    <i class="bi bi-geo-alt text-danger"></i>
+                                    <span>@provider.BaseCity</span>
+                                </div>
+                            }
+                            @if (provider.MinFee.HasValue)
+                            {
+                                <div class="provider-stat-item ms-sm-auto text-dark fw-bold">
+                                    <span>From @provider.MinFee.Value.ToString("N0") EGP</span>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
             </section>
 
+            <!-- About Section -->
             @if (!string.IsNullOrWhiteSpace(provider.Bio))
             {
-                <section class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-body p-4 p-md-5">
-                        <h2 class="h4 fw-bold mb-3">About</h2>
-                        <p class="mb-0 text-break">@provider.Bio</p>
-                    </div>
+                <section class="card border-0 shadow-sm rounded-4 mb-4 p-4 p-md-5">
+                    <h2 class="h5 fw-bold text-dark mb-3">About @provider.FullName</h2>
+                    <p class="mb-0 text-muted lh-base text-break">@provider.Bio</p>
                 </section>
             }
 
-            <section class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4 p-md-5">
-                    <h2 class="h4 fw-bold mb-3">Services</h2>
-                    @if (provider.Services.Count == 0)
-                    {
-                        <div class="alert alert-light border mb-0">No services are currently listed.</div>
-                    }
-                    else
-                    {
-                        <div class="list-group list-group-flush">
-                            @foreach (var service in provider.Services)
-                            {
-                                <div class="list-group-item px-0 d-flex flex-column flex-sm-row justify-content-between gap-3">
-                                    <div>
-                                        <h3 class="h6 fw-bold mb-1">@service.Name</h3>
-                                        @if (!string.IsNullOrWhiteSpace(service.Description))
+            <!-- Services Section -->
+            <section class="card border-0 shadow-sm rounded-4 mb-4 p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="h5 fw-bold text-dark mb-0">Offered Medical Services</h2>
+                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1 small">
+                        @provider.Services.Count services listed
+                    </span>
+                </div>
+
+                @if (provider.Services.Count == 0)
+                {
+                    <div class="alert alert-light border rounded-3 text-muted p-4 text-center">
+                        No medical services are currently listed for this provider.
+                    </div>
+                }
+                else
+                {
+                    <div class="vstack gap-3">
+                        @foreach (var service in provider.Services)
+                        {
+                            <div class="service-item-card d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="fs-3 text-primary mt-1">
+                                        @if (service.Type == ServiceType.DoctorHomeVisit)
                                         {
-                                            <p class="small text-muted mb-0 text-break">@service.Description</p>
+                                            <i class="bi bi-house-door-fill"></i>
+                                        }
+                                        else if (service.Type == ServiceType.NurseHomeVisit)
+                                        {
+                                            <i class="bi bi-heart-pulse-fill text-danger"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-camera-video-fill text-info"></i>
                                         }
                                     </div>
-                                    <div class="fw-semibold text-nowrap">@service.Fee.ToString("N0") EGP</div>
+                                    <div>
+                                        <h3 class="h6 fw-bold text-dark mb-1">@service.Name</h3>
+                                        @if (!string.IsNullOrWhiteSpace(service.Description))
+                                        {
+                                            <p class="small text-muted mb-1 text-break">@service.Description</p>
+                                        }
+                                        <span class="badge bg-light text-secondary border rounded-pill small">@service.Type</span>
+                                    </div>
                                 </div>
-                            }
+
+                                <div class="text-sm-end d-flex d-sm-block align-items-center justify-content-between gap-3">
+                                    <div class="fs-5 fw-bold text-dark mb-sm-2">
+                                        @service.Fee.ToString("N0") <small class="fs-6 text-muted fw-normal">EGP</small>
+                                    </div>
+                                    <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id" asp-route-serviceId="@service.Id"
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-semibold text-nowrap">
+                                        Book Service
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <!-- Reviews Section -->
+            <section id="reviews" class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 pb-3 border-bottom">
+                    <div>
+                        <h2 class="h5 fw-bold text-dark mb-0">Patient Reviews</h2>
+                        <span class="small text-muted">Verified post-visit ratings from authentic patients</span>
+                    </div>
+
+                    @if (provider.RatingCount > 0)
+                    {
+                        <div class="text-end">
+                            <span class="text-warning fs-5 fw-bold">
+                                <i class="bi bi-star-fill"></i> @provider.AverageRating.ToString("0.0")
+                            </span>
+                            <span class="text-muted small d-block">based on @provider.RatingCount review(s)</span>
                         </div>
                     }
                 </div>
-            </section>
 
-            <section id="reviews" class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4 p-md-5">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                        <h2 class="h4 fw-bold mb-0">Reviews</h2>
-                        @if (provider.RatingCount > 0)
+                @if (reviewPage.Items.Count == 0)
+                {
+                    <div class="alert alert-light border rounded-3 p-4 text-center text-muted">
+                        <i class="bi bi-chat-heart fs-3 d-block mb-2 text-muted"></i>
+                        No patient reviews yet. Be the first to book and share your experience!
+                    </div>
+                }
+                else
+                {
+                    <div class="vstack gap-4">
+                        @foreach (var review in reviewPage.Items)
                         {
-                            <span class="text-warning" aria-label="@provider.AverageRating.ToString("0.0") out of 5 stars">
-                                <i class="bi bi-star-fill"></i> @provider.AverageRating.ToString("0.0") (@provider.RatingCount)
-                            </span>
+                            var reviewerAvatarId = Math.Abs(review.ReviewerName.Aggregate(0, (h, c) => (h * 31) + c));
+                            var reviewDateEgypt = EgyptTime.ConvertUtcToEgypt(review.CreatedAt);
+
+                            <article class="border-bottom pb-3">
+                                <div class="d-flex gap-3">
+                                    @await Html.PartialAsync("_Avatar", new AvatarDto
+                                    {
+                                        FullName = review.ReviewerName,
+                                        PhotoUrl = null,
+                                        Id = reviewerAvatarId,
+                                        Size = 44
+                                    })
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+                                            <h3 class="h6 fw-bold mb-0 text-dark">@review.ReviewerName</h3>
+                                            <time class="small text-muted" datetime="@review.CreatedAt.ToString("O")">
+                                                @reviewDateEgypt.ToString("d MMM yyyy")
+                                            </time>
+                                        </div>
+
+                                        <div class="text-warning small mb-2" aria-label="@review.Rating out of 5 stars">
+                                            @for (var star = 0; star < review.Rating; star++)
+                                            {
+                                                <i class="bi bi-star-fill"></i>
+                                            }
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                        {
+                                            <p class="mb-0 text-muted small text-break">@review.Comment</p>
+                                        }
+                                    </div>
+                                </div>
+                            </article>
                         }
                     </div>
 
-                    @if (reviewPage.Items.Count == 0)
+                    @if (reviewPage.TotalPages > 1)
                     {
-                        <div class="alert alert-light border mb-0">No reviews yet.</div>
+                        <nav class="mt-4" aria-label="Reviews pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                @if (reviewPage.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link rounded-start-pill" href="@Url.Action("Details", "Providers", new { id = provider.Id, reviewsPage = reviewPage.PageNumber - 1 })#reviews">Previous</a>
+                                    </li>
+                                }
+                                @for (var pageNumber = 1; pageNumber <= reviewPage.TotalPages; pageNumber++)
+                                {
+                                    <li class="page-item @(pageNumber == reviewPage.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Details", "Providers", new { id = provider.Id, reviewsPage = pageNumber })#reviews">@pageNumber</a>
+                                    </li>
+                                }
+                                @if (reviewPage.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link rounded-end-pill" href="@Url.Action("Details", "Providers", new { id = provider.Id, reviewsPage = reviewPage.PageNumber + 1 })#reviews">Next</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
                     }
-                    else
-                    {
-                        <div class="vstack gap-3">
-                            @foreach (var review in reviewPage.Items)
-                            {
-                                <article class="border-bottom pb-3">
-                                    <div class="d-flex gap-3">
-                                        @await Html.PartialAsync("_Avatar", new AvatarDto
-                                        {
-                                            FullName = review.ReviewerName,
-                                            PhotoUrl = null,
-                                            Id = review.ReviewerName.GetHashCode(),
-                                            Size = 40
-                                        })
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex flex-wrap justify-content-between gap-2">
-                                                <h3 class="h6 fw-bold mb-1">@review.ReviewerName</h3>
-                                                <time class="small text-muted" datetime="@review.CreatedAt.ToString("O")">@review.CreatedAt.ToLocalTime().ToString("d MMM yyyy")</time>
-                                            </div>
-                                            <div class="text-warning small mb-2" aria-label="@review.Rating out of 5 stars">
-                                                @for (var star = 0; star < review.Rating; star++)
-                                                {
-                                                    <i class="bi bi-star-fill"></i>
-                                                }
-                                            </div>
-                                            @if (!string.IsNullOrWhiteSpace(review.Comment))
-                                            {
-                                                <p class="mb-0 text-break">@review.Comment</p>
-                                            }
-                                        </div>
-                                    </div>
-                                </article>
-                            }
-                        </div>
-
-                        @if (reviewPage.TotalPages > 1)
-                        {
-                            <nav class="mt-4" aria-label="Reviews pagination">
-                                <ul class="pagination justify-content-center mb-0">
-                                    @if (reviewPage.HasPreviousPage)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("Details", "Providers", new { id = provider.Id, reviewsPage = reviewPage.PageNumber - 1 })#reviews">Previous</a>
-                                        </li>
-                                    }
-                                    @for (var pageNumber = 1; pageNumber <= reviewPage.TotalPages; pageNumber++)
-                                    {
-                                        <li class="page-item @(pageNumber == reviewPage.PageNumber ? "active" : "")">
-                                            <a class="page-link" href="@Url.Action("Details", "Providers", new { id = provider.Id, reviewsPage = pageNumber })#reviews">@pageNumber</a>
-                                        </li>
-                                    }
-                                    @if (reviewPage.HasNextPage)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("Details", "Providers", new { id = provider.Id, reviewsPage = reviewPage.PageNumber + 1 })#reviews">Next</a>
-                                        </li>
-                                    }
-                                </ul>
-                            </nav>
-                        }
-                    }
-                </div>
+                }
             </section>
         </main>
 
-        <aside class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 1rem;">
-                <div class="card-body p-4">
-                    <h2 class="h5 fw-bold mb-3">Appointment information</h2>
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="small text-muted">Starting price</div>
-                        @if (provider.MinFee.HasValue)
+        <!-- Sticky Sidebar Column -->
+        <aside class="provider-sticky-sidebar">
+            <div class="booking-quick-box">
+                <div class="d-flex justify-content-between align-items-baseline mb-3">
+                    <span class="text-muted small">Consultation Fee</span>
+                    @if (provider.MinFee.HasValue)
+                    {
+                        <div>
+                            <span class="small text-muted">From </span>
+                            <span class="h4 fw-bold text-dark mb-0">@provider.MinFee.Value.ToString("N0")</span>
+                            <span class="small text-muted">EGP</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted small">Contact for pricing</span>
+                    }
+                </div>
+
+                <!-- Highlighted Next Available Window -->
+                @if (firstSlot != null)
+                {
+                    <div class="next-available-pill mb-3">
+                        <span class="small fw-semibold text-primary d-block mb-1">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Next Available Arrival Window:
+                        </span>
+                        <strong class="text-dark">
+                            @SlotFormatting.FormatDayLabel(firstSlot.Date, egyptNow) · @SlotFormatting.FormatWindow(firstSlot.StartTime, firstSlot.EndTime)
+                        </strong>
+                        <div class="small text-muted mt-1" style="font-size: 0.78rem;">
+                            The provider will arrive within this window.
+                        </div>
+                    </div>
+                }
+
+                <!-- Available Windows for next 5 days -->
+                <h3 class="h6 fw-bold text-dark mb-2">Available Arrival Windows</h3>
+                <p class="small text-muted mb-3" style="font-size: 0.8rem;">
+                    The provider will arrive within this window.
+                </p>
+
+                @if (slotDays.Count == 0)
+                {
+                    <div class="alert alert-light border rounded-3 small text-muted p-3 mb-4">
+                        No upcoming arrival windows are available in the next 30 days.
+                    </div>
+                }
+                else
+                {
+                    <div class="vstack gap-3 mb-4">
+                        @foreach (var day in slotDays)
                         {
-                            <div class="h4 fw-bold mb-0">@provider.MinFee.Value.ToString("N0") <small class="fs-6 text-muted">EGP</small></div>
-                        }
-                        else
-                        {
-                            <div class="text-muted fst-italic">Price not available</div>
+                            var windowsList = day.ToList();
+                            <div>
+                                <div class="small fw-bold text-muted mb-1">
+                                    @SlotFormatting.FormatDayLabel(day.Key, egyptNow)
+                                    <span class="fw-normal text-muted">(@day.Key.ToString("d MMM"))</span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var slot in windowsList.Take(3))
+                                    {
+                                        <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id" asp-route-slotId="@slot.Id"
+                                           class="slot-chip-link" title="Book this arrival window">
+                                            @SlotFormatting.FormatWindow(slot.StartTime, slot.EndTime)
+                                        </a>
+                                    }
+                                    @if (windowsList.Count > 3)
+                                    {
+                                        <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id" class="slot-chip-link text-primary">
+                                            +@(windowsList.Count - 3) more
+                                        </a>
+                                    }
+                                </div>
+                            </div>
                         }
                     </div>
 
-                    <h3 class="h6 fw-bold mb-3">Next available slots</h3>
-                    @if (!slotDays.Any())
-                    {
-                        <div class="alert alert-light border">No upcoming slots are available.</div>
-                    }
-                    else
-                    {
-                        <div class="vstack gap-3 mb-4">
-                            @foreach (var day in slotDays)
-                            {
-                                <div>
-                                    <div class="small fw-semibold text-muted mb-2">@day.Key.ToString("dddd, d MMMM")</div>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @foreach (var slot in day)
-                                        {
-                                            <span class="badge bg-light text-dark border">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</span>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-
-                    @if (provider.IsAvailable)
-                    {
-                        <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id"
-                           class="btn btn-primary w-100 rounded-pill">
-                            <i class="bi bi-calendar2-check me-1"></i> Book Appointment
+                    <div class="text-center mb-4">
+                        <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id" class="small text-primary text-decoration-none fw-semibold">
+                            See all availability in full booking page <i class="bi bi-arrow-right"></i>
                         </a>
-                    }
-                    else
-                    {
-                        <span class="d-block" tabindex="0"
-                              data-bs-toggle="tooltip" data-bs-placement="top"
-                              data-bs-title="No available slots at the moment">
-                            <button class="btn btn-secondary w-100 rounded-pill" type="button"
-                                    disabled aria-disabled="true">
-                                <i class="bi bi-calendar2-x me-1"></i> No Slots Available
-                            </button>
-                        </span>
-                    }
+                    </div>
+                }
+
+                <!-- Main CTA -->
+                @if (provider.IsAvailable)
+                {
+                    <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id"
+                       class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm mb-3">
+                        <i class="bi bi-calendar2-check me-1"></i> Book Appointment
+                    </a>
+                }
+                else
+                {
+                    <button class="btn btn-secondary w-100 py-3 rounded-pill fw-bold mb-2" disabled aria-disabled="true">
+                        <i class="bi bi-calendar2-x me-1"></i> Currently Unavailable
+                    </button>
+                    <div class="alert alert-warning border-0 p-2 text-center small mb-3">
+                        This provider has no open arrival windows right now.
+                    </div>
+                }
+
+                <div class="text-center text-muted small">
+                    <i class="bi bi-shield-check me-1 text-success"></i> Cash or card hold · Free cancellation until approved
                 </div>
             </div>
         </aside>
     </div>
 </div>
 
+<!-- Mobile Fixed Bottom Bar -->
+<div class="mobile-profile-action-bar">
+    <div>
+        @if (provider.MinFee.HasValue)
+        {
+            <span class="small text-muted d-block">Starting from</span>
+            <strong class="fs-5 text-dark">@provider.MinFee.Value.ToString("N0") <small class="fs-6 text-muted">EGP</small></strong>
+        }
+        else
+        {
+            <strong class="text-dark">@provider.FullName</strong>
+        }
+    </div>
 
+    @if (provider.IsAvailable)
+    {
+        <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id"
+           class="btn btn-primary rounded-pill px-4 fw-bold">
+            Book Now
+        </a>
+    }
+    else
+    {
+        <button class="btn btn-secondary rounded-pill px-4 fw-bold" disabled>
+            Unavailable
+        </button>
+    }
+</div>

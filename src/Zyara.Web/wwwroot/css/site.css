@@ -137,21 +137,85 @@ a:hover { color: var(--zy-primary-hover); text-decoration: underline; }
   border-radius: var(--zy-radius-control);
 }
 
-.btn-primary, .btn-success, .btn-info, .btn-warning, .btn-danger, .btn-secondary {
+.btn-primary {
   background-color: var(--zy-primary);
   border-color: var(--zy-primary);
   color: var(--zy-surface);
 }
 
-.btn-primary:hover, .btn-primary:focus,
-.btn-success:hover, .btn-success:focus,
-.btn-info:hover, .btn-info:focus,
-.btn-warning:hover, .btn-warning:focus,
-.btn-danger:hover, .btn-danger:focus,
-.btn-secondary:hover, .btn-secondary:focus {
+.btn-primary:hover, .btn-primary:focus {
   background-color: var(--zy-primary-hover);
   border-color: var(--zy-primary-hover);
   color: var(--zy-surface);
+}
+
+.btn-success {
+  background-color: var(--zy-success);
+  border-color: var(--zy-success);
+  color: #fff;
+}
+
+.btn-success:hover, .btn-success:focus {
+  background-color: var(--zy-teal-700);
+  border-color: var(--zy-teal-700);
+  color: #fff;
+}
+
+.btn-info {
+  background-color: var(--zy-info);
+  border-color: var(--zy-info);
+  color: #fff;
+}
+
+.btn-info:hover, .btn-info:focus {
+  background-color: var(--zy-primary-700);
+  border-color: var(--zy-primary-700);
+  color: #fff;
+}
+
+.btn-warning {
+  background-color: var(--zy-warning);
+  border-color: var(--zy-warning);
+  color: #212529;
+}
+
+.btn-warning:hover, .btn-warning:focus {
+  background-color: #d97706;
+  border-color: #d97706;
+  color: #212529;
+}
+
+.btn-danger {
+  background-color: var(--zy-danger);
+  border-color: var(--zy-danger);
+  color: #fff;
+}
+
+.btn-danger:hover, .btn-danger:focus {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: var(--zy-slate-600);
+  border-color: var(--zy-slate-600);
+  color: #fff;
+}
+
+.btn-secondary:hover, .btn-secondary:focus {
+  background-color: var(--zy-slate-700);
+  border-color: var(--zy-slate-700);
+  color: #fff;
+}
+
+.btn:disabled, .btn.disabled,
+fieldset:disabled .btn {
+  background-color: var(--zy-slate-200) !important;
+  border-color: var(--zy-slate-300) !important;
+  color: var(--zy-text-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.65;
 }
 
 .btn-light, .btn-outline-secondary {

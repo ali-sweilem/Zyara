@@ -1,0 +1,422 @@
+@model Zyara.Services.Features.Providers.Dtos.ProviderVisitDetailsDto
+
+@{
+    ViewData["Title"] = $"Visit #{Model.BookingId} Details";
+
+    string BadgeClass(BookingStatus s) => s switch
+    {
+        BookingStatus.Completed => "bg-success text-white",
+        BookingStatus.Started => "bg-info text-dark",
+        BookingStatus.Confirmed => "bg-primary text-white",
+        BookingStatus.PendingProviderApproval => "bg-warning text-dark",
+        _ => "bg-secondary text-white"
+    };
+}
+
+<div class="mb-4">
+    <a asp-area="Provider" asp-controller="Visits" asp-action="Index" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
+        <i class="bi bi-arrow-left"></i> Back to Visits
+    </a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="h4 fw-bold text-dark mb-0">Booking #@Model.BookingId</h2>
+                <span class="badge @BadgeClass(Model.Status) rounded-pill px-3 py-1 fs-6">
+                    @Model.Status
+                </span>
+            </div>
+            <p class="text-muted small mb-0 mt-1">Arrival window: @Model.DayLabel, @Model.FormattedWindow</p>
+        </div>
+
+        <!-- Action Buttons depending on status -->
+        <div class="d-flex gap-2">
+            @if (Model.Status == BookingStatus.PendingProviderApproval)
+            {
+                <form asp-area="Provider" asp-controller="Visits" asp-action="Accept" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                    <button type="submit" class="btn btn-success rounded-pill px-4">
+                        <i class="bi bi-check2"></i> Accept Request
+                    </button>
+                </form>
+
+                <button type="button" class="btn btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    Decline
+                </button>
+            }
+            else if (Model.Status == BookingStatus.Confirmed)
+            {
+                if (Model.IsHomeVisit)
+                {
+                    <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#startVisitModal">
+                        <i class="bi bi-geo-alt-fill me-1"></i> Start Visit
+                    </button>
+                }
+                else
+                {
+                    <form asp-area="Provider" asp-controller="Visits" asp-action="Start" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-camera-video-fill me-1"></i> Start Consultation
+                        </button>
+                    </form>
+                }
+
+                <button type="button" class="btn btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    Cancel Visit
+                </button>
+            }
+            else if (Model.Status == BookingStatus.Started)
+            {
+                <button type="button" class="btn btn-success rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#completeVisitModal">
+                    <i class="bi bi-check2-circle me-1"></i> Complete Visit
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusReason))
+{
+    <div class="alert alert-secondary rounded-4 border-0 p-3 mb-4">
+        <strong class="d-block mb-1"><i class="bi bi-info-circle me-1"></i> Status Note / Reason:</strong>
+        <div>@Model.StatusReason</div>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Left Column: Patient & Service Details -->
+    <div class="col-lg-7">
+        <!-- Patient Card -->
+        <div class="med-card p-4 mb-4">
+            <h3 class="h6 fw-bold text-dark mb-3">
+                <i class="bi bi-person-fill text-primary me-2"></i>Patient Information
+            </h3>
+            <div class="mb-3">
+                <span class="text-muted small d-block">Patient Full Name</span>
+                <strong class="text-dark fs-5">@Model.PatientName</strong>
+            </div>
+
+            @if (Model.CanSeePatientContact)
+            {
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <span class="text-muted small d-block">Phone Number</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.PatientPhone))
+                        {
+                            <a href="tel:@Model.PatientPhone" class="fw-bold text-primary text-decoration-none">
+                                <i class="bi bi-telephone-fill me-1"></i>@Model.PatientPhone
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not specified</span>
+                        }
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted small d-block">Visit Address</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.PatientAddress))
+                        {
+                            var mapsUrl = Model.PatientLatitude.HasValue && Model.PatientLongitude.HasValue
+                                ? $"https://www.google.com/maps?q={Model.PatientLatitude.Value},{Model.PatientLongitude.Value}"
+                                : $"https://www.google.com/maps/search/?api=1&query={Uri.EscapeDataString(Model.PatientAddress)}";
+
+                            <div>
+                                <div class="text-dark mb-1">@Model.PatientAddress</div>
+                                <a href="@mapsUrl" target="_blank" class="small text-danger fw-semibold text-decoration-none">
+                                    <i class="bi bi-geo-alt-fill me-1"></i> Open in Google Maps
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Remote consultation (no address required)</span>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="p-3 bg-light rounded-3 text-muted small">
+                    <i class="bi bi-shield-lock-fill text-secondary me-1"></i>
+                    Patient contact phone and home address are kept private until you accept and confirm this booking.
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.PatientNotes))
+            {
+                <div class="mt-3 pt-3 border-top">
+                    <span class="text-muted small d-block mb-1">Patient Medical Notes:</span>
+                    <div class="p-3 bg-light rounded-3 text-dark small fst-italic">
+                        "@Model.PatientNotes"
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Service & Window Card -->
+        <div class="med-card p-4">
+            <h3 class="h6 fw-bold text-dark mb-3">
+                <i class="bi bi-bandaid text-primary me-2"></i>Service Details
+            </h3>
+            <div class="row g-3 mb-2">
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Service Name</span>
+                    <strong class="text-dark">@Model.ServiceName</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Service Type</span>
+                    <span class="badge bg-light text-dark border rounded-pill">@Model.ServiceType</span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Scheduled Day</span>
+                    <strong class="text-dark">@Model.Date.ToString("dddd, d MMMM yyyy")</strong>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">2-Hour Arrival Window</span>
+                    <strong class="text-primary">@Model.FormattedWindow</strong>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.ServiceDescription))
+            {
+                <p class="small text-muted mb-0 mt-2">@Model.ServiceDescription</p>
+            }
+        </div>
+    </div>
+
+    <!-- Right Column: Financials & Status Timeline -->
+    <div class="col-lg-5">
+        <!-- Payment & Earnings Card -->
+        <div class="med-card p-4 mb-4">
+            <h3 class="h6 fw-bold text-dark mb-3">
+                <i class="bi bi-cash-stack text-success me-2"></i>Payment & Earnings
+            </h3>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted small">Payment Method:</span>
+                <span class="badge @(Model.PaymentMethod == PaymentMethod.CashOnArrival ? "bg-light text-dark border" : "bg-primary-subtle text-primary border") rounded-pill">
+                    @Model.PaymentMethod
+                </span>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted small">Payment Status:</span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                    @Model.PaymentStatus
+                </span>
+            </div>
+
+            <div class="p-3 bg-light rounded-3 mb-3">
+                <div class="d-flex justify-content-between text-muted small mb-1">
+                    <span>Total Booking Price:</span>
+                    <strong class="text-dark">@Model.TotalPrice.ToString("N2") EGP</strong>
+                </div>
+                <div class="d-flex justify-content-between text-muted small mb-1">
+                    <span>Platform Service Fee:</span>
+                    <span>- @Model.ServiceFee.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small mb-2">
+                    <span>Platform Commission:</span>
+                    <span>- @Model.Commission.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top">
+                    <span>Your Net Earnings:</span>
+                    <span class="text-success fs-5">@Model.NetEarnings.ToString("N2") EGP</span>
+                </div>
+            </div>
+
+            @if (Model.PaymentMethod == PaymentMethod.CashOnArrival)
+            {
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i> Collect <strong>@Model.TotalPrice.ToString("N2") EGP</strong> directly from the patient in cash upon visit completion.
+                </div>
+            }
+            else
+            {
+                <div class="small text-muted">
+                    <i class="bi bi-credit-card me-1"></i> Patient's card has an authorized hold. Funds are captured automatically upon completing the visit.
+                </div>
+            }
+        </div>
+
+        <!-- Status Timeline -->
+        <div class="med-card p-4">
+            <h3 class="h6 fw-bold text-dark mb-4">
+                <i class="bi bi-clock-history text-primary me-2"></i>Status Timeline
+            </h3>
+
+            <div class="timeline-step">
+                <div class="timeline-bullet"></div>
+                <div class="fw-bold text-dark small">Booking Requested</div>
+                <div class="text-muted small">@Model.CreatedAtEgypt.ToString("d MMM yyyy, hh:mm tt")</div>
+            </div>
+
+            <div class="timeline-step">
+                <div class="timeline-bullet @(Model.RespondedAtEgypt.HasValue ? "" : "inactive")"></div>
+                <div class="fw-bold text-dark small">Provider Response</div>
+                <div class="text-muted small">
+                    @(Model.RespondedAtEgypt.HasValue ? Model.RespondedAtEgypt.Value.ToString("d MMM yyyy, hh:mm tt") : "Pending provider response")
+                </div>
+            </div>
+
+            <div class="timeline-step">
+                <div class="timeline-bullet @(Model.StartedAtEgypt.HasValue ? "" : "inactive")"></div>
+                <div class="fw-bold text-dark small">Visit Started (Arrival Verified)</div>
+                <div class="text-muted small">
+                    @(Model.StartedAtEgypt.HasValue ? Model.StartedAtEgypt.Value.ToString("d MMM yyyy, hh:mm tt") : "Not yet started")
+                </div>
+            </div>
+
+            <div class="timeline-step">
+                <div class="timeline-bullet @(Model.CompletedAtEgypt.HasValue ? "" : "inactive")"></div>
+                <div class="fw-bold text-dark small">Visit Completed & Payment Settled</div>
+                <div class="text-muted small">
+                    @(Model.CompletedAtEgypt.HasValue ? Model.CompletedAtEgypt.Value.ToString("d MMM yyyy, hh:mm tt") : "Not yet completed")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Start Visit (OTP) -->
+@if (Model.IsHomeVisit && Model.Status == BookingStatus.Confirmed)
+{
+    <div class="modal fade" id="startVisitModal" tabindex="-1" aria-labelledby="startModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <form asp-area="Provider" asp-controller="Visits" asp-action="Start" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="startModalLabel">Verify Arrival & Start Visit</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">
+                            To ensure patient safety and verify your physical arrival at the door, please ask the patient for their 4-digit arrival verification code shown on their confirmation screen.
+                        </p>
+
+                        <div class="mb-3 text-center">
+                            <label class="form-label fw-bold text-dark">Enter 4-Digit Patient OTP</label>
+                            <input type="text" name="otp" class="form-control otp-box-display text-center letter-spacing-lg mx-auto" style="max-width: 200px;" maxlength="4" placeholder="••••" required autocomplete="off" />
+                            <div class="form-text small mt-2">
+                                Remaining attempts before lockout: @(5 - Model.OtpFailedAttempts) / 5
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Verify & Start</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Complete Visit -->
+@if (Model.Status == BookingStatus.Started)
+{
+    <div class="modal fade" id="completeVisitModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <form asp-area="Provider" asp-controller="Visits" asp-action="Complete" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="completeModalLabel">Complete Medical Visit</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">
+                            Are you sure you want to finalize this visit as completed?
+                        </p>
+
+                        @if (Model.PaymentMethod == PaymentMethod.CashOnArrival)
+                        {
+                            <div class="alert alert-warning rounded-3 p-3">
+                                <div class="fw-bold mb-1"><i class="bi bi-cash me-1"></i> Cash Collection Reminder</div>
+                                <div>Please collect <strong>@Model.TotalPrice.ToString("N2") EGP</strong> in cash from the patient before leaving.</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info rounded-3 p-3">
+                                <div class="fw-bold mb-1"><i class="bi bi-credit-card me-1"></i> Automatic Card Capture</div>
+                                <div>The authorized card hold of <strong>@Model.TotalPrice.ToString("N2") EGP</strong> will now be captured from the patient's account.</div>
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4">Confirm Completion</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Cancel Booking -->
+@if (Model.Status == BookingStatus.Confirmed)
+{
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <form asp-area="Provider" asp-controller="Visits" asp-action="Cancel" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel">Cancel Confirmed Booking</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">
+                            Cancelling this confirmed visit will notify the patient, make the arrival window available again, and release any authorized card hold. Please specify a cancellation reason (10 to 300 characters):
+                        </p>
+                        <div class="mb-3">
+                            <textarea name="reason" rows="3" class="form-control rounded-3" placeholder="Reason for cancellation..." required minlength="10" maxlength="300"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Keep Booking</button>
+                        <button type="submit" class="btn btn-danger rounded-pill">Confirm Cancellation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Decline Pending Request -->
+@if (Model.Status == BookingStatus.PendingProviderApproval)
+{
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <form asp-area="Provider" asp-controller="Visits" asp-action="Reject" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="declineModalLabel">Decline Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">
+                            Please provide a reason for declining this request (10 to 300 characters):
+                        </p>
+                        <div class="mb-3">
+                            <textarea name="reason" rows="3" class="form-control rounded-3" placeholder="Reason for declining..." required minlength="10" maxlength="300"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger rounded-pill">Decline</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+

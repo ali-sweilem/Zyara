@@ -1,0 +1,190 @@
+@using Zyara.Domain.Enums
+@using Zyara.Services.Features.Identity.Interfaces
+@using Zyara.Repositories.Data
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Hosting
+@inject ICurrentUser CurrentUser
+@inject IWebHostEnvironment Env
+@inject ZyaraDbContext DbContext
+
+@{
+    var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var isDashboard = currentCtrl.Equals("Dashboard", StringComparison.OrdinalIgnoreCase);
+    var isRequests = currentCtrl.Equals("Requests", StringComparison.OrdinalIgnoreCase);
+    var isVisits = currentCtrl.Equals("Visits", StringComparison.OrdinalIgnoreCase);
+    var isSchedule = currentCtrl.Equals("Schedule", StringComparison.OrdinalIgnoreCase);
+
+    int providerId = (CurrentUser.IsAuthenticated && CurrentUser.UserId.HasValue)
+        ? CurrentUser.UserId.Value
+        : (Env.IsDevelopment() ? 1 : 0);
+
+    var providerEntity = providerId > 0 
+        ? DbContext.Providers.FirstOrDefault(p => p.Id == providerId) 
+        : null;
+
+    var providerName = providerEntity?.FullName ?? "Provider Portal";
+    var providerRole = providerEntity?.Role == UserRole.Nurse ? "Nurse" : "Doctor";
+    var providerPhoto = providerEntity?.PhotoUrl;
+}
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Zyara Provider Portal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/provider-medical.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/provider-portal.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="provider-body">
+    <div class="provider-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="provider-sidebar" aria-label="Provider Portal Navigation">
+            <div class="provider-brand">
+                <a asp-area="Provider" asp-controller="Dashboard" asp-action="Index" class="d-flex align-items-center gap-2 text-decoration-none">
+                    <div class="brand-icon-pill">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+                    <div>
+                        <div class="brand-name">Zyara</div>
+                        <span class="brand-tag">Provider Portal</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="sidebar-menu">
+                <div class="menu-label">Clinical Practice</div>
+                <a class="nav-item-med @(isDashboard ? "active" : "")" asp-area="Provider" asp-controller="Dashboard" asp-action="Index">
+                    <i class="bi bi-grid-1x2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item-med @(isRequests ? "active" : "")" asp-area="Provider" asp-controller="Requests" asp-action="Index">
+                    <i class="bi bi-inbox"></i>
+                    <span class="flex-grow-1">Requests</span>
+                    @await Component.InvokeAsync("ProviderPendingCount")
+                </a>
+                <a class="nav-item-med @(isVisits ? "active" : "")" asp-area="Provider" asp-controller="Visits" asp-action="Index">
+                    <i class="bi bi-calendar2-check"></i>
+                    <span>Visits</span>
+                </a>
+                <a class="nav-item-med @(isSchedule ? "active" : "")" asp-area="Provider" asp-controller="Schedule" asp-action="Index">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Schedule</span>
+                </a>
+
+                <div class="menu-label">Account & Profile</div>
+                <a class="nav-item-med" asp-area="" asp-controller="Providers" asp-action="showprofile">
+                    <i class="bi bi-person-badge"></i>
+                    <span>My Profile</span>
+                </a>
+                <a class="nav-item-med" asp-area="" asp-controller="ProviderCredentials" asp-action="Index">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Credentials & Verification</span>
+                </a>
+            </nav>
+
+            <div class="p-3 border-top">
+                <a href="/" class="nav-item-med text-muted m-0">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Back to Zyara</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="provider-main">
+            <!-- Top Header -->
+            <header class="provider-header">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
+                    <h1 class="h5 fw-bold mb-0 text-dark">@(ViewData["Title"] ?? "Dashboard")</h1>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 fw-semibold">
+                        @providerRole
+                    </span>
+
+                    @if (providerId > 0)
+                    {
+                        <a asp-area="" asp-controller="Providers" asp-action="Details" asp-route-id="@providerId" 
+                           class="btn btn-sm btn-outline-secondary rounded-pill d-none d-sm-inline-flex align-items-center gap-1"
+                           target="_blank">
+                            <i class="bi bi-eye"></i> View public profile
+                        </a>
+                    }
+
+                    <div class="d-flex align-items-center gap-2">
+                        @if (!string.IsNullOrWhiteSpace(providerPhoto))
+                        {
+                            <img src="@providerPhoto" class="rounded-circle border" width="38" height="38" alt="@providerName" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                @(string.IsNullOrWhiteSpace(providerName) ? "P" : providerName[0].ToString().ToUpperInvariant())
+                            </div>
+                        }
+                        <span class="fw-semibold text-dark small d-none d-md-inline">@providerName</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="provider-content">
+                @if (TempData["Success"] != null || TempData["Message"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> @(TempData["Success"] ?? TempData["Message"])
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggle = document.getElementById('sidebarToggle');
+            var sidebar = document.querySelector('.provider-sidebar');
+            if (toggle && sidebar) {
+                toggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('show');
+                });
+                document.addEventListener('click', function (e) {
+                    if (window.innerWidth < 992 && !sidebar.contains(e.target) && !toggle.contains(e.target) && sidebar.classList.contains('show')) {
+                        sidebar.classList.remove('show');
+                    }
+                });
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

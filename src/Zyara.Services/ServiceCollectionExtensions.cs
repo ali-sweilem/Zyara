@@ -15,6 +15,7 @@ using Zyara.Services.Features.Payments;
 using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
+using Zyara.Services.Jobs;
 
 namespace Zyara.Services;
 
@@ -33,7 +34,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
 
+        services.AddScoped<IBookingTransitions, BookingTransitions>();
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<IProviderDashboardService, ProviderDashboardService>();
+        services.AddScoped<IProviderBookingService, ProviderBookingService>();
+        services.AddScoped<IProviderScheduleService, ProviderScheduleService>();
+
+        // Expiry background job
+        services.AddHostedService<BookingExpiryWorker>();
 
         // Moved here from Program.cs (T1)
         services.AddScoped<IPaymentService, PaymentService>();

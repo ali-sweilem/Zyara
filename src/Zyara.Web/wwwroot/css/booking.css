@@ -1,0 +1,211 @@
+/* Booking Appointment Stepped Flow & Payment Styles */
+
+.booking-stepped-layout {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.booking-steps-col {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.booking-summary-col {
+    width: 380px;
+    position: sticky;
+    top: 90px;
+}
+
+/* Stepped Cards */
+.booking-step-card {
+    background: var(--zy-surface);
+    border: 1px solid var(--zy-border);
+    border-radius: var(--zy-radius-card);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--zy-shadow-sm);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.booking-step-card:focus-within {
+    border-color: var(--zy-primary);
+    box-shadow: var(--zy-shadow-md);
+}
+
+.step-num-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--zy-primary-50);
+    color: var(--zy-primary-700);
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+/* Selectable Cards (Radio Cards) */
+.selectable-card {
+    position: relative;
+    border: 1.5px solid var(--zy-border);
+    border-radius: var(--zy-radius-control);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--zy-surface);
+    min-height: 44px;
+}
+
+.selectable-card:hover {
+    border-color: var(--zy-primary-300);
+    background: var(--zy-primary-50);
+}
+
+.selectable-card.selected,
+.selectable-card:has(input[type="radio"]:checked) {
+    border-color: var(--zy-primary);
+    background: var(--zy-primary-50);
+    box-shadow: 0 0 0 1px var(--zy-primary);
+}
+
+.selectable-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Horizontally Scrollable Day Chips */
+.days-scroll-wrapper {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.day-chip {
+    flex: 0 0 auto;
+    width: 90px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1.5px solid var(--zy-border);
+    border-radius: var(--zy-radius-control);
+    background: var(--zy-surface);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    min-height: 44px;
+}
+
+.day-chip:hover {
+    border-color: var(--zy-primary-300);
+}
+
+.day-chip.active,
+.day-chip.selected {
+    border-color: var(--zy-primary);
+    background: var(--zy-primary);
+    color: #fff;
+    box-shadow: var(--zy-shadow-sm);
+}
+
+.day-chip.active .text-muted,
+.day-chip.selected .text-muted {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Window Pill Radios */
+.window-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 18px;
+    border: 1.5px solid var(--zy-border);
+    border-radius: 999px;
+    background: var(--zy-surface);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--zy-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-pill:hover {
+    border-color: var(--zy-primary-300);
+    background: var(--zy-primary-50);
+}
+
+.window-pill:has(input[type="radio"]:checked),
+.window-pill.selected {
+    background: var(--zy-primary);
+    border-color: var(--zy-primary);
+    color: #fff;
+    box-shadow: var(--zy-shadow-sm);
+}
+
+.window-pill input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Payment Test Mode Ribbon */
+.test-mode-ribbon {
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: var(--zy-radius-control);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Sticky Summary Card */
+.booking-summary-card {
+    background: var(--zy-surface);
+    border: 1px solid var(--zy-border);
+    border-radius: var(--zy-radius-card);
+    padding: 24px;
+    box-shadow: var(--zy-shadow-md);
+}
+
+/* Mobile Fixed Bottom Bar */
+.mobile-booking-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--zy-surface);
+    border-top: 1px solid var(--zy-border);
+    padding: 12px 20px;
+    z-index: 1040;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 991.98px) {
+    .booking-stepped-layout {
+        flex-direction: column;
+        padding-bottom: 80px;
+    }
+
+    .booking-summary-col {
+        width: 100%;
+        position: static;
+    }
+
+    .mobile-booking-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+

@@ -1,51 +1,73 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Zyara.Domain.Entities;
+using Zyara.Domain.Enums;
+using Zyara.Repositories.Data;
+using Zyara.Services.Common;
+using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Bookings.Dtos;
 using Zyara.Services.Features.Bookings.Interfaces;
-using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Identity.Interfaces;
+using Zyara.Services.Features.Payments.Dtos;
 using Zyara.Services.Features.Payments.Interface;
+using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
-using Zyara.Services.Features.Shared.Dtos;
 
 namespace Zyara.Web.Controllers;
 
-[Authorize(Policy = PolicyNames.PatientOnly)]
 public sealed class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
     private readonly IProviderDetailsService _providerDetailsService;
     private readonly IPaymentService _paymentService;
     private readonly ICurrentUser _currentUser;
-    private readonly IAuthorizationService _auth;
+    private readonly IWebHostEnvironment _env;
+    private readonly ZyaraDbContext _db;
+    private readonly TimeProvider _timeProvider;
 
     public BookingController(
         IBookingService bookingService,
         IProviderDetailsService providerDetailsService,
         IPaymentService paymentService,
         ICurrentUser currentUser,
-        IAuthorizationService auth)
+        IWebHostEnvironment env,
+        ZyaraDbContext db,
+        TimeProvider timeProvider)
     {
         _bookingService = bookingService;
         _providerDetailsService = providerDetailsService;
         _paymentService = paymentService;
         _currentUser = currentUser;
-        _auth = auth;
+        _env = env;
+        _db = db;
+        _timeProvider = timeProvider;
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // GET /Booking/Book?providerId=5
-    // ─────────────────────────────────────────────────────────────────
+    private int? CurrentPatientId =>
+        (_currentUser.IsAuthenticated && _currentUser.UserId.HasValue)
+            ? _currentUser.UserId.Value
+            : (_env.IsDevelopment() ? 1 : null);
 
+    // ─────────────────────────────────────────────────────────────────
+    // GET /Booking/Book?providerId=5&serviceId=2&slotId=14
+    // ─────────────────────────────────────────────────────────────────
     [HttpGet]
-    public async Task<IActionResult> Book(int providerId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Book(int providerId, int? serviceId, int? slotId, CancellationToken cancellationToken)
     {
-        var vm = await BuildViewModelAsync(providerId, cancellationToken);
+        var patientId = CurrentPatientId;
+        if (!patientId.HasValue) return Challenge();
+
+        var vm = await BuildViewModelAsync(providerId, patientId.Value, serviceId, slotId, cancellationToken);
         if (vm is null)
         {
-            return NotFound();
+            return NotFound("Provider not found or not accepting bookings.");
         }
 
         return View(vm);
@@ -54,129 +76,239 @@ public sealed class BookingController : Controller
     // ─────────────────────────────────────────────────────────────────
     // POST /Booking/Book
     // ─────────────────────────────────────────────────────────────────
-
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Book(BookAppointmentDto form, CancellationToken cancellationToken)
+    public async Task<IActionResult> Book(BookAppointmentPostModel form, CancellationToken cancellationToken)
     {
-        // --- Security: take providerId from the form's display field (not trusted for
-        //               anything financial), validate it against the DB in the service.
-        var providerId = form.ProviderId;
+        var patientId = CurrentPatientId;
+        if (!patientId.HasValue) return Challenge();
 
         if (!ModelState.IsValid)
         {
-            // Repopulate read-only fields before returning the view
-            var refreshed = await BuildViewModelAsync(providerId, cancellationToken);
-            if (refreshed is null)
-            {
-                return NotFound();
-            }
+            var refreshed = await BuildViewModelAsync(form.ProviderId, patientId.Value, form.SelectedProviderServiceId, form.SelectedTimeSlotId, cancellationToken);
+            if (refreshed is null) return NotFound();
 
-            // Keep the patient's selections
-            refreshed.SelectedTimeSlotId = form.SelectedTimeSlotId;
-            refreshed.SelectedProviderServiceId = form.SelectedProviderServiceId;
-            refreshed.Notes = form.Notes;
-
+            refreshed.Form = form;
             return View(refreshed);
         }
 
-        var patientId = _currentUser.RequireUserId();
-
-        var dto = new BookAppointmentDto
+        var command = new CreateBookingCommand
         {
-            ProviderId = providerId,
-            PatientId = patientId,
-            TimeSlotId = form.SelectedTimeSlotId,
+            PatientId = patientId.Value,
+            ProviderId = form.ProviderId,
             ProviderServiceId = form.SelectedProviderServiceId,
-            Notes = form.Notes
+            TimeSlotId = form.SelectedTimeSlotId,
+            PaymentMethod = form.PaymentMethod,
+            Notes = form.Notes,
+            AddressId = form.AddressId,
+            Label = form.Label,
+            City = form.City,
+            District = form.District,
+            StreetAndBuilding = form.StreetAndBuilding,
+            Latitude = form.Latitude,
+            Longitude = form.Longitude,
+            SaveNewAddress = form.SaveNewAddress
         };
 
-        var result = await _bookingService.CreateBookingAsync(dto, cancellationToken);
-
+        var result = await _bookingService.CreateBookingAsync(command, cancellationToken);
         if (!result.Succeeded)
         {
-            // Service-level validation error (slot taken, provider not found, etc.)
             ModelState.AddModelError(string.Empty, result.Error!);
+            var refreshed = await BuildViewModelAsync(form.ProviderId, patientId.Value, form.SelectedProviderServiceId, form.SelectedTimeSlotId, cancellationToken);
+            if (refreshed is null) return NotFound();
 
-            var refreshed = await BuildViewModelAsync(providerId, cancellationToken);
-            if (refreshed is null)
-            {
-                return NotFound();
-            }
-
-            refreshed.SelectedProviderServiceId = form.SelectedProviderServiceId;
-            refreshed.Notes = form.Notes;
-
+            refreshed.Form = form;
             return View(refreshed);
         }
 
-        // PRG: redirect to Payment page so the patient can confirm cash-on-arrival payment
-        TempData["Message"] = "Your appointment request has been submitted successfully!";
-        return RedirectToAction("Create", "Payment", new { bookingId = result.Value });
+        if (result.Value.NeedsPayment)
+        {
+            return RedirectToAction(nameof(Pay), new { bookingId = result.Value.BookingId });
+        }
+
+        TempData["Success"] = "Your appointment request has been submitted successfully!";
+        return RedirectToAction(nameof(Confirmation), new { id = result.Value.BookingId });
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // GET /Booking/Pay?bookingId=12
+    // ─────────────────────────────────────────────────────────────────
+    [HttpGet]
+    public async Task<IActionResult> Pay(int bookingId, CancellationToken cancellationToken)
+    {
+        var patientId = CurrentPatientId;
+        if (!patientId.HasValue) return Challenge();
+
+        var summary = await _paymentService.GetBookingPaymentSummaryAsync(bookingId, patientId.Value, cancellationToken);
+        if (summary is null) return NotFound("Booking not found or access denied.");
+
+        if (summary.PaymentStatus == PaymentStatus.Authorized || summary.PaymentStatus == PaymentStatus.Captured)
+        {
+            return RedirectToAction(nameof(Confirmation), new { id = bookingId });
+        }
+
+        ViewBag.Summary = summary;
+        var input = new CardPayInputModel { BookingId = bookingId };
+        return View(input);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // POST /Booking/Pay
+    // ─────────────────────────────────────────────────────────────────
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Pay(CardPayInputModel form, CancellationToken cancellationToken)
+    {
+        var patientId = CurrentPatientId;
+        if (!patientId.HasValue) return Challenge();
+
+        var summary = await _paymentService.GetBookingPaymentSummaryAsync(form.BookingId, patientId.Value, cancellationToken);
+        if (summary is null) return NotFound();
+
+        ViewBag.Summary = summary;
+
+        if (!ModelState.IsValid)
+        {
+            // Clear card number and cvv
+            form.CardNumber = string.Empty;
+            form.Cvv = string.Empty;
+            return View(form);
+        }
+
+        var cardInput = new CardInput(
+            form.CardHolderName,
+            form.CardNumber,
+            form.ExpiryMonth,
+            form.ExpiryYear,
+            form.Cvv);
+
+        var payResult = await _paymentService.PayWithCardAsync(patientId.Value, form.BookingId, cardInput, cancellationToken);
+
+        // Security: clear sensitive card details immediately
+        form.CardNumber = string.Empty;
+        form.Cvv = string.Empty;
+
+        if (!payResult.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, payResult.Error!);
+            return View(form);
+        }
+
+        TempData["Success"] = "Pre-authorization hold placed successfully. Your request has been sent to the provider.";
+        return RedirectToAction(nameof(Confirmation), new { id = form.BookingId });
     }
 
     // ─────────────────────────────────────────────────────────────────
     // GET /Booking/Confirmation?id=12
-    // (called by PaymentController after successful payment confirmation)
     // ─────────────────────────────────────────────────────────────────
-
     [HttpGet]
     public async Task<IActionResult> Confirmation(int id, int? bookingId, CancellationToken cancellationToken)
     {
+        var patientId = CurrentPatientId;
+        if (!patientId.HasValue) return Challenge();
+
         var targetId = id > 0 ? id : (bookingId ?? 0);
-        var booking = await _bookingService.GetBookingAsync(targetId, cancellationToken);
-        if (booking is null)
+        var confirmation = await _paymentService.GetBookingConfirmationAsync(targetId, cancellationToken);
+        if (confirmation is null) return NotFound();
+
+        if (confirmation.PatientId != patientId.Value)
         {
             return NotFound();
         }
 
-        var authorization = await _auth.AuthorizeAsync(User, booking, Operations.View);
-        if (!authorization.Succeeded)
+        if (confirmation.Status == BookingStatus.PendingPayment)
         {
-            return NotFound();
+            return RedirectToAction(nameof(Pay), new { bookingId = targetId });
         }
 
-        var dto = await _paymentService.GetBookingConfirmationAsync(targetId);
-        if (dto is null)
-        {
-            return NotFound();
-        }
-
-        return View(dto);
+        return View(confirmation);
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Helpers
+    // Private Helpers
     // ─────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Loads provider summary + available slots + services and builds the BookAppointmentDto.
-    /// Returns null if the provider is not found.
-    /// </summary>
-    private async Task<BookAppointmentDto?> BuildViewModelAsync(
+    private async Task<BookAppointmentViewModel?> BuildViewModelAsync(
         int providerId,
+        int patientId,
+        int? preselectedServiceId,
+        int? preselectedSlotId,
         CancellationToken cancellationToken)
     {
         var provider = await _providerDetailsService.GetDetailsAsync(providerId, cancellationToken);
-        if (provider is null)
-        {
-            return null;
-        }
+        if (provider is null) return null;
 
         var slots = await _bookingService.GetAvailableSlotsAsync(providerId, cancellationToken);
+        var savedAddresses = await _bookingService.GetPatientAddressesAsync(patientId, cancellationToken);
 
-        return new BookAppointmentDto
+        var settings = await _db.PlatformSettings.AsNoTracking().FirstOrDefaultAsync(cancellationToken) ?? new PlatformSettings();
+
+        var egyptNow = EgyptTime.Now(_timeProvider);
+
+        var days = slots
+            .GroupBy(s => s.Date.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new BookAppointmentDayDto
+            {
+                Date = g.Key,
+                DayLabel = SlotFormatting.FormatDayLabel(g.Key, egyptNow),
+                WeekdayName = g.Key.ToString("ddd"),
+                DayNumber = g.Key.Day.ToString(),
+                MonthName = g.Key.ToString("MMM"),
+                Windows = g.Select(s => new BookAppointmentWindowDto
+                {
+                    Id = s.Id,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    FormattedWindow = SlotFormatting.FormatWindow(s.StartTime, s.EndTime),
+                    PartOfDay = SlotFormatting.GetPartOfDay(s.StartTime)
+                }).ToList()
+            })
+            .ToList();
+
+        var serviceDtos = provider.Services.Select(s => new BookAppointmentServiceItemDto
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Description = s.Description,
+            Fee = s.Fee,
+            Type = s.Type
+        }).ToList();
+
+        var chosenServiceId = preselectedServiceId ?? (serviceDtos.Count == 1 ? serviceDtos[0].Id : (int?)null);
+
+        string? preselectedDay = null;
+        if (preselectedSlotId.HasValue)
+        {
+            var matchedDay = days.FirstOrDefault(d => d.Windows.Any(w => w.Id == preselectedSlotId.Value));
+            if (matchedDay != null) preselectedDay = matchedDay.DateKey;
+        }
+        if (preselectedDay == null && days.Count > 0)
+        {
+            preselectedDay = days[0].DateKey;
+        }
+
+        return new BookAppointmentViewModel
         {
             ProviderId = provider.Id,
             ProviderFullName = provider.FullName,
             ProviderSpecialty = provider.Specialty,
             ProviderPhotoUrl = provider.PhotoUrl,
             ProviderBaseCity = provider.BaseCity,
-            AvailableSlots = slots,
-            ProviderServices = provider.Services
+            PlatformServiceFee = settings.ServiceFee,
+            Services = serviceDtos,
+            Days = days,
+            SavedAddresses = savedAddresses,
+            PreselectedServiceId = chosenServiceId,
+            PreselectedSlotId = preselectedSlotId,
+            PreselectedDay = preselectedDay,
+            Form = new BookAppointmentPostModel
+            {
+                ProviderId = provider.Id,
+                SelectedProviderServiceId = chosenServiceId ?? 0,
+                SelectedTimeSlotId = preselectedSlotId ?? 0,
+                PaymentMethod = PaymentMethod.CashOnArrival,
+                SaveNewAddress = true
+            }
         };
     }
 }
-
-
-

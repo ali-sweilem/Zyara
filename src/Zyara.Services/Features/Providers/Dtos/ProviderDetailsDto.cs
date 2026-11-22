@@ -19,6 +19,6 @@ public sealed class ProviderDetailsDto
     public decimal? MinFee { get; init; }
     public bool IsAvailable { get; set; }
     public IReadOnlyList<ProviderServiceItemDto> Services { get; init; } = [];
-    public IReadOnlyList<UpcomingSlotDto> UpcomingSlots { get; init; } = [];
+    public IReadOnlyList<UpcomingSlotDto> UpcomingSlots { get; set; } = [];
 }
 

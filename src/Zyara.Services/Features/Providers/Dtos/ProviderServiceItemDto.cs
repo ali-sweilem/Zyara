@@ -1,3 +1,5 @@
+using Zyara.Domain.Enums;
+
 namespace Zyara.Services.Features.Providers.Dtos;
 
 public sealed class ProviderServiceItemDto
@@ -6,5 +8,6 @@ public sealed class ProviderServiceItemDto
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
     public decimal Fee { get; init; }
+    public ServiceType Type { get; init; }
 }
 

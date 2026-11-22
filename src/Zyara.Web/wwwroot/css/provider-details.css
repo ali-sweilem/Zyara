@@ -1,0 +1,131 @@
+/* Provider Public Profile Details Styles */
+
+.provider-details-grid {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.provider-main-col {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.provider-sticky-sidebar {
+    width: 380px;
+    position: sticky;
+    top: 90px;
+}
+
+/* Hero Section */
+.provider-hero-card {
+    background: var(--zy-surface);
+    border: 1px solid var(--zy-border);
+    border-radius: var(--zy-radius-card);
+    padding: 32px;
+    box-shadow: var(--zy-shadow-md);
+    margin-bottom: 24px;
+}
+
+.provider-stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--zy-border);
+    font-size: 0.92rem;
+    color: var(--zy-text-2);
+}
+
+.provider-stat-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Service Card */
+.service-item-card {
+    border: 1px solid var(--zy-border);
+    border-radius: var(--zy-radius-card);
+    padding: 20px;
+    background: var(--zy-surface);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.service-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--zy-shadow-sm);
+    border-color: var(--zy-primary);
+}
+
+/* Sidebar Booking Box */
+.booking-quick-box {
+    background: var(--zy-surface);
+    border: 1px solid var(--zy-border);
+    border-radius: var(--zy-radius-card);
+    padding: 28px;
+    box-shadow: var(--zy-shadow-md);
+}
+
+.next-available-pill {
+    background: var(--zy-primary-50);
+    border: 1px solid var(--zy-primary-100);
+    border-radius: var(--zy-radius-control);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+
+.slot-chip-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--zy-border);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--zy-text);
+    text-decoration: none;
+    background: var(--zy-surface);
+    transition: all 0.2s ease;
+}
+
+.slot-chip-link:hover {
+    border-color: var(--zy-primary);
+    background: var(--zy-primary-50);
+    color: var(--zy-primary-700);
+    text-decoration: none;
+}
+
+/* Mobile Fixed Action Bar */
+.mobile-profile-action-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--zy-surface);
+    border-top: 1px solid var(--zy-border);
+    padding: 12px 20px;
+    z-index: 1040;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 991.98px) {
+    .provider-details-grid {
+        flex-direction: column;
+        padding-bottom: 80px;
+    }
+
+    .provider-sticky-sidebar {
+        width: 100%;
+        position: static;
+    }
+
+    .mobile-profile-action-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+

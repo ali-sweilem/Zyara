@@ -1,0 +1,171 @@
+@model Zyara.Services.Common.PagedResult<Zyara.Services.Features.Providers.Dtos.ProviderVisitItemDto>
+
+@{
+    ViewData["Title"] = "Clinical Visits";
+    var activeGroup = (ViewBag.ActiveGroup as string ?? "upcoming").ToLowerInvariant();
+    var statusFilter = ViewBag.StatusFilter as string ?? "";
+    var fromDate = ViewBag.FromDate as string ?? "";
+    var toDate = ViewBag.ToDate as string ?? "";
+
+    var routeValues = new Dictionary<string, string>
+    {
+        ["area"] = "Provider",
+        ["group"] = activeGroup
+    };
+    if (!string.IsNullOrWhiteSpace(statusFilter)) routeValues["status"] = statusFilter;
+    if (!string.IsNullOrWhiteSpace(fromDate)) routeValues["fromDate"] = fromDate;
+    if (!string.IsNullOrWhiteSpace(toDate)) routeValues["toDate"] = toDate;
+
+    var pagination = new PaginationDto(Model, "Index", "Visits", routeValues, "page", null, "Visits pagination");
+
+    string BadgeClass(BookingStatus s) => s switch
+    {
+        BookingStatus.Completed => "bg-success text-white",
+        BookingStatus.Started => "bg-info text-dark",
+        BookingStatus.Confirmed => "bg-primary text-white",
+        BookingStatus.PendingProviderApproval => "bg-warning text-dark",
+        _ => "bg-secondary text-white"
+    };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="h4 fw-bold text-dark mb-1">Visits Management</h2>
+        <p class="text-muted small mb-0">Track and manage your upcoming appointments, active consultations, and historical visits.</p>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-pills mb-4 gap-2">
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(activeGroup == "upcoming" ? "active" : "bg-white text-dark border")"
+           asp-area="Provider" asp-controller="Visits" asp-action="Index" asp-route-group="upcoming">
+            <i class="bi bi-calendar-check me-1"></i> Upcoming (Confirmed)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(activeGroup == "inprogress" ? "active" : "bg-white text-dark border")"
+           asp-area="Provider" asp-controller="Visits" asp-action="Index" asp-route-group="inprogress">
+            <i class="bi bi-play-circle me-1"></i> In Progress (Started)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(activeGroup == "history" ? "active" : "bg-white text-dark border")"
+           asp-area="Provider" asp-controller="Visits" asp-action="Index" asp-route-group="history">
+            <i class="bi bi-clock-history me-1"></i> History
+        </a>
+    </li>
+</ul>
+
+@if (activeGroup == "history")
+{
+    <!-- Filter bar for History -->
+    <div class="med-card p-3 mb-4">
+        <form method="get" class="row g-2 align-items-end">
+            <input type="hidden" name="group" value="history" />
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted">Status</label>
+                <select name="status" class="form-select form-select-sm rounded-3">
+                    <option value="">All History Statuses</option>
+                    <option value="Completed" selected="@(statusFilter == "Completed")">Completed</option>
+                    <option value="Cancelled" selected="@(statusFilter == "Cancelled")">Cancelled</option>
+                    <option value="Rejected" selected="@(statusFilter == "Rejected")">Rejected</option>
+                    <option value="Expired" selected="@(statusFilter == "Expired")">Expired</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted">From Date</label>
+                <input type="date" name="fromDate" value="@fromDate" class="form-control form-select-sm rounded-3" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted">To Date</label>
+                <input type="date" name="toDate" value="@toDate" class="form-control form-select-sm rounded-3" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill w-100">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                <a asp-area="Provider" asp-controller="Visits" asp-action="Index" asp-route-group="history" class="btn btn-outline-secondary btn-sm rounded-pill">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <div class="med-card text-center p-5">
+        <i class="bi bi-calendar-x fs-1 text-muted d-block mb-3"></i>
+        <h3 class="h5 fw-bold text-dark">No Visits Found</h3>
+        <p class="text-muted small mb-0">There are no visits matching this category or filter right now.</p>
+    </div>
+}
+else
+{
+    <div class="vstack gap-3 mb-4">
+        @foreach (var visit in Model.Items)
+        {
+            <div class="med-card p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge @BadgeClass(visit.Status) rounded-pill px-3 py-1 fw-bold">
+                                @visit.Status
+                            </span>
+                            <span class="text-muted small">#@visit.BookingId</span>
+                            <span class="badge bg-light text-dark border rounded-pill">
+                                @visit.ServiceType
+                            </span>
+                        </div>
+                        <h3 class="h5 fw-bold text-dark mb-1">@visit.PatientName</h3>
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-bandaid me-1 text-primary"></i>@visit.ServiceName
+                            <span class="mx-1">·</span>
+                            <i class="bi bi-clock me-1 text-primary"></i>@visit.DayLabel, @visit.FormattedWindow
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(visit.PatientAddress))
+                        {
+                            <div class="small text-muted">
+                                <i class="bi bi-geo-alt me-1 text-danger"></i>@visit.PatientAddress
+                            </div>
+                        }
+                    </div>
+
+                    <div class="text-md-end">
+                        <div class="mb-2">
+                            <span class="badge @(visit.PaymentMethod == PaymentMethod.CashOnArrival ? "bg-light text-dark border" : "bg-primary-subtle text-primary border") rounded-pill">
+                                @visit.PaymentMethod
+                            </span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                                @visit.PaymentStatus
+                            </span>
+                        </div>
+
+                        @if (visit.Status == BookingStatus.Completed)
+                        {
+                            <div class="fw-bold text-success mb-2">
+                                Net Earned: @visit.NetEarnings.ToString("N0") EGP
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="small text-muted mb-2">
+                                Total: @visit.TotalPrice.ToString("N0") EGP
+                            </div>
+                        }
+
+                        <a asp-area="Provider" asp-controller="Visits" asp-action="Details" asp-route-id="@visit.BookingId"
+                           class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                            View Details <i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <partial name="_Pagination" model="pagination" />
+}
+

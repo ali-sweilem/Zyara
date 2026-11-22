@@ -12,8 +12,7 @@ public interface IBookingService
     Task<Booking?> GetBookingAsync(int bookingId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns available (unbooked) time slots for the given provider.
-    /// Excludes slots that are already Booked or Locked, and excludes past slots for today.
+    /// Returns available (unbooked) time slots for the given provider adhering to BookingRules.
     /// </summary>
     Task<IReadOnlyList<BookingSlotDto>> GetAvailableSlotsAsync(
         int providerId,
@@ -21,12 +20,16 @@ public interface IBookingService
 
     /// <summary>
     /// Creates a booking for the given patient against the chosen provider service and time slot.
-    /// Validates: provider exists, slot is free, service belongs to provider, date is not in the past.
-    /// Returns the new Booking ID on success, or an error message on failure.
+    /// In one transaction: validates provider, slot, service, address, locks slot, creates payment, generates OTP.
     /// </summary>
-    Task<ServiceResult<int>> CreateBookingAsync(
-        BookAppointmentDto dto,
+    Task<ServiceResult<CreateBookingResult>> CreateBookingAsync(
+        CreateBookingCommand command,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns saved addresses for the patient.
+    /// </summary>
+    Task<IReadOnlyList<AddressDto>> GetPatientAddressesAsync(
+        int patientId,
         CancellationToken cancellationToken = default);
 }
-
-

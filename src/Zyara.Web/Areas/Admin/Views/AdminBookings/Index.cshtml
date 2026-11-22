@@ -16,6 +16,7 @@
         BookingStatus.Started => "bg-info text-dark",
         BookingStatus.Confirmed or BookingStatus.ConfirmedCollectionPending => "bg-primary",
         BookingStatus.PendingProviderApproval => "bg-warning text-dark",
+        BookingStatus.PendingPayment => "bg-secondary text-light",
         _ => "bg-secondary"   // Cancelled, Rejected, Expired
     };
 }

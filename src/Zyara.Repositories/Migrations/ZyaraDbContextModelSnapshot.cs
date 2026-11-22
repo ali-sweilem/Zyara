@@ -211,15 +211,41 @@ namespace Zyara.Services.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("OtpCode")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("OtpFailedAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
                     b.Property<int>("ProviderId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal>("ServiceFee")
                         .HasPrecision(18, 2)
@@ -228,10 +254,17 @@ namespace Zyara.Services.Migrations
                     b.Property<int>("ServiceId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StatusReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<int>("TimeSlotId")
                         .HasColumnType("int");
@@ -239,6 +272,16 @@ namespace Zyara.Services.Migrations
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("VisitAddress")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<double?>("VisitLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("VisitLongitude")
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -251,7 +294,8 @@ namespace Zyara.Services.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("TimeSlotId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Status] <> 'Cancelled' AND [Status] <> 'Rejected' AND [Status] <> 'Expired'");
 
                     b.ToTable("Bookings", (string)null);
                 });
@@ -889,8 +933,8 @@ namespace Zyara.Services.Migrations
                         .IsRequired();
 
                     b.HasOne("Zyara.Domain.Entities.TimeSlot", "TimeSlot")
-                        .WithOne()
-                        .HasForeignKey("Zyara.Domain.Entities.Booking", "TimeSlotId")
+                        .WithMany()
+                        .HasForeignKey("TimeSlotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

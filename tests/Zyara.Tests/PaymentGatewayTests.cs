@@ -16,6 +16,7 @@ namespace Zyara.Tests
         {
             var connection = new SqliteConnection("DataSource=:memory:");
             connection.Open();
+            connection.CreateFunction("SYSUTCDATETIME", () => DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "PRAGMA foreign_keys = OFF;";

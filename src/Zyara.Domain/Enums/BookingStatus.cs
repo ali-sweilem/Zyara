@@ -13,6 +13,7 @@ namespace Zyara.Domain.Enums
         Completed,
         Cancelled,
         Rejected,
-        Expired
+        Expired,
+        PendingPayment
     }
 }

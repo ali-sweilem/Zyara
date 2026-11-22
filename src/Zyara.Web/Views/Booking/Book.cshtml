@@ -1,175 +1,571 @@
-@model Zyara.Services.Features.Bookings.Dtos.BookAppointmentDto
+@model Zyara.Services.Features.Bookings.Dtos.BookAppointmentViewModel
 
 @{
     ViewData["Title"] = $"Book Appointment — {Model.ProviderFullName}";
+    var selectedDayKey = Model.PreselectedDay ?? (Model.Days.Count > 0 ? Model.Days[0].DateKey : "");
+    var preselectedService = Model.Services.FirstOrDefault(s => s.Id == Model.PreselectedServiceId);
+    var isInitialHomeVisit = preselectedService == null || preselectedService.Type != ServiceType.RemoteConsultation;
 }
 
-<div class="container py-4 py-lg-5" style="max-width: 720px;">
+@section Styles {
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+}
 
-    @* ── Back link ── *@
+<div class="container py-4 py-lg-5">
+    <!-- Back Link -->
     <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
        class="d-inline-flex align-items-center gap-1 text-muted text-decoration-none small mb-4">
         <i class="bi bi-arrow-left"></i> Back to provider profile
     </a>
 
-    @* ── Provider summary card ── *@
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4 d-flex align-items-center gap-4">
-            @await Html.PartialAsync("_Avatar", new AvatarDto
-            {
-                FullName = Model.ProviderFullName,
-                PhotoUrl = Model.ProviderPhotoUrl,
-                Id = Model.ProviderId,
-                Size = 72
-            })
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div asp-validation-summary="All" class="d-inline"></div>
+        </div>
+    }
+
+    @if (Model.Services.Count == 0)
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+            <i class="bi bi-info-circle text-muted fs-1 mb-3"></i>
+            <h2 class="h5 fw-bold text-dark">No Active Services</h2>
+            <p class="text-muted small mb-4">This provider does not have any active medical services listed for booking right now.</p>
             <div>
-                <h1 class="h4 fw-bold mb-1">@Model.ProviderFullName</h1>
-                <p class="text-muted mb-0 small">
-                    @(string.IsNullOrWhiteSpace(Model.ProviderSpecialty) ? "Healthcare Provider" : Model.ProviderSpecialty)
-                    @if (!string.IsNullOrWhiteSpace(Model.ProviderBaseCity))
-                    {
-                        <span class="ms-2"><i class="bi bi-geo-alt text-danger"></i> @Model.ProviderBaseCity</span>
-                    }
-                </p>
+                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId" class="btn btn-outline-secondary rounded-pill px-4">
+                    Back to Profile
+                </a>
             </div>
         </div>
-    </div>
-
-    @* ── Booking form card ── *@
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-body p-4 p-md-5">
-            <h2 class="h5 fw-bold mb-4">
-                <i class="bi bi-calendar2-check me-2 text-primary"></i>Book an Appointment
-            </h2>
-
-            @* ── Global validation summary ── *@
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger rounded-3 mb-4" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <asp-validation-summary asp-validation-summary="All" class="mb-0 d-inline" />
-                </div>
-            }
-
-            @if (!Model.AvailableSlots.Any())
-            {
-                <div class="alert alert-warning rounded-3" role="alert">
-                    <i class="bi bi-calendar-x me-2"></i>
-                    This provider has no available slots right now. Please check back later.
-                </div>
-                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-                   class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-arrow-left me-1"></i> Back
+    }
+    else if (Model.Days.Count == 0)
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+            <i class="bi bi-calendar2-x text-muted fs-1 mb-3"></i>
+            <h2 class="h5 fw-bold text-dark">No Available Arrival Windows</h2>
+            <p class="text-muted small mb-4">All appointment slots for this provider are currently booked or outside the allowed lead time. Please check back later.</p>
+            <div>
+                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId" class="btn btn-outline-secondary rounded-pill px-4">
+                    Back to Profile
                 </a>
-            }
-            else if (!Model.ProviderServices.Any())
-            {
-                <div class="alert alert-warning rounded-3" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    This provider has no active services listed. Booking is not possible at this time.
-                </div>
-                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-                   class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-arrow-left me-1"></i> Back
-                </a>
-            }
-            else
-            {
-                <form asp-action="Book" asp-controller="Booking" method="post">
-                    @Html.AntiForgeryToken()
-
-                    @* ProviderId is a display field — read-only, re-submitted so the controller
-                       can repopulate the VM on a failed POST, but its value is re-validated
-                       server-side against the DB and never trusted for pricing. *@
-                    <input type="hidden" asp-for="ProviderId" />
-
-                    @* ── 1. Service selector ── *@
-                    <div class="mb-4">
-                        <label asp-for="SelectedProviderServiceId" class="form-label fw-semibold">
-                            Select Service <span class="text-danger">*</span>
-                        </label>
-                        <select asp-for="SelectedProviderServiceId" class="form-select rounded-3">
-                            <option value="">— choose a service —</option>
-                            @foreach (var svc in Model.ProviderServices)
-                            {
-                                <option value="@svc.Id">@svc.Name — @svc.Fee.ToString("N0") EGP</option>
-                            }
-                        </select>
-                        <span asp-validation-for="SelectedProviderServiceId" class="text-danger small"></span>
-                    </div>
-
-                    @* ── 2. Time slot selector ── *@
-                    <div class="mb-4">
-                        <label asp-for="SelectedTimeSlotId" class="form-label fw-semibold">
-                            Select Time Slot <span class="text-danger">*</span>
-                        </label>
-                        <select asp-for="SelectedTimeSlotId" class="form-select rounded-3">
-                            <option value="">— choose a slot —</option>
-                            @foreach (var slot in Model.AvailableSlots)
-                            {
-                                <option value="@slot.Id">@slot.Label</option>
-                            }
-                        </select>
-                        <span asp-validation-for="SelectedTimeSlotId" class="text-danger small"></span>
-                    </div>
-
-                    @* ── 3. Notes ── *@
-                    <div class="mb-4">
-                        <label asp-for="Notes" class="form-label fw-semibold">
-                            Notes <span class="text-muted fw-normal">(optional)</span>
-                        </label>
-                        <textarea asp-for="Notes" class="form-control rounded-3" rows="3"
-                                  placeholder="Any additional information for the provider…"
-                                  maxlength="500"></textarea>
-                        <div class="form-text text-end">
-                            <span id="notesCharCount">0</span> / 500
-                        </div>
-                        <span asp-validation-for="Notes" class="text-danger small"></span>
-                    </div>
-
-                    @* ── Payment notice ── *@
-                    <div class="alert alert-light border small d-flex align-items-start gap-2 mb-4" role="note">
-                        <i class="bi bi-info-circle-fill text-primary mt-1 flex-shrink-0"></i>
-                        <span>
-                            Payment is <strong>cash on arrival</strong>. You will confirm payment details
-                            on the next screen before the booking is finalised.
-                        </span>
-                    </div>
-
-                    @* ── Actions ── *@
-                    <div class="d-flex flex-wrap gap-3">
-                        <button type="submit" class="btn btn-primary rounded-pill px-5">
-                            <i class="bi bi-calendar2-check me-1"></i> Confirm Booking
-                        </button>
-                        <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-                           class="btn btn-outline-secondary rounded-pill px-4">
-                            Cancel
-                        </a>
-                    </div>
-                </form>
-            }
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <form asp-action="Book" asp-controller="Booking" method="post" id="bookingForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ProviderId" value="@Model.ProviderId" />
+            <input type="hidden" id="platformServiceFee" value="@Model.PlatformServiceFee" />
+
+            <div class="booking-stepped-layout">
+                <!-- Left Column: Steps -->
+                <div class="booking-steps-col">
+                    <!-- Step 1: Select Service -->
+                    <div class="booking-step-card" id="step-service">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-num-badge">1</span>
+                            <h2 class="h5 fw-bold mb-0 text-dark">Choose Medical Service</h2>
+                        </div>
+                        <p class="text-muted small mb-3">Select the examination or treatment you require.</p>
+
+                        <div class="vstack gap-2">
+                            @foreach (var svc in Model.Services)
+                            {
+                                var isChecked = (Model.Form.SelectedProviderServiceId > 0 && Model.Form.SelectedProviderServiceId == svc.Id)
+                                                || (Model.Form.SelectedProviderServiceId == 0 && Model.PreselectedServiceId == svc.Id);
+
+                                <label class="selectable-card d-flex align-items-center justify-content-between @(isChecked ? "selected" : "")"
+                                       data-id="@svc.Id"
+                                       data-name="@svc.Name"
+                                       data-fee="@svc.Fee"
+                                       data-type="@svc.Type">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <input type="radio" name="SelectedProviderServiceId" value="@svc.Id" @(isChecked ? "checked" : "") required />
+                                        <div class="fs-4 text-primary">
+                                            @if (svc.Type == ServiceType.DoctorHomeVisit)
+                                            {
+                                                <i class="bi bi-house-door-fill"></i>
+                                            }
+                                            else if (svc.Type == ServiceType.NurseHomeVisit)
+                                            {
+                                                <i class="bi bi-heart-pulse-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-camera-video-fill"></i>
+                                            }
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">@svc.Name</div>
+                                            @if (!string.IsNullOrWhiteSpace(svc.Description))
+                                            {
+                                                <div class="small text-muted">@svc.Description</div>
+                                            }
+                                            <span class="badge bg-light text-dark border rounded-pill mt-1 small">@svc.Type</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fs-5 fw-bold text-dark">@svc.Fee.ToString("N0")</span>
+                                        <span class="small text-muted">EGP</span>
+                                    </div>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Choose Day -->
+                    <div class="booking-step-card" id="step-day">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-num-badge">2</span>
+                            <h2 class="h5 fw-bold mb-0 text-dark">Select Date</h2>
+                        </div>
+                        <p class="text-muted small mb-3">Browse available days with open appointment windows.</p>
+
+                        <div class="days-scroll-wrapper" role="radiogroup" aria-label="Available Days">
+                            @foreach (var day in Model.Days)
+                            {
+                                var isActive = day.DateKey == selectedDayKey;
+                                <button type="button" class="day-chip @(isActive ? "active" : "")" data-day-key="@day.DateKey" role="radio" aria-checked="@(isActive ? "true" : "false")">
+                                    <div class="small fw-semibold text-uppercase text-muted">@day.WeekdayName</div>
+                                    <div class="fs-4 fw-bold">@day.DayNumber</div>
+                                    <div class="small text-muted">@day.MonthName</div>
+                                    <div class="badge bg-light text-primary border rounded-pill px-2 py-0 mt-1" style="font-size: 0.7rem;">
+                                        @day.WindowsCount win
+                                    </div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Choose 2-Hour Arrival Window -->
+                    <div class="booking-step-card" id="step-window">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-num-badge">3</span>
+                            <h2 class="h5 fw-bold mb-0 text-dark">Choose 2-Hour Arrival Window</h2>
+                        </div>
+                        <p class="text-muted small mb-3">
+                            <i class="bi bi-info-circle me-1 text-primary"></i>
+                            The provider will arrive at your location sometime within this 2-hour window.
+                        </p>
+
+                        @foreach (var day in Model.Days)
+                        {
+                            var isDayActive = day.DateKey == selectedDayKey;
+                            var morningSlots = day.Windows.Where(w => w.PartOfDay == "Morning").ToList();
+                            var afternoonSlots = day.Windows.Where(w => w.PartOfDay == "Afternoon").ToList();
+                            var eveningSlots = day.Windows.Where(w => w.PartOfDay == "Evening").ToList();
+
+                            <div class="day-windows-container @(isDayActive ? "" : "d-none")" data-day-container="@day.DateKey">
+                                @if (morningSlots.Count > 0)
+                                {
+                                    <div class="mb-3">
+                                        <div class="small fw-bold text-muted text-uppercase mb-2">
+                                            <i class="bi bi-brightness-alt-high me-1 text-warning"></i> Morning (Before 12:00 PM)
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var w in morningSlots)
+                                            {
+                                                var isChecked = Model.Form.SelectedTimeSlotId == w.Id || Model.PreselectedSlotId == w.Id;
+                                                <label class="window-pill @(isChecked ? "selected" : "")" data-window-id="@w.Id" data-window-time="@w.FormattedWindow" data-window-day="@day.DayLabel">
+                                                    <input type="radio" name="SelectedTimeSlotId" value="@w.Id" @(isChecked ? "checked" : "") required />
+                                                    @w.FormattedWindow
+                                                </label>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (afternoonSlots.Count > 0)
+                                {
+                                    <div class="mb-3">
+                                        <div class="small fw-bold text-muted text-uppercase mb-2">
+                                            <i class="bi bi-sun me-1 text-warning"></i> Afternoon (12:00 PM – 05:00 PM)
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var w in afternoonSlots)
+                                            {
+                                                var isChecked = Model.Form.SelectedTimeSlotId == w.Id || Model.PreselectedSlotId == w.Id;
+                                                <label class="window-pill @(isChecked ? "selected" : "")" data-window-id="@w.Id" data-window-time="@w.FormattedWindow" data-window-day="@day.DayLabel">
+                                                    <input type="radio" name="SelectedTimeSlotId" value="@w.Id" @(isChecked ? "checked" : "") required />
+                                                    @w.FormattedWindow
+                                                </label>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (eveningSlots.Count > 0)
+                                {
+                                    <div class="mb-3">
+                                        <div class="small fw-bold text-muted text-uppercase mb-2">
+                                            <i class="bi bi-moon-stars me-1 text-primary"></i> Evening (05:00 PM Onwards)
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var w in eveningSlots)
+                                            {
+                                                var isChecked = Model.Form.SelectedTimeSlotId == w.Id || Model.PreselectedSlotId == w.Id;
+                                                <label class="window-pill @(isChecked ? "selected" : "")" data-window-id="@w.Id" data-window-time="@w.FormattedWindow" data-window-day="@day.DayLabel">
+                                                    <input type="radio" name="SelectedTimeSlotId" value="@w.Id" @(isChecked ? "checked" : "") required />
+                                                    @w.FormattedWindow
+                                                </label>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Step 4: Visit Address (Hidden for Remote Consultation) -->
+                    <div class="booking-step-card @(isInitialHomeVisit ? "" : "d-none")" id="step-address">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-num-badge">4</span>
+                            <h2 class="h5 fw-bold mb-0 text-dark">Visit Address</h2>
+                        </div>
+                        <p class="text-muted small mb-3">Select your saved address or enter a new visit location.</p>
+
+                        @if (Model.SavedAddresses.Count > 0)
+                        {
+                            <div class="vstack gap-2 mb-3">
+                                @foreach (var addr in Model.SavedAddresses)
+                                {
+                                    var isChecked = Model.Form.AddressId == addr.Id;
+                                    <label class="selectable-card d-flex align-items-center justify-content-between @(isChecked ? "selected" : "")">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <input type="radio" name="AddressId" value="@addr.Id" @(isChecked ? "checked" : "") class="saved-address-radio" />
+                                            <div>
+                                                <strong class="text-dark d-block">@addr.Label</strong>
+                                                <span class="small text-muted">@addr.Formatted</span>
+                                            </div>
+                                        </div>
+                                        <i class="bi bi-geo-alt-fill text-danger fs-5"></i>
+                                    </label>
+                                }
+                            </div>
+                        }
+
+                        <!-- Add New Address Toggle / Accordion -->
+                        <div class="border rounded-3 p-3 bg-light">
+                            <label class="form-check d-flex align-items-center gap-2 mb-3 cursor-pointer">
+                                <input type="radio" name="AddressId" value="" class="form-check-input new-address-radio" @(Model.SavedAddresses.Count == 0 || !Model.Form.AddressId.HasValue ? "checked" : "") />
+                                <span class="fw-bold text-dark">Enter a new address</span>
+                            </label>
+
+                            <div id="newAddressFields" class="vstack gap-3">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-muted">City</label>
+                                        <input type="text" name="City" value="@Model.Form.City" class="form-control rounded-3" placeholder="e.g. Cairo" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-muted">District / Area</label>
+                                        <input type="text" name="District" value="@Model.Form.District" class="form-control rounded-3" placeholder="e.g. Maadi" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label small fw-semibold text-muted">Street, Building & Apartment</label>
+                                    <input type="text" name="StreetAndBuilding" value="@Model.Form.StreetAndBuilding" class="form-control rounded-3" placeholder="e.g. 15 Road 9, Apt 4" />
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-muted">Address Label</label>
+                                        <input type="text" name="Label" value="@Model.Form.Label" class="form-control rounded-3" placeholder="e.g. Home, Office" />
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <div class="form-check mb-2">
+                                            <input type="checkbox" name="SaveNewAddress" value="true" class="form-check-input" id="saveAddrCheck" checked />
+                                            <label class="form-check-label small text-dark" for="saveAddrCheck">
+                                                Save address for future visits
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Payment Method -->
+                    <div class="booking-step-card" id="step-payment">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-num-badge">5</span>
+                            <h2 class="h5 fw-bold mb-0 text-dark">Payment Method</h2>
+                        </div>
+                        <p class="text-muted small mb-3">Choose how you prefer to pay for this appointment.</p>
+
+                        <div class="vstack gap-3">
+                            <label class="selectable-card d-flex align-items-start gap-3 @(Model.Form.PaymentMethod == PaymentMethod.CashOnArrival ? "selected" : "")" id="payMethodCash">
+                                <input type="radio" name="PaymentMethod" value="@PaymentMethod.CashOnArrival" @(Model.Form.PaymentMethod == PaymentMethod.CashOnArrival ? "checked" : "") required />
+                                <div class="fs-3 text-success"><i class="bi bi-cash-coin"></i></div>
+                                <div>
+                                    <div class="fw-bold text-dark">Cash on Arrival</div>
+                                    <div class="small text-muted">Pay the healthcare provider in cash directly after the consultation is completed.</div>
+                                </div>
+                            </label>
+
+                            <label class="selectable-card d-flex align-items-start gap-3 @(Model.Form.PaymentMethod == PaymentMethod.OnlinePayment ? "selected" : "")" id="payMethodCard">
+                                <input type="radio" name="PaymentMethod" value="@PaymentMethod.OnlinePayment" @(Model.Form.PaymentMethod == PaymentMethod.OnlinePayment ? "checked" : "") required />
+                                <div class="fs-3 text-primary"><i class="bi bi-credit-card-2-front-fill"></i></div>
+                                <div>
+                                    <div class="fw-bold text-dark">Card Pre-Authorization</div>
+                                    <div class="small text-muted">A hold is placed on your card today; your card is only charged after the visit is completed. The hold is immediately released if the request is declined.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Step 6: Patient Notes -->
+                    <div class="booking-step-card" id="step-notes">
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="step-num-badge">6</span>
+                            <h2 class="h5 fw-bold mb-0 text-dark">Medical Notes & Symptoms</h2>
+                        </div>
+                        <p class="text-muted small mb-3">Share any relevant health context, symptoms, or gate directions with the provider.</p>
+
+                        <div class="position-relative">
+                            <textarea name="Notes" id="patientNotes" rows="3" class="form-control rounded-3" maxlength="500" placeholder="Optional notes for your provider...">@Model.Form.Notes</textarea>
+                            <div class="text-end text-muted small mt-1">
+                                <span id="notesCharCounter">0</span> / 500 characters
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Sticky Summary Panel -->
+                <div class="booking-summary-col">
+                    <div class="booking-summary-card">
+                        <h3 class="h6 fw-bold text-dark pb-3 mb-3 border-bottom">
+                            Appointment Summary
+                        </h3>
+
+                        <!-- Provider Mini-Card -->
+                        <div class="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom">
+                            @if (!string.IsNullOrWhiteSpace(Model.ProviderPhotoUrl))
+                            {
+                                <img src="@Model.ProviderPhotoUrl" class="rounded-circle border" width="48" height="48" alt="@Model.ProviderFullName" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 48px; height: 48px;">
+                                    @Model.ProviderFullName[0]
+                                </div>
+                            }
+                            <div>
+                                <strong class="text-dark d-block">@Model.ProviderFullName</strong>
+                                <span class="small text-muted">@Model.ProviderSpecialty · @Model.ProviderBaseCity</span>
+                            </div>
+                        </div>
+
+                        <!-- Summary Items -->
+                        <div class="vstack gap-2 small pb-3 mb-3 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Service:</span>
+                                <strong class="text-dark text-end" id="summaryServiceName">—</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Date:</span>
+                                <strong class="text-dark text-end" id="summaryDate">—</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Window:</span>
+                                <strong class="text-primary text-end" id="summaryWindow">—</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Payment:</span>
+                                <strong class="text-dark text-end" id="summaryPayment">Cash on Arrival</strong>
+                            </div>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="vstack gap-2 small pb-3 mb-3 border-bottom">
+                            <div class="d-flex justify-content-between text-muted">
+                                <span>Service Fee:</span>
+                                <span id="summaryServiceFee">0 EGP</span>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted">
+                                <span>Platform Booking Fee:</span>
+                                <span>@Model.PlatformServiceFee.ToString("N0") EGP</span>
+                            </div>
+                            <div class="d-flex justify-content-between fw-bold text-dark fs-5 pt-2 border-top">
+                                <span>Total:</span>
+                                <span class="text-primary" id="summaryTotal">0 EGP</span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border small text-muted mb-4">
+                            <i class="bi bi-clock me-1"></i> Your provider must accept your request before it is confirmed.
+                        </div>
+
+                        <button type="submit" id="submitBookingBtn" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" disabled>
+                            Send Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Fixed Bottom Action Bar -->
+            <div class="mobile-booking-bar">
+                <div>
+                    <span class="small text-muted d-block">Total to pay</span>
+                    <strong class="fs-5 text-primary" id="mobileTotal">0 EGP</strong>
+                </div>
+                <button type="submit" id="mobileSubmitBtn" class="btn btn-primary rounded-pill px-4 fw-bold" disabled>
+                    Send Request
+                </button>
+            </div>
+        </form>
+    }
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
-        // Live character counter for the Notes textarea
-        (function () {
-            const textarea = document.getElementById('Notes');
-            const counter = document.getElementById('notesCharCount');
-            if (!textarea || !counter) return;
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.getElementById('bookingForm');
+            if (!form) return;
 
-            function update() {
-                counter.textContent = textarea.value.length;
+            var platformFee = parseFloat(document.getElementById('platformServiceFee').value) || 0;
+            var submitBtn = document.getElementById('submitBookingBtn');
+            var mobileSubmitBtn = document.getElementById('mobileSubmitBtn');
+
+            var summaryServiceName = document.getElementById('summaryServiceName');
+            var summaryDate = document.getElementById('summaryDate');
+            var summaryWindow = document.getElementById('summaryWindow');
+            var summaryPayment = document.getElementById('summaryPayment');
+            var summaryServiceFee = document.getElementById('summaryServiceFee');
+            var summaryTotal = document.getElementById('summaryTotal');
+            var mobileTotal = document.getElementById('mobileTotal');
+
+            var stepAddress = document.getElementById('step-address');
+            var serviceCards = document.querySelectorAll('#step-service .selectable-card');
+            var dayChips = document.querySelectorAll('.day-chip');
+            var windowPills = document.querySelectorAll('.window-pill');
+            var paymentCards = document.querySelectorAll('#step-payment .selectable-card');
+            var notesTextarea = document.getElementById('patientNotes');
+            var charCounter = document.getElementById('notesCharCounter');
+
+            // Notes counter
+            if (notesTextarea && charCounter) {
+                var updateCounter = function () {
+                    charCounter.textContent = notesTextarea.value.length;
+                };
+                notesTextarea.addEventListener('input', updateCounter);
+                updateCounter();
             }
 
-            textarea.addEventListener('input', update);
-            update(); // initialise on page load (handles repopulated form on failed POST)
-        }());
+            // Day switcher
+            dayChips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    dayChips.forEach(function (c) { c.classList.remove('active'); c.setAttribute('aria-checked', 'false'); });
+                    chip.classList.add('active');
+                    chip.setAttribute('aria-checked', 'true');
+
+                    var dayKey = chip.getAttribute('data-day-key');
+                    document.querySelectorAll('.day-windows-container').forEach(function (container) {
+                        if (container.getAttribute('data-day-container') === dayKey) {
+                            container.classList.remove('d-none');
+                        } else {
+                            container.classList.add('d-none');
+                        }
+                    });
+                });
+            });
+
+            // Service selection
+            serviceCards.forEach(function (card) {
+                card.addEventListener('click', function () {
+                    serviceCards.forEach(function (c) { c.classList.remove('selected'); });
+                    card.classList.add('selected');
+                    var radio = card.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = true;
+
+                    var type = card.getAttribute('data-type');
+                    if (type === 'RemoteConsultation') {
+                        stepAddress.classList.add('d-none');
+                    } else {
+                        stepAddress.classList.remove('d-none');
+                    }
+
+                    updateSummary();
+                });
+            });
+
+            // Window selection
+            windowPills.forEach(function (pill) {
+                pill.addEventListener('click', function () {
+                    windowPills.forEach(function (p) { p.classList.remove('selected'); });
+                    pill.classList.add('selected');
+                    var radio = pill.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = true;
+
+                    updateSummary();
+                });
+            });
+
+            // Payment method selection
+            paymentCards.forEach(function (card) {
+                card.addEventListener('click', function () {
+                    paymentCards.forEach(function (c) { c.classList.remove('selected'); });
+                    card.classList.add('selected');
+                    var radio = card.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = true;
+
+                    updateSummary();
+                });
+            });
+
+            function updateSummary() {
+                var selectedServiceCard = document.querySelector('#step-service .selectable-card:has(input[type="radio"]:checked)');
+                var selectedWindowPill = document.querySelector('.window-pill:has(input[type="radio"]:checked)');
+                var selectedPayment = document.querySelector('input[name="PaymentMethod"]:checked');
+
+                var serviceFee = 0;
+                var serviceName = '—';
+                var isHomeVisit = true;
+
+                if (selectedServiceCard) {
+                    serviceName = selectedServiceCard.getAttribute('data-name') || '—';
+                    serviceFee = parseFloat(selectedServiceCard.getAttribute('data-fee')) || 0;
+                    var type = selectedServiceCard.getAttribute('data-type');
+                    isHomeVisit = type !== 'RemoteConsultation';
+                }
+
+                var windowDay = '—';
+                var windowTime = '—';
+                if (selectedWindowPill) {
+                    windowDay = selectedWindowPill.getAttribute('data-window-day') || '—';
+                    windowTime = selectedWindowPill.getAttribute('data-window-time') || '—';
+                }
+
+                var paymentMethodLabel = (selectedPayment && selectedPayment.value === 'OnlinePayment')
+                    ? 'Card Pre-Authorization'
+                    : 'Cash on Arrival';
+
+                var total = serviceFee + platformFee;
+
+                summaryServiceName.textContent = serviceName;
+                summaryDate.textContent = windowDay;
+                summaryWindow.textContent = windowTime;
+                summaryPayment.textContent = paymentMethodLabel;
+                summaryServiceFee.textContent = serviceFee.toLocaleString() + ' EGP';
+                summaryTotal.textContent = total.toLocaleString() + ' EGP';
+                mobileTotal.textContent = total.toLocaleString() + ' EGP';
+
+                var btnText = (selectedPayment && selectedPayment.value === 'OnlinePayment')
+                    ? 'Continue to Payment'
+                    : 'Send Request';
+
+                submitBtn.textContent = btnText;
+                mobileSubmitBtn.textContent = btnText;
+
+                // Validation state for submit button
+                var canSubmit = selectedServiceCard !== null && selectedWindowPill !== null;
+                submitBtn.disabled = !canSubmit;
+                mobileSubmitBtn.disabled = !canSubmit;
+            }
+
+            // Initialize on load
+            updateSummary();
+        });
     </script>
 }
-
-
-

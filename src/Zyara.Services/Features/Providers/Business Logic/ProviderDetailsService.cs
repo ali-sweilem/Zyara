@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Enums;
+using Zyara.Domain.Rules;
 using Zyara.Repositories.Data;
 using Zyara.Services.Features.Providers.Dtos;
 using Zyara.Services.Features.Providers.Interfaces;
@@ -26,14 +27,11 @@ public sealed class ProviderDetailsService : IProviderDetailsService
     public async Task<ProviderDetailsDto?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
         var egyptNow = EgyptTime.Now(_timeProvider);
-        var today = egyptNow.Date;
-        var nowTime = egyptNow.TimeOfDay;
 
         var provider = await _db.Providers
             .AsNoTracking()
             .PubliclyVisible()
             .Where(p => p.Id == id)
-            .AsSplitQuery()
             .Select(p => new ProviderDetailsDto
             {
                 Id = p.Id,
@@ -59,21 +57,8 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                         Id = ps.Id,
                         Name = ps.Service!.Name,
                         Description = ps.Service.Description,
-                        Fee = ps.Fee
-                    })
-                    .ToList(),
-                UpcomingSlots = p.TimeSlots
-                    .Where(ts => ts.Status == TimeSlotStatus.Available &&
-                        (ts.Date > today || (ts.Date == today && ts.StartTime > nowTime)))
-                    .OrderBy(ts => ts.Date)
-                    .ThenBy(ts => ts.StartTime)
-                    .Take(30)
-                    .Select(ts => new UpcomingSlotDto
-                    {
-                        Id = ts.Id,
-                        Date = ts.Date,
-                        StartTime = ts.StartTime,
-                        EndTime = ts.EndTime
+                        Fee = ps.Fee,
+                        Type = ps.Service.Type
                     })
                     .ToList()
             })
@@ -81,6 +66,22 @@ public sealed class ProviderDetailsService : IProviderDetailsService
 
         if (provider is not null)
         {
+            provider.UpcomingSlots = await _db.TimeSlots
+                .AsNoTracking()
+                .Where(ts => ts.ProviderId == id)
+                .BookableSlots(egyptNow)
+                .OrderBy(ts => ts.Date)
+                .ThenBy(ts => ts.StartTime)
+                .Take(30)
+                .Select(ts => new UpcomingSlotDto
+                {
+                    Id = ts.Id,
+                    Date = ts.Date,
+                    StartTime = ts.StartTime,
+                    EndTime = ts.EndTime
+                })
+                .ToListAsync(cancellationToken);
+
             provider.IsAvailable = provider.UpcomingSlots.Count > 0;
         }
 

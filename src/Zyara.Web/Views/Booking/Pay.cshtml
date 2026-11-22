@@ -1,0 +1,132 @@
+@model Zyara.Services.Features.Bookings.Dtos.CardPayInputModel
+@{
+    ViewData["Title"] = "Secure Card Pre-Authorization";
+    var summary = ViewBag.Summary as Zyara.Services.Features.Payments.Dtos.BookingPaymentSummaryDto;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+}
+
+<div class="container py-4 py-lg-5" style="max-width: 680px;">
+    @if (summary?.IsFakeGatewayActive == true)
+    {
+        <div class="test-mode-ribbon">
+            <i class="bi bi-shield-lock-fill fs-5"></i>
+            <div>
+                <strong>DEMO TEST MODE ACTIVE:</strong>
+                Use test card <code class="text-white bg-dark px-2 py-1 rounded">4242 4242 4242 4242</code> with any future MM/YY and CVV.
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 56px; height: 56px;">
+                    <i class="bi bi-credit-card-2-front-fill fs-3"></i>
+                </div>
+                <h1 class="h4 fw-bold text-dark mb-1">Pre-Authorize Payment</h1>
+                <p class="text-muted small mb-0">Booking #@Model.BookingId</p>
+            </div>
+
+            <!-- Honest Billing Explanation Alert -->
+            <div class="alert alert-info rounded-3 p-3 small mb-4">
+                <i class="bi bi-info-circle-fill me-1"></i>
+                <strong>Zero-Risk Payment Policy:</strong>
+                We place a pre-authorization hold of <strong>@summary?.TotalPrice.ToString("N2") EGP</strong> on your card now. You are charged only after your healthcare visit is completed. The hold is immediately released if the provider declines or expires.
+            </div>
+
+            <!-- Booking Brief Summary -->
+            @if (summary != null)
+            {
+                <div class="bg-light rounded-3 p-3 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">Healthcare Provider:</span>
+                        <strong class="text-dark">@summary.ProviderFullName</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">Service:</span>
+                        <strong class="text-dark">@summary.ServiceName</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">Arrival Window:</span>
+                        <strong class="text-primary">@summary.DayLabel, @summary.FormattedWindow</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="fw-bold text-dark">Pre-Authorization Hold Amount:</span>
+                        <span class="fs-5 fw-bold text-primary">@summary.TotalPrice.ToString("N2") EGP</span>
+                    </div>
+                </div>
+            }
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger rounded-3 mb-4">
+                    <div asp-validation-summary="All" class="small mb-0"></div>
+                </div>
+            }
+
+            <form asp-action="Pay" asp-controller="Booking" method="post" id="cardPayForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BookingId" value="@Model.BookingId" />
+
+                <div class="mb-3">
+                    <label asp-for="CardHolderName" class="form-label small fw-semibold text-dark">Cardholder Name</label>
+                    <input asp-for="CardHolderName" class="form-control rounded-3" placeholder="Full name as printed on card" autocomplete="cc-name" required />
+                    <span asp-validation-for="CardHolderName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CardNumber" class="form-label small fw-semibold text-dark">Card Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-credit-card"></i></span>
+                        <input type="text" name="CardNumber" id="cardNumberInput" class="form-control rounded-end-3" placeholder="4242 •••• •••• 4242" maxlength="19" autocomplete="cc-number" required />
+                    </div>
+                    <span asp-validation-for="CardNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-4">
+                        <label asp-for="ExpiryMonth" class="form-label small fw-semibold text-dark">Exp. Month</label>
+                        <input type="text" name="ExpiryMonth" class="form-control rounded-3 text-center" placeholder="MM" maxlength="2" autocomplete="cc-exp-month" required />
+                        <span asp-validation-for="ExpiryMonth" class="text-danger small"></span>
+                    </div>
+                    <div class="col-4">
+                        <label asp-for="ExpiryYear" class="form-label small fw-semibold text-dark">Exp. Year</label>
+                        <input type="text" name="ExpiryYear" class="form-control rounded-3 text-center" placeholder="YY" maxlength="4" autocomplete="cc-exp-year" required />
+                        <span asp-validation-for="ExpiryYear" class="text-danger small"></span>
+                    </div>
+                    <div class="col-4">
+                        <label asp-for="Cvv" class="form-label small fw-semibold text-dark">CVV</label>
+                        <input type="password" name="Cvv" class="form-control rounded-3 text-center" placeholder="•••" maxlength="4" autocomplete="cc-csc" required />
+                        <span asp-validation-for="Cvv" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <button type="submit" id="paySubmitBtn" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm">
+                    <i class="bi bi-lock-fill me-1"></i> Authorize @summary?.TotalPrice.ToString("N0") EGP Hold
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var cardInput = document.getElementById('cardNumberInput');
+            if (cardInput) {
+                cardInput.addEventListener('input', function (e) {
+                    var val = e.target.value.replace(/\D/g, '').substring(0, 16);
+                    var parts = [];
+                    for (var i = 0; i < val.length; i += 4) {
+                        parts.push(val.substring(i, i + 4));
+                    }
+                    e.target.value = parts.join(' ');
+                });
+            }
+        });
+    </script>
+}
+

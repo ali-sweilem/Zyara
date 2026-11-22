@@ -33,6 +33,44 @@ namespace Zyara.Repositories.Data.Configurations
                 .IsRequired(false)
                 .HasMaxLength(10);
 
+            builder.Property(b => b.Notes)
+                .IsRequired(false)
+                .HasMaxLength(500);
+
+            builder.Property(b => b.VisitAddress)
+                .IsRequired(false)
+                .HasMaxLength(400);
+
+            builder.Property(b => b.VisitLatitude)
+                .IsRequired(false);
+
+            builder.Property(b => b.VisitLongitude)
+                .IsRequired(false);
+
+            builder.Property(b => b.CreatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            builder.Property(b => b.RespondedAt)
+                .IsRequired(false);
+
+            builder.Property(b => b.StartedAt)
+                .IsRequired(false);
+
+            builder.Property(b => b.CompletedAt)
+                .IsRequired(false);
+
+            builder.Property(b => b.StatusReason)
+                .IsRequired(false)
+                .HasMaxLength(300);
+
+            builder.Property(b => b.OtpFailedAttempts)
+                .IsRequired()
+                .HasDefaultValue(0);
+
+            builder.Property(b => b.RowVersion)
+                .IsRowVersion();
+
             builder.Property(b => b.PatientId).IsRequired();
             builder.Property(b => b.ProviderId).IsRequired();
             builder.Property(b => b.ServiceId).IsRequired();
@@ -59,14 +97,16 @@ namespace Zyara.Repositories.Data.Configurations
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
-            // Booking (0..1) <-> TimeSlot (1): one-to-one, FK on Booking, unique index, Restrict
+            // TimeSlot relationship: HasOne(b => b.TimeSlot).WithMany().HasForeignKey(b => b.TimeSlotId).OnDelete(DeleteBehavior.Restrict).IsRequired()
             builder.HasOne(b => b.TimeSlot)
-                .WithOne()
-                .HasForeignKey<Booking>(b => b.TimeSlotId)
+                .WithMany()
+                .HasForeignKey(b => b.TimeSlotId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
-            builder.HasIndex(b => b.TimeSlotId).IsUnique();
+            builder.HasIndex(b => b.TimeSlotId)
+                .IsUnique()
+                .HasFilter("[Status] <> 'Cancelled' AND [Status] <> 'Rejected' AND [Status] <> 'Expired'");
 
             // Booking (1) <-> Payment (1): one-to-one, FK on Payment, Cascade
             builder.HasOne(b => b.Payment)
@@ -75,11 +115,9 @@ namespace Zyara.Repositories.Data.Configurations
                 .OnDelete(DeleteBehavior.Cascade)
                 .IsRequired();
 
-            // Prescription (0..1) <-> Booking (1): one-to-one optional, Restrict, FK on Prescription, unique index
             builder.HasIndex(b => b.PatientId);
             builder.HasIndex(b => b.ProviderId);
             builder.HasIndex(b => b.Status);
         }
     }
 }
-

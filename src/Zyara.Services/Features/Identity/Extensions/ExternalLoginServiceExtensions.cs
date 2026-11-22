@@ -18,11 +18,14 @@ public static class ExternalLoginServiceExtensions
         var clientSecret = config["Authentication:Google:ClientSecret"];
 
         // Register Google only when ClientId is present to avoid failing startup when secrets are not yet configured
-        if (!string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret))
+        if (!string.IsNullOrWhiteSpace(clientId) && 
+            !string.IsNullOrWhiteSpace(clientSecret) && 
+            !clientId.Contains("YOUR_CLIENT_ID", StringComparison.OrdinalIgnoreCase))
         {
             services.AddAuthentication()
                 .AddGoogle(options =>
                 {
+                    options.SignInScheme = Microsoft.AspNetCore.Identity.IdentityConstants.ExternalScheme;
                     options.ClientId = clientId;
                     options.ClientSecret = clientSecret;
                 });

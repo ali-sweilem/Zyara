@@ -30,7 +30,7 @@ namespace Zyara.Services.Features.Providers.Dtos
         [Required(ErrorMessage = "Date is required.")]
         [DataType(DataType.Date)]
         [Display(Name = "Date")]
-        public DateTime Date { get; set; } = DateTime.Today;
+        public DateTime Date { get; set; } = EgyptTime.Today();
 
         [Required(ErrorMessage = "Start time is required.")]
         [Display(Name = "Start Time")]

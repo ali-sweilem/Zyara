@@ -16,24 +16,89 @@ public class ExternalLoginController : Controller
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly IExternalLoginService _externalLoginService;
+    private readonly IAuthenticationSchemeProvider _schemeProvider;
+    private readonly IConfiguration _config;
 
     public ExternalLoginController(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
-        IExternalLoginService externalLoginService)
+        IExternalLoginService externalLoginService,
+        IAuthenticationSchemeProvider schemeProvider,
+        IConfiguration config)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _externalLoginService = externalLoginService;
+        _schemeProvider = schemeProvider;
+        _config = config;
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Challenge(string provider = "Google", string? returnUrl = null)
+    public async Task<IActionResult> Challenge(string provider = "Google", string? returnUrl = null)
     {
-        var redirectUrl = Url.Action(nameof(Callback), "ExternalLogin", new { returnUrl });
-        var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-        return new ChallengeResult(provider, properties);
+        var clientId = _config["Authentication:Google:ClientId"];
+        var clientSecret = _config["Authentication:Google:ClientSecret"];
+        var isConfigured = !string.IsNullOrWhiteSpace(clientId) && 
+                           !string.IsNullOrWhiteSpace(clientSecret) && 
+                           !clientId.Contains("YOUR_CLIENT_ID", StringComparison.OrdinalIgnoreCase);
+
+        var scheme = await _schemeProvider.GetSchemeAsync(provider);
+
+        // If real OAuth credentials are configured and the scheme exists, challenge Google
+        if (isConfigured && scheme != null)
+        {
+            var redirectUrl = Url.Action(nameof(Callback), "ExternalLogin", new { returnUrl });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return new ChallengeResult(provider, properties);
+        }
+
+        // Otherwise (development mode or credentials not yet provided), use the dev Google sign-in helper
+        return RedirectToAction(nameof(DevGoogle), new { returnUrl });
+    }
+
+    [HttpGet]
+    public IActionResult DevGoogle(string? returnUrl = null)
+    {
+        ViewBag.ReturnUrl = returnUrl;
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DevGoogleSignIn(string email, string? fullName = null, string? returnUrl = null)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            ModelState.AddModelError(string.Empty, "Email is required.");
+            ViewBag.ReturnUrl = returnUrl;
+            return View("DevGoogle");
+        }
+
+        email = email.Trim().ToLowerInvariant();
+        fullName = string.IsNullOrWhiteSpace(fullName) ? email.Split('@')[0] : fullName.Trim();
+        var googleId = "google-dev-" + Math.Abs(email.GetHashCode());
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, googleId),
+            new Claim(ClaimTypes.Name, fullName),
+            new Claim(ClaimTypes.Email, email)
+        };
+
+        var identity = new ClaimsIdentity(claims, IdentityConstants.ExternalScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var props = new AuthenticationProperties(new Dictionary<string, string?>
+        {
+            { "LoginProvider", "Google" }
+        })
+        {
+            RedirectUri = Url.Action(nameof(Callback), "ExternalLogin", new { returnUrl })
+        };
+
+        await HttpContext.SignInAsync(IdentityConstants.ExternalScheme, principal, props);
+
+        return RedirectToAction(nameof(Callback), new { returnUrl });
     }
 
     [HttpGet]

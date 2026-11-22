@@ -36,6 +36,17 @@ namespace Zyara.Repositories.Data
 
             // Apply all entity configurations defined in this assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ZyaraDbContext).Assembly);
+
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                modelBuilder.Entity<Booking>()
+                    .Property(b => b.RowVersion)
+                    .HasDefaultValueSql("randomblob(8)");
+
+                modelBuilder.Entity<Booking>()
+                    .Property(b => b.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            }
         }
     }
 }

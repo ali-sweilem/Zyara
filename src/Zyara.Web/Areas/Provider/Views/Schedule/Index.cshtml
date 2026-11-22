@@ -1,180 +1,327 @@
-@using Zyara.Domain.Enums
-@model Zyara.Services.Features.Providers.Dtos.ProviderTimeSlotIndexDto
+@model Zyara.Services.Features.Providers.Dtos.ProviderScheduleViewDto
 
 @{
-    Layout = "_Layout";
-    ViewData["Title"] = "Manage Working Schedule";
+    ViewData["Title"] = "Manage Arrival Schedule";
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<style>
-    .flatpickr-calendar {
-        direction: ltr;
-    }
-</style>
 
-<div class="container-fluid py-4" dir="ltr" lang="en">
-    @if (TempData["Message"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    <div class="row g-4">
-        <!-- Form: Add New TimeSlot -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-primary text-white py-3">
-                    <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-clock-plus me-2"></i>Add 2-Hour Time Slot
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    <form action="/Provider/Schedule/CreateTimeSlot" method="post">
-                        @Html.AntiForgeryToken()
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Date</label>
-                            <input type="text" id="NewTimeSlot_Date" name="NewTimeSlot.Date" class="form-control datepicker bg-white" placeholder="Select Date" />
-                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.Date")</span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Start Time</label>
-                            <input type="text" id="NewTimeSlot_StartTime" name="NewTimeSlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Start Time" />
-                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.StartTime")</span>
-                            <div class="form-text text-muted small">
-                                * Slot duration is automatically set to 2 hours (120 minutes).
-                            </div>
-                        </div>
-
-                        <div class="mb-4 p-3 bg-light rounded-3">
-                            <span class="text-muted small">Fixed Window:</span>
-                            <div class="fw-bold text-primary mt-1">
-                                <i class="bi bi-hourglass-split me-1"></i> 120 Minutes (Arrival Window)
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm">
-                            <i class="bi bi-plus-circle me-1"></i> Add Time Slot
-                        </button>
-                    </form>
-                </div>
+<!-- Counters on top -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Available Windows</span>
+                <span class="badge bg-success rounded-pill px-3 py-1">Open</span>
             </div>
+            <div class="kpi-val text-success">@Model.AvailableCount</div>
+            <small class="text-muted">Publicly bookable by patients</small>
         </div>
-
-        <!-- Table: TimeSlots List -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 fw-bold text-dark">
-                        <i class="bi bi-calendar-week me-2 text-primary"></i>My Time Slots
-                    </h5>
-                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
-                        Total: @(Model.TimeSlots?.Count ?? 0)
-                    </span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 text-center">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Window Time</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.TimeSlots != null && Model.TimeSlots.Any())
-                                {
-                                    @foreach (var slot in Model.TimeSlots)
-                                    {
-                                        <tr>
-                                            <td class="fw-bold">@slot.Date.ToString("yyyy-MM-dd")</td>
-                                            <td>
-                                                @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") -
-                                                @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt")
-                                            </td>
-                                            <td>
-                                                @switch (slot.Status)
-                                                {
-                                                    case TimeSlotStatus.Available:
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Available</span>
-                                                        break;
-                                                    case TimeSlotStatus.Locked:
-                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Locked</span>
-                                                        break;
-                                                    case TimeSlotStatus.Booked:
-                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Booked</span>
-                                                        break;
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (slot.Status == TimeSlotStatus.Available)
-                                                {
-                                                    <form action="/Provider/Schedule/DeleteTimeSlot/@slot.Id" method="post" class="d-inline">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Are you sure you want to delete this available slot?')">
-                                                            <i class="bi bi-trash"></i> Delete
-                                                        </button>
-                                                    </form>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-light text-muted border">In Use</span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">
-                                            No time slots available yet. Add your working hours on the left.
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Pending Approval</span>
+                <span class="badge bg-warning text-dark rounded-pill px-3 py-1">Locked</span>
             </div>
+            <div class="kpi-val text-warning">@Model.PendingApprovalCount</div>
+            <small class="text-muted">Awaiting your response / payment</small>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="kpi-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="kpi-label">Booked Visits</span>
+                <span class="badge bg-primary rounded-pill px-3 py-1">Booked</span>
+            </div>
+            <div class="kpi-val text-primary">@Model.BookedCount</div>
+            <small class="text-muted">Confirmed appointments</small>
         </div>
     </div>
 </div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+<div class="row g-4">
+    <!-- Left Column: Quick Setup + Add Single -->
+    <div class="col-lg-5">
+        <!-- Quick Setup Card -->
+        <div class="med-card p-4 mb-4">
+            <h3 class="h6 fw-bold text-dark mb-1">
+                <i class="bi bi-magic text-primary me-2"></i>Quick Schedule Setup
+            </h3>
+            <p class="text-muted small mb-4">
+                Generate back-to-back 2-hour arrival windows in bulk. Trailing hours that do not form a full 2-hour window are safely dropped.
+            </p>
 
+            <form asp-area="Provider" asp-controller="Schedule" asp-action="Generate" method="post" id="quickSetupForm">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-dark d-block">Working Days (Sat – Fri)</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        @{
+                            var days = new[]
+                            {
+                                (DayOfWeek.Saturday, "Sat"),
+                                (DayOfWeek.Sunday, "Sun"),
+                                (DayOfWeek.Monday, "Mon"),
+                                (DayOfWeek.Tuesday, "Tue"),
+                                (DayOfWeek.Wednesday, "Wed"),
+                                (DayOfWeek.Thursday, "Thu"),
+                                (DayOfWeek.Friday, "Fri")
+                            };
+                        }
+                        @foreach (var (d, label) in days)
+                        {
+                            var isDefault = d != DayOfWeek.Friday;
+                            <div class="day-chip-toggle">
+                                <input type="checkbox" name="DaysOfWeek" value="@d" id="day-@d" @(isDefault ? "checked" : "") class="day-checkbox" />
+                                <label for="day-@d">@label</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-dark">From Hour</label>
+                        <select name="FromHour" id="fromHourSelect" class="form-select rounded-3">
+                            @for (int h = 6; h <= 20; h++)
+                            {
+                                <option value="@h" selected="@(h == 10)">@($"{h:D2}:00")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-dark">To Hour</label>
+                        <select name="ToHour" id="toHourSelect" class="form-select rounded-3">
+                            @for (int h = 8; h <= 24; h++)
+                            {
+                                <option value="@h" selected="@(h == 18)">@($"{h:D2}:00")</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-dark">Start Date</label>
+                        <input type="text" name="StartDate" id="quickStartDate" class="form-control rounded-3 datepicker bg-white" placeholder="Select date" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-dark">Repeat For</label>
+                        <select name="RepeatWeeks" id="repeatWeeksSelect" class="form-select rounded-3">
+                            <option value="1">1 week</option>
+                            <option value="2">2 weeks</option>
+                            <option value="4">4 weeks</option>
+                            <option value="8">8 weeks</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Live Preview Box -->
+                <div class="schedule-preview-box mb-4" id="schedulePreviewBox">
+                    <div class="fw-semibold text-primary mb-1">
+                        <i class="bi bi-eye me-1"></i> Live Schedule Preview
+                    </div>
+                    <div id="previewContent">Calculating windows...</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 fw-semibold">
+                    <i class="bi bi-calendar-check me-1"></i> Generate Arrival Windows
+                </button>
+            </form>
+        </div>
+
+        <!-- Add Single Window (Collapsed) -->
+        <div class="med-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h6 fw-bold text-dark mb-0">
+                    <i class="bi bi-plus-circle text-primary me-2"></i>Add a Single Window
+                </h3>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#singleSlotCollapse">
+                    Toggle
+                </button>
+            </div>
+
+            <div class="collapse" id="singleSlotCollapse">
+                <form asp-area="Provider" asp-controller="Schedule" asp-action="AddSingle" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Date</label>
+                        <input type="text" name="Date" class="form-control rounded-3 datepicker bg-white" placeholder="Select date" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Start Time (2-Hour Window)</label>
+                        <select name="StartTime" class="form-select rounded-3" required>
+                            @{
+                                for (int hour = 6; hour <= 21; hour++)
+                                {
+                                    for (int min = 0; min < 60; min += 30)
+                                    {
+                                        if (hour == 21 && min > 30) continue;
+                                        var ts = new TimeSpan(hour, min, 0);
+                                        var endTs = ts.Add(TimeSpan.FromHours(2));
+                                        <option value="@ts">@SlotFormatting.FormatWindow(ts, endTs)</option>
+                                    }
+                                }
+                            }
+                        </select>
+                        <div class="form-text small text-muted">Each window is exactly 120 minutes (2 hours).</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-outline-primary rounded-pill w-100 py-2 fw-semibold">
+                        <i class="bi bi-plus-lg me-1"></i> Add Window
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Schedule Grouped by Date -->
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 fw-bold text-dark mb-0">Upcoming Arrival Windows</h3>
+            <div class="d-flex align-items-center gap-2">
+                <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-includePast="@(!Model.IncludePast)"
+                   class="btn btn-sm @(Model.IncludePast ? "btn-secondary text-white" : "btn-outline-secondary") rounded-pill">
+                    <i class="bi bi-clock-history me-1"></i> @(Model.IncludePast ? "Hide Past" : "Show Past")
+                </a>
+            </div>
+        </div>
+
+        @if (Model.DayGroups.Count == 0)
+        {
+            <div class="med-card text-center p-5">
+                <i class="bi bi-calendar2-x fs-1 text-muted d-block mb-3"></i>
+                <h4 class="h6 fw-bold text-dark">No Arrival Windows Found</h4>
+                <p class="text-muted small mb-0">Use the Quick Setup on the left to generate available appointment windows.</p>
+            </div>
+        }
+        else
+        {
+            <div class="vstack gap-3">
+                @foreach (var day in Model.DayGroups)
+                {
+                    <div class="med-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <div>
+                                <h4 class="h6 fw-bold text-dark mb-0">
+                                    <i class="bi bi-calendar-event me-2 text-primary"></i>@day.DayLabel
+                                </h4>
+                                <span class="small text-muted">@day.Date.ToString("dddd, d MMMM yyyy")</span>
+                            </div>
+
+                            <form asp-area="Provider" asp-controller="Schedule" asp-action="ClearDay" method="post" class="d-inline"
+                                  onsubmit="return confirm('Clear all available windows for this date?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="date" value="@day.Date.ToString("yyyy-MM-dd")" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                    <i class="bi bi-trash3 me-1"></i> Clear Day
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var slot in day.Slots)
+                            {
+                                var badgeClass = slot.Status switch
+                                {
+                                    TimeSlotStatus.Available => "badge-available",
+                                    TimeSlotStatus.Locked => "badge-locked",
+                                    _ => "badge-booked"
+                                };
+
+                                <div class="border rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2 @badgeClass">
+                                    <i class="bi bi-clock"></i>
+                                    <span class="fw-semibold small">@slot.FormattedWindow</span>
+                                    <span class="badge @(slot.Status == TimeSlotStatus.Available ? "bg-success" : (slot.Status == TimeSlotStatus.Locked ? "bg-warning text-dark" : "bg-primary")) rounded-pill small py-1">
+                                        @slot.Status
+                                    </span>
+
+                                    @if (slot.CanDelete)
+                                    {
+                                        <form asp-area="Provider" asp-controller="Schedule" asp-action="Delete" method="post" class="d-inline m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="slotId" value="@slot.Id" />
+                                            <button type="submit" class="btn btn-link p-0 text-danger border-0" title="Delete window" aria-label="Delete window">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             flatpickr(".datepicker", {
+                minDate: "today",
                 dateFormat: "Y-m-d",
-                minDate: "today"
+                defaultDate: "today"
             });
 
-            flatpickr(".timepicker", {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "H:i",
-                altInput: true,
-                altFormat: "h:i K",
-                time_24hr: false
+            // Live Preview Calculation
+            var fromSelect = document.getElementById('fromHourSelect');
+            var toSelect = document.getElementById('toHourSelect');
+            var weeksSelect = document.getElementById('repeatWeeksSelect');
+            var dayCheckboxes = document.querySelectorAll('.day-checkbox');
+            var previewContent = document.getElementById('previewContent');
+
+            function updatePreview() {
+                var fromH = parseInt(fromSelect.value, 10);
+                var toH = parseInt(toSelect.value, 10);
+                var weeks = parseInt(weeksSelect.value, 10);
+
+                var checkedDays = 0;
+                dayCheckboxes.forEach(function (cb) {
+                    if (cb.checked) checkedDays++;
+                });
+
+                if (toH <= fromH) {
+                    previewContent.innerHTML = '<span class="text-danger">To Hour must be greater than From Hour.</span>';
+                    return;
+                }
+
+                var totalHours = toH - fromH;
+                var windowsPerDay = Math.floor(totalHours / 2);
+                var partialDropped = totalHours % 2 !== 0;
+
+                var windowsList = [];
+                for (var i = 0; i < windowsPerDay; i++) {
+                    var s = fromH + (i * 2);
+                    var e = s + 2;
+                    var sStr = s > 12 ? (s - 12) + ':00 PM' : (s === 12 ? '12:00 PM' : s + ':00 AM');
+                    var eStr = e > 12 ? (e - 12) + ':00 PM' : (e === 12 ? '12:00 PM' : (e === 24 ? '12:00 AM' : e + ':00 AM'));
+                    windowsList.push(sStr + ' – ' + eStr);
+                }
+
+                var totalWindows = windowsPerDay * checkedDays * weeks;
+
+                var html = '<div>Will create <strong>' + windowsPerDay + ' window(s)/day</strong> (' + windowsList.join(', ') + ') across ' + (checkedDays * weeks) + ' scheduled day(s).</div>';
+                html += '<div class="mt-1">Estimated total: <strong>' + totalWindows + ' window(s)</strong>.</div>';
+                if (partialDropped) {
+                    html += '<div class="text-warning mt-1 small"><i class="bi bi-info-circle me-1"></i> 1 trailing partial hour is automatically dropped to preserve exact 2-hour windows.</div>';
+                }
+                previewContent.innerHTML = html;
+            }
+
+            fromSelect.addEventListener('change', updatePreview);
+            toSelect.addEventListener('change', updatePreview);
+            weeksSelect.addEventListener('change', updatePreview);
+            dayCheckboxes.forEach(function (cb) {
+                cb.addEventListener('change', updatePreview);
             });
+
+            updatePreview();
         });
     </script>
 }
-

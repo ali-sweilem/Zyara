@@ -1,83 +1,93 @@
 ﻿using System;
-using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Zyara.Domain.Entities;
-using Zyara.Services.Features.Payments.Dtos;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Zyara.Services.Features.Payments.Interface;
 
-namespace Zyara.Services.Features.Payments
+namespace Zyara.Services.Features.Payments;
+
+public class FakeVisaGateway : IPaymentGateway
 {
-    public class FakeVisaGateway : IPaymentGateway
+    private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _config;
+
+    public FakeVisaGateway(IWebHostEnvironment env, IConfiguration config)
     {
-        public Task<CardCheckoutDto> CreateCheckoutAsync(Payment payment, string returnUrl)
+        _env = env;
+        _config = config;
+    }
+
+    public bool CollectsCardDetailsInApp => true;
+
+    public Task<GatewayResult> AuthorizeAsync(decimal amount, int bookingId, CardInput? card = null)
+    {
+        var allowFake = _config.GetValue<bool>("Payment:AllowFakeGateway");
+        if (!_env.IsDevelopment() && !allowFake)
         {
-            var reference = $"FAKE-VISA-{Guid.NewGuid():N}";
-            payment.GatewayReference = reference;
-
-            // توجيه المستخدم لصفحة الـ Fake Checkout للمعاينة والتجربة
-            var checkoutUrl = $"/CardPayment/FakeCheckout?reference={reference}&returnUrl={Uri.EscapeDataString(returnUrl)}";
-
-            return Task.FromResult(new CardCheckoutDto
-            {
-                PaymentId = payment.Id,
-                BookingId = payment.BookingId,
-                Amount = payment.Amount,
-                GatewayReference = reference,
-                CheckoutUrl = checkoutUrl,
-                IsRedirect = true
-            });
+            throw new InvalidOperationException("FakeVisaGateway is only permitted in Development environment unless Payment:AllowFakeGateway is true.");
         }
 
-        public async Task<GatewayResultDto> VerifyWebhookAsync(HttpRequest request)
+        if (card == null || string.IsNullOrWhiteSpace(card.CardNumber))
         {
-            string reference = string.Empty;
-            string cardLast4 = "4242";
-            string cardBrand = "Visa";
-            bool isSuccess = true;
-
-            if (request.HasFormContentType)
-            {
-                var form = await request.ReadFormAsync();
-                reference = form["reference"].ToString();
-                if (form.ContainsKey("cardLast4")) cardLast4 = form["cardLast4"].ToString();
-                if (form.ContainsKey("success")) bool.TryParse(form["success"], out isSuccess);
-            }
-            else
-            {
-                using var reader = new StreamReader(request.Body);
-                var body = await reader.ReadToEndAsync();
-                if (!string.IsNullOrWhiteSpace(body))
-                {
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(body);
-                        var root = doc.RootElement;
-                        if (root.TryGetProperty("reference", out var refProp)) reference = refProp.GetString() ?? "";
-                        if (root.TryGetProperty("cardLast4", out var last4Prop)) cardLast4 = last4Prop.GetString() ?? "4242";
-                        if (root.TryGetProperty("success", out var succProp)) isSuccess = succProp.GetBoolean();
-                    }
-                    catch { }
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(reference))
-            {
-                return new GatewayResultDto
-                {
-                    IsSuccessful = false,
-                    ErrorMessage = "Missing gateway reference in webhook payload."
-                };
-            }
-
-            return new GatewayResultDto
-            {
-                IsSuccessful = isSuccess,
-                GatewayReference = reference,
-                CardBrand = cardBrand,
-                CardLast4 = cardLast4
-            };
+            return Task.FromResult(GatewayResult.Failure("Card number is required."));
         }
+
+        var cleaned = card.CardNumber.Replace(" ", "").Replace("-", "").Trim();
+        if (!PassesLuhn(cleaned))
+        {
+            return Task.FromResult(GatewayResult.Failure("Invalid card number format or checksum."));
+        }
+
+        if (cleaned == "4000000000000002")
+        {
+            return Task.FromResult(GatewayResult.Failure("Your card was declined by the bank."));
+        }
+
+        if (cleaned == "4000000000009995")
+        {
+            return Task.FromResult(GatewayResult.Failure("Insufficient funds on this card."));
+        }
+
+        if (cleaned == "4242424242424242")
+        {
+            var reference = $"FAKE-{Guid.NewGuid():N}";
+            return Task.FromResult(GatewayResult.Success(reference));
+        }
+
+        return Task.FromResult(GatewayResult.Failure("Invalid card number or unsupported test card."));
+    }
+
+    public Task<GatewayResult> CaptureAsync(string gatewayReference, decimal amount)
+    {
+        return Task.FromResult(GatewayResult.Success(gatewayReference));
+    }
+
+    public Task<GatewayResult> ReleaseAsync(string gatewayReference)
+    {
+        return Task.FromResult(GatewayResult.Success(gatewayReference));
+    }
+
+    private static bool PassesLuhn(string number)
+    {
+        if (string.IsNullOrWhiteSpace(number) || number.Length < 12)
+            return false;
+
+        int sum = 0;
+        bool alternate = false;
+        for (int i = number.Length - 1; i >= 0; i--)
+        {
+            char c = number[i];
+            if (!char.IsDigit(c)) return false;
+            int n = c - '0';
+            if (alternate)
+            {
+                n *= 2;
+                if (n > 9) n -= 9;
+            }
+            sum += n;
+            alternate = !alternate;
+        }
+        return (sum % 10 == 0);
     }
 }
