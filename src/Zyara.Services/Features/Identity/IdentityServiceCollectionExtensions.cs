@@ -20,6 +20,7 @@ public static class IdentityServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IRegistrationService, RegistrationService>();   // T3 (Abdelrhman)
+        services.AddScoped<ILoginService, LoginService>();
 
         services
             .AddIdentity<User, IdentityRole<int>>(options =>

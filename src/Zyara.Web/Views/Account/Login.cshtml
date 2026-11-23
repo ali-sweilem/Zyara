@@ -1,0 +1,67 @@
+@using Microsoft.AspNetCore.Authentication
+@model Zyara.Services.Features.Identity.Dtos.LoginDto
+@inject IAuthenticationSchemeProvider Schemes
+@{
+    ViewData["Title"] = "Sign in";
+    var googleEnabled = await Schemes.GetSchemeAsync("Google") is not null;   // button only when Google is configured
+}
+
+<section class="py-4 py-md-5">
+    <div class="card shadow-sm border-0 rounded-4 mx-auto" style="max-width: 460px;">
+        <div class="card-body p-4 p-md-5">
+            <h1 class="h3 fw-bold mb-1">Sign in</h1>
+            <p class="text-muted mb-4">New to Zyara? <a asp-controller="Register" asp-action="Index">Create an account</a></p>
+
+            @if (TempData["ErrorMessage"] is string externalError)
+            {
+                <div class="alert alert-danger border-0 rounded-4">@externalError</div>
+            }
+
+            <form asp-action="Login" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-4"></div>
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                @if (ViewData["ShowResend"] is true)
+                {
+                    <div class="mb-3 small">
+                        <a asp-controller="EmailConfirmation" asp-action="Resend" asp-route-email="@Model.Email">Resend the confirmation email</a>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label fw-semibold"></label>
+                    <input asp-for="Email" type="email" class="form-control" autocomplete="username" placeholder="name@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label fw-semibold"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label"></label>
+                    </div>
+                    <a asp-controller="Password" asp-action="Forgot" class="small">Forgot password?</a>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill py-2">Sign in</button>
+                </div>
+            </form>
+
+            @if (googleEnabled)
+            {
+                <div class="text-center text-muted small my-3">or</div>
+                <partial name="_ExternalLoginButtons" model="@(Model.ReturnUrl ?? string.Empty)" />
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

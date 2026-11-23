@@ -1,0 +1,3 @@
+@* Signed-in users only (rendered from _LoginPartial). The form is hidden: it only carries the antiforgery token. *@
+<form id="session-keepalive-form" asp-area="" asp-controller="Session" asp-action="Refresh" method="post" class="d-none"></form>
+<script src="~/js/session-keepalive.js" asp-append-version="true"></script>

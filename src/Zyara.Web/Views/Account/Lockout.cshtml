@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Account locked";
+}
+
+<section class="py-5 text-center">
+    <h1 class="h3 fw-bold mb-2">Account temporarily locked</h1>
+    <p class="text-muted mb-4">Too many failed sign-in attempts. Please try again in 10 minutes, or reset your password.</p>
+    <a asp-controller="Password" asp-action="Forgot" class="btn btn-outline-primary rounded-pill px-4 me-2">Reset password</a>
+    <a asp-controller="Account" asp-action="Login" class="btn btn-primary rounded-pill px-4">Back to sign in</a>
+</section>
