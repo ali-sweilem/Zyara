@@ -3,8 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Zyara.Domain.Entities;
+using Zyara.Domain.Enums;
 using Zyara.Repositories.Data;
 using Zyara.Repositories.Data.Repositories;
+using Zyara.Services.Common;
 using Zyara.Services.Features.Administration.Dtos;
 using Zyara.Services.Features.Administration.Interfaces;
 
@@ -49,6 +52,32 @@ namespace Zyara.Services.Features.Administration
             await _unitOfWork.ExecuteInTransactionAsync(
                 ct => _unitOfWork.SaveChangesAsync(ct), cancellationToken);
             return true;
+        }
+
+        public async Task<ServiceResult> CreateServiceAsync(
+            string? name, string? description, ServiceType type, CancellationToken cancellationToken = default)
+        {
+            name = name?.Trim();
+            description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+
+            if (string.IsNullOrEmpty(name) || name.Length < 3 || name.Length > 100)
+                return ServiceResult.Fail("The service name must be between 3 and 100 characters.");
+
+            if (description is { Length: > 500 })
+                return ServiceResult.Fail("The description is too long (500 characters max).");
+
+            if (!Enum.IsDefined(type))
+                return ServiceResult.Fail("Choose a valid service type.");
+
+            var exists = await _db.Services.AnyAsync(s => s.Name == name, cancellationToken);
+            if (exists)
+                return ServiceResult.Fail("A service with this name already exists.");
+
+            _db.Services.Add(new Service { Name = name, Description = description, Type = type, IsActive = true });
+            await _unitOfWork.ExecuteInTransactionAsync(
+                ct => _unitOfWork.SaveChangesAsync(ct), cancellationToken);
+
+            return ServiceResult.Ok();
         }
     }
 }

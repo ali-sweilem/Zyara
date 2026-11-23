@@ -19,6 +19,25 @@
     <div class="alert alert-danger py-2">@err</div>
 }
 
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+        <h3 class="h6 fw-bold mb-3">Add a service to the catalog</h3>
+        <form asp-area="Admin" asp-controller="AdminServices" asp-action="Create" method="post" class="row g-2">
+            <div class="col-md-4"><input name="name" class="form-control" placeholder="Service name" maxlength="100" required /></div>
+            <div class="col-md-3">
+                <select name="type" class="form-select">
+                    <option value="DoctorHomeVisit">Doctor home visit</option>
+                    <option value="NurseHomeVisit">Nurse home visit</option>
+                    <option value="RemoteConsultation">Online consultation</option>
+                </select>
+            </div>
+            <div class="col-md-3"><input name="description" class="form-control" placeholder="Description (optional)" maxlength="500" /></div>
+            <div class="col-md-2 d-grid"><button type="submit" class="btn btn-primary">Add</button></div>
+        </form>
+        <div class="form-text">Providers pick services from this catalog and set their own price.</div>
+    </div>
+</div>
+
 @if (Model.Count == 0)
 {
     <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">No services found.</div>

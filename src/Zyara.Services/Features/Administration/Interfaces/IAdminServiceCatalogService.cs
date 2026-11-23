@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Zyara.Domain.Enums;
+using Zyara.Services.Common;
 using Zyara.Services.Features.Administration.Dtos;
 
 namespace Zyara.Services.Features.Administration.Interfaces
@@ -12,6 +14,9 @@ namespace Zyara.Services.Features.Administration.Interfaces
 
         /// <summary>Flips IsActive. Returns false if the service does not exist.</summary>
         Task<bool> ToggleServiceAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>Adds a service to the catalog (providers then pick it and set their own price).</summary>
+        Task<ServiceResult> CreateServiceAsync(string? name, string? description, ServiceType type, CancellationToken cancellationToken = default);
     }
 }
 

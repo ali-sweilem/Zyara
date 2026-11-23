@@ -1,3 +1,4 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using Zyara.Domain.Enums
 @model Zyara.Services.Features.Providers.Dtos.ProviderTimeSlotIndexDto
 
@@ -14,6 +15,15 @@
 </style>
 
 <div class="container-fluid py-4" dir="ltr" lang="en">
+    <div class="d-flex justify-content-end mb-3">
+        <div class="btn-group rounded-pill">
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">Requests</a>
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-outline-primary">History</a>
+            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary">Wallet</a>
+            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-primary">My schedule</a>
+        </div>
+    </div>
+
     @if (TempData["Message"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">

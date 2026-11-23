@@ -1,0 +1,122 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Zyara.Domain.Enums
+@using Zyara.Services.Features.Providers.Dtos
+@model ProviderServicesPageDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "My Services";
+
+    string TypeLabel(ServiceType t) => t switch
+    {
+        ServiceType.RemoteConsultation => "Online consultation",
+        _ => "Home visit"
+    };
+}
+
+<div class="container-fluid py-4" dir="ltr" lang="en" style="max-width: 960px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h1 class="h3 fw-bold mb-0">My Services</h1>
+        <div class="btn-group rounded-pill">
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">Requests</a>
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-outline-primary">History</a>
+            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary">Wallet</a>
+            <a asp-area="Provider" asp-controller="Services" asp-action="Index" class="btn btn-primary">My services</a>
+            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary">My schedule</a>
+        </div>
+    </div>
+
+    @if (TempData["Message"] != null) { <div class="alert alert-success border-0 shadow-sm">@TempData["Message"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger border-0 shadow-sm">@TempData["Error"]</div> }
+
+    <p class="text-muted">
+        Patients choose one of these services (and see your price) when they book an appointment with you.
+        You need at least one service to be bookable.
+    </p>
+
+    @* ───────── services I offer ───────── *@
+    <h2 class="h5 fw-bold mb-3">Services I offer <span class="badge bg-primary">@Model.Offered.Count</span></h2>
+
+    @if (!Model.Offered.Any())
+    {
+        <div class="alert alert-warning border-0 rounded-4">
+            You don&apos;t offer any service yet, so patients can&apos;t book you. Add one below.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            @foreach (var s in Model.Offered)
+            {
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between gap-3 align-items-center">
+                                <div>
+                                    <div class="fw-bold">@s.Name
+                                        @if (!s.IsActive) { <span class="badge bg-secondary ms-1">Hidden by admin</span> }
+                                    </div>
+                                    <div class="text-muted small">@TypeLabel(s.Type)@(string.IsNullOrWhiteSpace(s.Description) ? "" : " · " + s.Description)</div>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <form asp-area="Provider" asp-controller="Services" asp-action="UpdateFee" method="post" class="d-flex gap-2 align-items-center">
+                                        <input type="hidden" name="Id" value="@s.Id" />
+                                        <div class="input-group" style="width: 190px;">
+                                            <input type="number" name="Fee" value="@(s.Fee.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))"
+                                                   step="0.01" min="0.01" max="@(Model.MaxFee.ToString("0"))" class="form-control" required />
+                                            <span class="input-group-text">EGP</span>
+                                        </div>
+                                        <button type="submit" class="btn btn-outline-primary rounded-pill">Save price</button>
+                                    </form>
+
+                                    <form asp-area="Provider" asp-controller="Services" asp-action="Remove" method="post"
+                                          onsubmit="return confirm('Stop offering this service?');">
+                                        <input type="hidden" name="id" value="@s.Id" />
+                                        <button type="submit" class="btn btn-outline-danger rounded-pill">Remove</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ───────── add a service ───────── *@
+    <h2 class="h5 fw-bold mb-3">Add a service</h2>
+
+    @if (!Model.Available.Any())
+    {
+        <p class="text-muted">
+            There are no more services you can add right now. If you need a new one, ask the admin to add it to the catalog.
+        </p>
+    }
+    else
+    {
+        <div class="list-group shadow-sm rounded-4 overflow-hidden">
+            @foreach (var s in Model.Available)
+            {
+                <div class="list-group-item">
+                    <form asp-area="Provider" asp-controller="Services" asp-action="Add" method="post"
+                          class="d-flex flex-wrap justify-content-between gap-3 align-items-center">
+                        <input type="hidden" name="ServiceId" value="@s.ServiceId" />
+                        <div>
+                            <div class="fw-semibold">@s.Name</div>
+                            <div class="text-muted small">@TypeLabel(s.Type)@(string.IsNullOrWhiteSpace(s.Description) ? "" : " · " + s.Description)</div>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="input-group" style="width: 190px;">
+                                <input type="number" name="Fee" step="0.01" min="0.01" max="@(Model.MaxFee.ToString("0"))"
+                                       class="form-control" placeholder="Your price" required />
+                                <span class="input-group-text">EGP</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Add</button>
+                        </div>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+</div>

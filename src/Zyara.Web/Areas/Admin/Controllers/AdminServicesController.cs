@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Zyara.Domain.Enums;
 using Zyara.Services.Features.Administration.Interfaces;
 
 namespace Zyara.Web.Areas.Admin.Controllers
@@ -27,6 +28,15 @@ namespace Zyara.Web.Areas.Admin.Controllers
         {
             var found = await _services.ToggleServiceAsync(id, cancellationToken);
             TempData[found ? "Success" : "Error"] = found ? "Service status updated." : "Service not found.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(string? name, string? description, ServiceType type, CancellationToken cancellationToken)
+        {
+            var result = await _services.CreateServiceAsync(name, description, type, cancellationToken);
+            TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Service added to the catalog." : result.Error;
             return RedirectToAction(nameof(Index));
         }
     }
