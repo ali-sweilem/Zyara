@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Zyara.Repositories.Data;
 using Zyara.Repositories.Data.Repositories;
-
 using Zyara.Services.Features.Administration;
 using Zyara.Services.Features.Administration.Interfaces;
 using Zyara.Services.Features.Bookings;
@@ -21,6 +20,8 @@ using Zyara.Services.Features.Payments;
 using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
+using Zyara.Services.Features.Reviews;
+using Zyara.Services.Features.Reviews.Interfaces;
 using Zyara.Services.Jobs;
 
 namespace Zyara.Services;
@@ -47,6 +48,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMedicalRecordService, MedicalRecordService>();
         services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<IPatientPortalService, PatientPortalService>();
+        services.AddScoped<IPatientProfileService, PatientProfileService>();
+        services.AddScoped<IReviewService, ReviewService>();
 
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IProviderBookingService, ProviderBookingService>();   // provider booking lifecycle
@@ -60,6 +63,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminBookingService, AdminBookingService>();
         services.AddScoped<IAdminProviderReviewService, AdminProviderReviewService>();
 
+
+        services.AddScoped<IBookingMaintenanceService, BookingMaintenanceService>();
+        services.AddHostedService<BookingMaintenanceWorker>();
         // Identity + the 5 stubs (T1)
         services.AddZyaraIdentity(config, env);
         return services;

@@ -90,7 +90,9 @@
                             <li class="nav-item"><a class="nav-link @(isLanding ? "is-active" : "")" asp-area="" asp-controller="Landing" asp-action="Index" aria-current="@(isLanding ? "page" : null)">Services</a></li>
                             @if (isPatient)
                             {
-                                <li class="nav-item"><a class="nav-link @Active("Patient")" asp-area="" asp-controller="Patient" asp-action="Index">My bookings</a></li>
+                                <li class="nav-item"><a class="nav-link @(IsActive("Patient") && currentAction != "Profile" ? "is-active" : "")" asp-area="" asp-controller="Patient" asp-action="Index">My bookings</a></li>
+                                <li class="nav-item"><a class="nav-link @Active("Reviews")" asp-area="" asp-controller="Reviews" asp-action="Index">My reviews</a></li>
+                                <li class="nav-item"><a class="nav-link @(IsActive("Patient") && currentAction == "Profile" ? "is-active" : "")" asp-area="" asp-controller="Patient" asp-action="Profile">Profile</a></li>
                             }
                         }
                     </ul>

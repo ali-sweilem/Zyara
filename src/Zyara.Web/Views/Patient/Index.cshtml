@@ -50,15 +50,7 @@
                                             }
                                             @if (booking.CanReview)
                                             {
-                                                <form asp-action="Review" method="post" class="d-flex gap-1 mt-2">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="bookingId" value="@booking.Id" />
-                                                    <select name="stars" class="form-select form-select-sm" aria-label="Rating">
-                                                        @for (var stars = 5; stars >= 1; stars--) { <option value="@stars">@stars stars</option> }
-                                                    </select>
-                                                    <input name="comment" class="form-control form-control-sm" placeholder="Comment" />
-                                                    <button class="btn btn-sm btn-primary" type="submit">Rate</button>
-                                                </form>
+                                                <a class="btn btn-sm btn-primary rounded-pill mt-2" asp-controller="Reviews" asp-action="Create" asp-route-bookingId="@booking.Id">Rate visit</a>
                                             }
                                         </td>
                                     </tr>

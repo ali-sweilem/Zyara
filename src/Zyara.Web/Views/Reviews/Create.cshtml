@@ -1,0 +1,62 @@
+@using Zyara.Services.Features.Shared.Dtos
+@model Zyara.Services.Features.Reviews.Dtos.ReviewFormDto
+@{
+    ViewData["Title"] = "Rate your visit";
+}
+
+<style>
+    .star-rating { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; }
+    .star-rating label { font-size: 2.4rem; line-height: 1; color: #d0d5dd; cursor: pointer; padding: 0 .2rem; transition: color .12s ease; }
+    .star-rating input:checked ~ label,
+    .star-rating label:hover,
+    .star-rating label:hover ~ label { color: #f5b301; }
+    .star-rating input:focus-visible + label { outline: 2px solid #0d6efd; border-radius: .4rem; }
+</style>
+
+<div class="container py-4" style="max-width: 720px;">
+    <a asp-action="Index" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> My reviews</a>
+
+    <div class="card border-0 shadow-sm rounded-4 mt-3">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                @await Html.PartialAsync("_Avatar", new AvatarDto { FullName = Model.ProviderName, PhotoUrl = Model.ProviderPhotoUrl, Id = Model.BookingId, Size = 64 })
+                <div>
+                    <p class="text-primary fw-semibold small mb-1">How was your visit?</p>
+                    <h1 class="h4 mb-1">@Model.ProviderName</h1>
+                    <div class="text-muted small">
+                        @Model.ProviderSpecialty · @Model.ServiceName ·
+                        @Model.Date.ToString("ddd, dd MMM yyyy") ·
+                        @DateTime.Today.Add(Model.StartTime).ToString("hh:mm tt")
+                    </div>
+                </div>
+            </div>
+
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="All" class="alert alert-danger border-0 rounded-4"></div>
+                <input type="hidden" name="BookingId" value="@Model.BookingId" />
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold d-block">Your rating</label>
+                    <div class="star-rating">
+                        @for (var i = 5; i >= 1; i--)
+                        {
+                            <input type="radio" class="btn-check" name="Stars" id="star-@i" value="@i" required @(Model.Stars == i ? "checked" : null) />
+                            <label for="star-@i" title="@i star@(i == 1 ? "" : "s")"><i class="bi bi-star-fill"></i></label>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="Comment" class="form-label fw-semibold">Your comment <span class="text-muted fw-normal">(optional)</span></label>
+                    <textarea id="Comment" name="Comment" class="form-control" rows="4" maxlength="1000"
+                              placeholder="Tell others about your experience: punctuality, behaviour, quality of care...">@Model.Comment</textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit review</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">Not now</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

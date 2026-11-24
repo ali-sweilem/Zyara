@@ -20,7 +20,8 @@ public sealed class PatientBookingDto
     public DateOnly? Date { get; init; }
     public TimeSpan? StartTime { get; init; }
     public bool CanCancel => Status is BookingStatus.PendingProviderApproval or BookingStatus.Confirmed;
-    public bool CanReview => Status == BookingStatus.Completed;
+    public bool HasReview { get; init; }
+    public bool CanReview => Status == BookingStatus.Completed && !HasReview;
 }
 
 public sealed class PatientAddressDto

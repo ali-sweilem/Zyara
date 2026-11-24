@@ -1,0 +1,89 @@
+@using Zyara.Services.Features.Shared.Dtos
+@using Zyara.Services.Features.Reviews.Dtos
+@model PatientReviewsPageDto
+@{
+    ViewData["Title"] = "My reviews";
+
+    string When(ReviewableVisitDto v) =>
+        $"{v.Date:ddd, dd MMM yyyy} · {DateTime.Today.Add(v.StartTime):hh:mm tt}";
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <p class="text-primary fw-semibold mb-1">Patient Portal</p>
+            <h1 class="h3 mb-1">My reviews</h1>
+            <p class="text-muted mb-0">Rate your completed visits and help other patients choose.</p>
+        </div>
+        <a class="btn btn-outline-primary rounded-pill px-4" asp-controller="Patient" asp-action="Index">My bookings</a>
+    </div>
+
+    @if (TempData["Success"] is string success) { <div class="alert alert-success border-0 shadow-sm">@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger border-0 shadow-sm">@error</div> }
+
+    @* ───────── waiting for a review ───────── *@
+    <h2 class="h5 fw-bold mb-3">Waiting for your review <span class="badge bg-warning text-dark">@Model.Pending.Count</span></h2>
+    @if (!Model.Pending.Any())
+    {
+        <p class="text-muted mb-4">No visits are waiting for a review.</p>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            @foreach (var v in Model.Pending)
+            {
+                <div class="col-12 col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body d-flex align-items-center gap-3">
+                            @await Html.PartialAsync("_Avatar", new AvatarDto { FullName = v.ProviderName, PhotoUrl = v.ProviderPhotoUrl, Id = v.BookingId, Size = 56 })
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">@v.ProviderName</div>
+                                <div class="text-muted small">@v.ServiceName · @When(v)</div>
+                            </div>
+                            <a class="btn btn-primary btn-sm rounded-pill px-3" asp-action="Create" asp-route-bookingId="@v.BookingId">Rate visit</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ───────── already reviewed ───────── *@
+    <h2 class="h5 fw-bold mb-3">My past reviews <span class="badge bg-secondary">@Model.Reviewed.Count</span></h2>
+    @if (!Model.Reviewed.Any())
+    {
+        <p class="text-muted mb-0">You have not reviewed any visit yet.</p>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var r in Model.Reviewed)
+            {
+                <div class="col-12 col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                @await Html.PartialAsync("_Avatar", new AvatarDto { FullName = r.ProviderName, PhotoUrl = r.ProviderPhotoUrl, Id = r.BookingId, Size = 48 })
+                                <div>
+                                    <div class="fw-bold">@r.ProviderName</div>
+                                    <div class="text-muted small">@r.ServiceName · @When(r)</div>
+                                </div>
+                            </div>
+                            <div class="mb-1" aria-label="@r.Stars out of 5 stars">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi @(i <= r.Stars ? "bi-star-fill text-warning" : "bi-star text-muted")"></i>
+                                }
+                                <span class="text-muted small ms-2">@r.ReviewedAt.ToString("dd MMM yyyy")</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(r.Comment))
+                            {
+                                <p class="mb-0">@r.Comment</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

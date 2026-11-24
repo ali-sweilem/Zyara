@@ -176,8 +176,9 @@ public sealed class ProviderBookingService : IProviderBookingService
 
         booking.Status = BookingStatus.Completed;
         SettlePayment(booking);
-        NotifyPatient(booking, NotificationType.VisitCompleted, "Visit completed",
-            $"Your booking #{booking.Id} is completed. Thank you for using Zyara.");
+        _notifications.Notify(booking.PatientId, NotificationType.VisitCompleted, "Visit completed",
+            $"Your booking #{booking.Id} is completed. How was your visit? Tap to rate it.",
+            $"/Reviews/Create?bookingId={booking.Id}");
 
         // Wallet: ledger line (tracked) + relative balance update, all in ONE transaction with the status change.
         var delta = _wallet.RecordBookingSettlement(booking);

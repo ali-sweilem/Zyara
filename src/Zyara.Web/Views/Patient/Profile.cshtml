@@ -1,0 +1,186 @@
+@using Zyara.Domain.Enums
+@using Zyara.Services.Features.Shared.Dtos
+@model Zyara.Services.Features.Patients.Dtos.PatientProfileDto
+@{
+    ViewData["Title"] = "My profile";
+    var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            @await Html.PartialAsync("_Avatar", new AvatarDto { FullName = Model.FullName, PhotoUrl = Model.PhotoUrl, Id = 0, Size = 72 })
+            <div>
+                <p class="text-primary fw-semibold mb-1">Patient Portal</p>
+                <h1 class="h3 mb-1">@Model.FullName</h1>
+                <p class="text-muted mb-0 small">Member since @Model.MemberSince.ToString("MMM yyyy")</p>
+            </div>
+        </div>
+        <a class="btn btn-outline-primary rounded-pill px-4" asp-action="Index">My bookings</a>
+    </div>
+
+    @if (TempData["Success"] is string success) { <div class="alert alert-success border-0 shadow-sm">@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger border-0 shadow-sm">@error</div> }
+
+    @* ───────── numbers ───────── *@
+    <div class="row g-3 mb-4">
+        <div class="col-4">
+            <div class="card border-0 shadow-sm rounded-4 text-center h-100"><div class="card-body py-3">
+                <div class="h3 fw-bold mb-0">@Model.TotalBookings</div><div class="text-muted small">Bookings</div></div></div>
+        </div>
+        <div class="col-4">
+            <div class="card border-0 shadow-sm rounded-4 text-center h-100"><div class="card-body py-3">
+                <div class="h3 fw-bold mb-0">@Model.CompletedVisits</div><div class="text-muted small">Completed visits</div></div></div>
+        </div>
+        <div class="col-4">
+            <a asp-controller="Reviews" asp-action="Index" class="text-decoration-none text-reset">
+                <div class="card border-0 shadow-sm rounded-4 text-center h-100"><div class="card-body py-3">
+                    <div class="h3 fw-bold mb-0">@Model.ReviewsWritten</div><div class="text-muted small">Reviews written</div></div></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @* ───────── personal information ───────── *@
+        <div class="col-lg-7">
+            <section class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Personal information</h2>
+                    <form asp-action="UpdateProfile" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold" for="FullName">Full name</label>
+                            <input id="FullName" name="FullName" class="form-control" value="@Model.FullName" maxlength="100" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <input class="form-control" value="@Model.Email" readonly />
+                                @if (Model.EmailConfirmed)
+                                {
+                                    <span class="input-group-text text-success"><i class="bi bi-patch-check-fill me-1"></i> Confirmed</span>
+                                }
+                            </div>
+                            <div class="form-text">Your email is your sign-in name, so it cannot be changed here.</div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="PhoneNumber">Phone number</label>
+                                <input id="PhoneNumber" name="PhoneNumber" type="tel" class="form-control" value="@Model.PhoneNumber" maxlength="20" placeholder="e.g. 01012345678" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" for="DateOfBirth">Date of birth</label>
+                                <input id="DateOfBirth" name="DateOfBirth" type="date" class="form-control" value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd"))" max="@today" />
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" for="Gender">Gender</label>
+                            <select id="Gender" name="Gender" class="form-select" required>
+                                @if (!Enum.IsDefined(Model.Gender))
+                                {
+                                    <option value="" selected>Select...</option>
+                                }
+                                <option value="@((int)Gender.Male)" selected="@(Model.Gender == Gender.Male)">Male</option>
+                                <option value="@((int)Gender.Female)" selected="@(Model.Gender == Gender.Female)">Female</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">Save changes</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+
+        @* ───────── security ───────── *@
+        <div class="col-lg-5">
+            <section class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Security</h2>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="fw-semibold">Two-factor authentication</div>
+                            <div class="small @(Model.TwoFactorEnabled ? "text-success" : "text-muted")">@(Model.TwoFactorEnabled ? "Enabled" : "Not enabled")</div>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="TwoFactor" asp-action="Manage">Manage</a>
+                    </div>
+                    <hr />
+
+                    <h3 class="h6 mb-3">Change password</h3>
+                    @if (!Model.HasPassword)
+                    {
+                        <p class="text-muted small mb-0">This account signs in with Google, so there is no password to change.</p>
+                    }
+                    else
+                    {
+                        <form asp-action="ChangePassword" method="post" autocomplete="off">
+                            <div class="mb-2">
+                                <input name="CurrentPassword" type="password" class="form-control" placeholder="Current password" autocomplete="current-password" required />
+                            </div>
+                            <div class="mb-2">
+                                <input name="NewPassword" type="password" class="form-control" placeholder="New password" autocomplete="new-password" minlength="8" required />
+                            </div>
+                            <div class="mb-3">
+                                <input name="ConfirmNewPassword" type="password" class="form-control" placeholder="Confirm new password" autocomplete="new-password" required />
+                            </div>
+                            <div class="form-text mb-3">At least 8 characters, with an uppercase letter, a lowercase letter and a digit. Other devices are signed out.</div>
+                            <button type="submit" class="btn btn-outline-primary rounded-pill px-4">Update password</button>
+                        </form>
+                    }
+                </div>
+            </section>
+        </div>
+
+        @* ───────── addresses ───────── *@
+        <div class="col-12">
+            <section class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h5 mb-0">Saved addresses</h2>
+                        <span class="text-muted small">@Model.Addresses.Count / @Model.MaxAddresses</span>
+                    </div>
+
+                    @if (Model.Addresses.Count == 0)
+                    {
+                        <p class="text-muted">No saved addresses yet.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush mb-3">
+                            @foreach (var a in Model.Addresses)
+                            {
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong>@a.Label</strong><br />
+                                        <span class="text-muted small">@a.StreetAndBuilding, @a.District, @a.City</span>
+                                    </div>
+                                    <form asp-action="DeleteAddress" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                                onclick="return confirm('Delete this address?')"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    @if (Model.Addresses.Count < Model.MaxAddresses)
+                    {
+                        <h3 class="h6 mb-3">Add an address</h3>
+                        <form asp-action="AddAddress" method="post">
+                            <div class="row g-2">
+                                <div class="col-md-3"><input name="Label" class="form-control" placeholder="Name (e.g. Home)" maxlength="50" required /></div>
+                                <div class="col-md-3"><input name="City" class="form-control" placeholder="City" maxlength="60" required /></div>
+                                <div class="col-md-3"><input name="District" class="form-control" placeholder="District" maxlength="60" required /></div>
+                                <div class="col-md-3"><input name="StreetAndBuilding" class="form-control" placeholder="Street and building" maxlength="200" required /></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 mt-3">Add address</button>
+                        </form>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

@@ -15,7 +15,6 @@ public sealed class PatientPortalService(
     IRepository<Patient> patients,
     IRepository<Booking> bookings,
     IRepository<Address> addresses,
-    IRepository<Review> reviews,
     IUnitOfWork unitOfWork) : IPatientPortalService
 {
     public async Task<PatientDashboardDto?> GetDashboardAsync(int patientId, CancellationToken cancellationToken = default)
@@ -37,6 +36,7 @@ public sealed class PatientPortalService(
                 ProviderName = b.Provider!.FullName,
                 ServiceName = b.Service!.Name,
                 Status = b.Status,
+                HasReview = b.Review != null,
                 Date = DateOnly.FromDateTime(b.TimeSlot!.Date),
                 StartTime = b.TimeSlot.StartTime
             })
@@ -74,22 +74,6 @@ public sealed class PatientPortalService(
 
         booking.Status = BookingStatus.Cancelled;
         if (booking.TimeSlot is not null) booking.TimeSlot.Status = TimeSlotStatus.Available;
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        return ServiceResult<bool>.Ok(true);
-    }
-
-    public async Task<ServiceResult<bool>> AddReviewAsync(int patientId, int bookingId, int stars, string? comment, CancellationToken cancellationToken = default)
-    {
-        if (stars is < 1 or > 5) return ServiceResult<bool>.Fail("Rating must be between 1 and 5 stars.");
-
-        var booking = await bookings.Query()
-            .Include(b => b.Review)
-            .FirstOrDefaultAsync(b => b.Id == bookingId && b.PatientId == patientId, cancellationToken);
-        if (booking is null || booking.Status != BookingStatus.Completed)
-            return ServiceResult<bool>.Fail("Only completed visits can be reviewed.");
-        if (booking.Review is not null) return ServiceResult<bool>.Fail("This visit has already been reviewed.");
-
-        reviews.Add(new Review { BookingId = bookingId, Stars = stars, Comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim() });
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return ServiceResult<bool>.Ok(true);
     }
