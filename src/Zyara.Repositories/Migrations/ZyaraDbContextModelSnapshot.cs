@@ -768,6 +768,37 @@ namespace Zyara.Services.Migrations
                     b.ToTable("WalletTransactions", (string)null);
                 });
 
+            modelBuilder.Entity("Zyara.Domain.Entities.WeeklySlotTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("GeneratedThrough")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ProviderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SlotDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderId", "DayOfWeek", "StartTime")
+                        .IsUnique();
+
+                    b.ToTable("WeeklySlotTemplates", (string)null);
+                });
+
             modelBuilder.Entity("Zyara.Domain.Entities.Admin", b =>
                 {
                     b.HasBaseType("Zyara.Domain.Entities.User");
@@ -1088,6 +1119,17 @@ namespace Zyara.Services.Migrations
                         .IsRequired();
 
                     b.Navigation("Booking");
+
+                    b.Navigation("Provider");
+                });
+
+            modelBuilder.Entity("Zyara.Domain.Entities.WeeklySlotTemplate", b =>
+                {
+                    b.HasOne("Zyara.Domain.Entities.Provider", "Provider")
+                        .WithMany()
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Provider");
                 });

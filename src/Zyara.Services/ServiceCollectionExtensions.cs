@@ -4,8 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Zyara.Repositories.Data;
 using Zyara.Repositories.Data.Repositories;
-using Zyara.Services.Features.AdminDashboard;
-using Zyara.Services.Features.AdminDashboard.Interfaces;
+
 using Zyara.Services.Features.Administration;
 using Zyara.Services.Features.Administration.Interfaces;
 using Zyara.Services.Features.Bookings;
@@ -59,7 +58,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminFeeService, AdminFeeService>();
         services.AddScoped<IAdminServiceCatalogService, AdminServiceCatalogService>();
         services.AddScoped<IAdminBookingService, AdminBookingService>();
-        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IAdminProviderReviewService, AdminProviderReviewService>();
 
         // Identity + the 5 stubs (T1)
