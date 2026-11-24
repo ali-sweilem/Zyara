@@ -13,7 +13,7 @@
         NotificationType.BookingRequested => "bi-calendar-plus",
         NotificationType.BookingAccepted or NotificationType.VisitCompleted => "bi-check-circle",
         NotificationType.BookingRejected or NotificationType.BookingCancelled => "bi-x-circle",
-        NotificationType.BookingExpired => "bi-hourglass-bottom",
+        NotificationType.BookingExpired or NotificationType.BookingNoShow => "bi-hourglass-bottom",
         NotificationType.VisitStarted => "bi-play-circle",
         _ => "bi-bell"
     };

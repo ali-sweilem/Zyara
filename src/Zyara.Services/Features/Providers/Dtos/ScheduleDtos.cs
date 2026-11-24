@@ -40,10 +40,31 @@ namespace Zyara.Services.Features.Providers.Dtos
         public int SlotDurationMinutes { get; set; } = 120; // 120 minutes fixed by business rule
     }
 
+    /// <summary>A fixed weekly working time: "every Sunday 10:00 - 12:00".</summary>
+    public class WeeklySlotDto
+    {
+        public int Id { get; set; }
+        public DayOfWeek DayOfWeek { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+    }
+
+    public class CreateWeeklySlotDto
+    {
+        [Required(ErrorMessage = "Choose the day.")]
+        [Display(Name = "Day")]
+        public DayOfWeek DayOfWeek { get; set; } = DayOfWeek.Saturday;
+
+        [Required(ErrorMessage = "Start time is required.")]
+        [Display(Name = "Start Time")]
+        public TimeSpan? StartTime { get; set; }
+    }
+
     public class ProviderTimeSlotIndexDto
     {
         public List<TimeSlotDto> TimeSlots { get; set; } = new();
         public CreateTimeSlotDto NewTimeSlot { get; set; } = new();
+        public List<WeeklySlotDto> WeeklySlots { get; set; } = new();
     }
 }
 

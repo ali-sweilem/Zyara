@@ -21,6 +21,7 @@ namespace Zyara.Repositories.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<TimeSlot> TimeSlots { get; set; }
+        public DbSet<WeeklySlotTemplate> WeeklySlotTemplates { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Prescription> Prescriptions { get; set; }
         public DbSet<PrescriptionItem> PrescriptionItems { get; set; }

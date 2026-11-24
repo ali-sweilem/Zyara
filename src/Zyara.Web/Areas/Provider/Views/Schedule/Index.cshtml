@@ -5,6 +5,10 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Manage Working Schedule";
+
+    // Egypt week starts on Saturday
+    var weekDays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday, DayOfWeek.Monday, DayOfWeek.Tuesday,
+                           DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -15,6 +19,14 @@
 </style>
 
 <div class="container-fluid py-4" dir="ltr" lang="en">
+    <div class="d-flex justify-content-end mb-3">
+        <div class="btn-group rounded-pill">
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">Requests</a>
+            <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-outline-primary">History</a>
+            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary">Wallet</a>
+            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-primary">My schedule</a>
+        </div>
+    </div>
 
     @if (TempData["Message"] != null)
     {
@@ -71,6 +83,71 @@
                             <i class="bi bi-plus-circle me-1"></i> Add Time Slot
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Fixed weekly times: add once, repeats every week -->
+            <div class="card border-0 shadow-sm rounded-3 mt-4">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-arrow-repeat me-2"></i>Repeat Every Week
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3">
+                        Add a fixed weekly time once. 2-hour slots are created for the next 4 weeks and
+                        new weeks are added automatically.
+                    </p>
+
+                    <form action="/Provider/Schedule/AddWeekly" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Day</label>
+                            <select name="NewWeeklySlot.DayOfWeek" class="form-select">
+                                @foreach (var day in weekDays)
+                                {
+                                    <option value="@((int)day)">@day</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Start Time</label>
+                            <input type="text" name="NewWeeklySlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Start Time" />
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold rounded-pill shadow-sm">
+                            <i class="bi bi-arrow-repeat me-1"></i> Add Weekly Time
+                        </button>
+                    </form>
+
+                    @if (Model.WeeklySlots.Any())
+                    {
+                        <hr class="my-4" />
+                        <div class="small fw-bold mb-2">My weekly times</div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var w in Model.WeeklySlots)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>
+                                        <strong>@w.DayOfWeek</strong>
+                                        <span class="text-muted ms-1">
+                                            @DateTime.Today.Add(w.StartTime).ToString("hh:mm tt") -
+                                            @DateTime.Today.Add(w.EndTime).ToString("hh:mm tt")
+                                        </span>
+                                    </span>
+                                    <form action="/Provider/Schedule/RemoveWeekly/@w.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                                onclick="return confirm('Stop repeating this time? Its free upcoming slots will be deleted (booked ones stay).')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </li>
+                            }
+                        </ul>
+                    }
                 </div>
             </div>
         </div>

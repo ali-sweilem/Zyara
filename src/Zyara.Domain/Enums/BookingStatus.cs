@@ -13,6 +13,7 @@ namespace Zyara.Domain.Enums
         Completed,
         Cancelled,
         Rejected,
-        Expired
+        Expired,
+        NoShow          // confirmed, but not started 30 minutes after the window opened (set by the background job)
     }
 }

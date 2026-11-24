@@ -23,18 +23,6 @@
     <div class="alert alert-danger py-2">@err</div>
 }
 
-<ul class="nav nav-pills mb-3">
-    <li class="nav-item">
-        <a class="nav-link @(Model.Role is null ? "active" : "")" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index">All</a>
-    </li>
-    @foreach (var r in Enum.GetValues<UserRole>())
-    {
-        <li class="nav-item">
-            <a class="nav-link @(Model.Role == r ? "active" : "")" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index" asp-route-role="@r">@r</a>
-        </li>
-    }
-</ul>
-
 @if (Model.Users.Items.Count == 0)
 {
     <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">No users found.</div>

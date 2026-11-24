@@ -10,6 +10,7 @@ using Zyara.Repositories.Data;
 using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
+using Zyara.Services.Features.Providers.Interfaces;
 
 namespace Zyara.Web.Areas.Provider.Controllers
 {
@@ -19,25 +20,29 @@ namespace Zyara.Web.Areas.Provider.Controllers
         private readonly ZyaraDbContext _context;
         private readonly ICurrentUser _currentUser;
         private readonly IAuthorizationService _auth;
+        private readonly IWeeklyScheduleService _weekly;
 
         public ScheduleController(
             ZyaraDbContext context,
             ICurrentUser currentUser,
-            IAuthorizationService auth)
+            IAuthorizationService auth,
+            IWeeklyScheduleService weekly)
         {
             _context = context;
             _currentUser = currentUser;
             _auth = auth;
+            _weekly = weekly;
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             int currentProviderId = _currentUser.RequireUserId();
 
             var model = new ProviderTimeSlotIndexDto
             {
-                TimeSlots = GetProviderSlots(currentProviderId)
+                TimeSlots = GetProviderSlots(currentProviderId),
+                WeeklySlots = await _weekly.GetAsync(currentProviderId, cancellationToken)
             };
 
             return View(model);
@@ -45,7 +50,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateTimeSlot(ProviderTimeSlotIndexDto model)
+        public async Task<IActionResult> CreateTimeSlot(ProviderTimeSlotIndexDto model)
         {
             int currentProviderId = _currentUser.RequireUserId();
             var newSlot = model.NewTimeSlot;
@@ -81,6 +86,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             if (!ModelState.IsValid)
             {
                 model.TimeSlots = GetProviderSlots(currentProviderId);
+                model.WeeklySlots = await _weekly.GetAsync(currentProviderId);
                 return View("Index", model);
             }
 
@@ -131,6 +137,40 @@ namespace Zyara.Web.Areas.Provider.Controllers
             {
                 TempData["Error"] = $"Cannot delete a slot that is currently {slot.Status}.";
             }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST /Provider/Schedule/AddWeekly : a fixed weekly time (repeats every week)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddWeekly(
+            [Bind(Prefix = "NewWeeklySlot")] CreateWeeklySlotDto dto, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage
+                                    ?? "Choose a day and a start time.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result = await _weekly.AddAsync(_currentUser.RequireUserId(), dto, cancellationToken);
+
+            if (result.Succeeded) TempData["Message"] = "Weekly time added. Slots were created for the next 4 weeks and new weeks are added automatically.";
+            else TempData["Error"] = result.Error;
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST /Provider/Schedule/RemoveWeekly/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveWeekly(int id, CancellationToken cancellationToken)
+        {
+            var result = await _weekly.RemoveAsync(_currentUser.RequireUserId(), id, cancellationToken);
+
+            if (result.Succeeded) TempData["Message"] = "Weekly time removed. Its free upcoming slots were deleted; booked ones stay.";
+            else TempData["Error"] = result.Error;
 
             return RedirectToAction(nameof(Index));
         }

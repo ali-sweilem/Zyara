@@ -9,6 +9,7 @@ namespace Zyara.Domain.Enums
         BookingCancelled = 4,   // -> provider: the patient cancelled
         BookingExpired = 5,     // -> patient
         VisitStarted = 6,       // -> patient
-        VisitCompleted = 7      // -> patient
+        VisitCompleted = 7,     // -> patient
+        BookingNoShow = 8       // -> patient and provider: the visit never started
     }
 }

@@ -263,6 +263,7 @@ public sealed class ProviderBookingService : IProviderBookingService
     {
         BookingStatus.PendingProviderApproval => "waiting for approval",
         BookingStatus.ConfirmedCollectionPending => "confirmed",
+        BookingStatus.NoShow => "marked as a no-show",
         _ => status.ToString().ToLowerInvariant()
     };
 

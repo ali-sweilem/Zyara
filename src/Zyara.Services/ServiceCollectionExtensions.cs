@@ -22,6 +22,7 @@ using Zyara.Services.Features.Payments;
 using Zyara.Services.Features.Payments.Interface;
 using Zyara.Services.Features.Providers;
 using Zyara.Services.Features.Providers.Interfaces;
+using Zyara.Services.Jobs;
 
 namespace Zyara.Services;
 
@@ -40,6 +41,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProviderVerficationService, ProviderVerificationService>();
         services.AddScoped<IProviderCredentialService, ProviderCredentialService>();
         services.AddScoped<IProviderServiceCatalogService, ProviderServiceCatalogService>();
+        services.AddScoped<IWeeklyScheduleService, WeeklyScheduleService>();
+        services.AddHostedService<WeeklySlotGeneratorJob>();   // keeps the next 4 weeks of weekly slots ready
 
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IMedicalRecordService, MedicalRecordService>();

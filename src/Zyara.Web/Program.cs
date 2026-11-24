@@ -33,10 +33,21 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
-// Map Area routes (e.g. /Provider/Dashboard/Index)
+// Area home pages (there is no Dashboard controller: Admin -> Users, Provider -> Schedule)
+app.MapControllerRoute(
+    name: "admin-home",
+    pattern: "Admin",
+    defaults: new { area = "Admin", controller = "AdminUsers", action = "Index" });
+
+app.MapControllerRoute(
+    name: "provider-home",
+    pattern: "Provider",
+    defaults: new { area = "Provider", controller = "Schedule", action = "Index" });
+
+// Map Area routes (e.g. /Provider/Bookings/Index)
 app.MapControllerRoute(
     name: "areas",
-    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{area:exists}/{controller}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "landing",
