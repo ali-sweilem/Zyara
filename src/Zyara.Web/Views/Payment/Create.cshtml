@@ -5,6 +5,10 @@
 }
 
 <div class="container py-5" style="max-width: 520px;">
+    @if (TempData["Error"] is string payError)
+    {
+        <div class="alert alert-danger border-0 rounded-4">@payError</div>
+    }
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-header bg-white border-bottom text-center py-4">
             <h4 class="mb-1 text-primary fw-bold">Select Payment</h4>
@@ -37,6 +41,18 @@
                         Confirm Cash on Arrival
                     </button>
                 </div>
+            </form>
+
+            <div class="text-center text-muted small my-3">or</div>
+
+            <form asp-controller="CardPayment" asp-action="Checkout" method="post">
+                <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-outline-primary btn-lg rounded-pill">
+                        <i class="bi bi-credit-card me-1"></i> Pay by card (Visa)
+                    </button>
+                </div>
+                <p class="text-muted small text-center mt-2 mb-0">You enter the card on the payment page, never on Zyara.</p>
             </form>
         </div>
     </div>

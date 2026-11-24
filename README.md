@@ -42,6 +42,22 @@ and the platform charges the provider a 15% commission on completed visits.
 - **Booking lifecycle:** every booking moves through a defined set of statuses with a full history trail.
 - **Commission ledger:** a commission record is created when a visit is completed.
 
+## Accounts, Security and Payments
+
+- **Sign in:** email + password (lockout after 5 failed attempts), Google login (patients), forgot / reset password,
+  and email confirmation (in Development the links are printed in the console).
+- **Two-factor authentication (optional):** any signed-in user can turn it on from the **Security** link in the navbar.
+  Scan the QR code with Google/Microsoft Authenticator, type the 6-digit code, and save the 10 recovery codes
+  (shown once, each works once). After that, sign-in asks for a code from the app.
+- **Roles and ownership:** Admin and Provider areas are protected by role; bookings, credentials and visit notes are
+  also checked per owner (another user's id returns 404).
+- **Provider documents** are stored in `src/Zyara.Web/App_Data/PrivateUploads` (outside `wwwroot`, git-ignored) and can
+  only be opened through `ProviderCredentials/Download`, which checks login and ownership.
+- **Pay by card:** patients can pay with a card instead of cash. The default gateway is a **demo** one
+  (`Payment:Provider = Fake`): use the test card `4242 4242 4242 4242`; any other card is declined.
+  The card number is never stored or logged (only brand and last 4 digits). Gateway webhooks are signed
+  (HMAC) and idempotent.
+
 ## Business Rules
 
 | Rule | Value |
@@ -104,7 +120,8 @@ and the compiler enforces it because each layer is a separate project.
 Zyara/
 ├── src/
 │   ├── Zyara.Domain/        Entities, Enums, Rules
-│   ├── Zyara.Services/      Data, Features, Jobs, Common
+│   ├── Zyara.Repositories/  ZyaraDbContext, configurations, migrations, seeders
+│   ├── Zyara.Services/      Features (Identity, Payments, ...), Jobs, Common
 │   └── Zyara.Web/           Areas/{Patient,Provider,Admin}, Views, Program.cs
 ├── tests/
 │   └── Zyara.Tests/
@@ -156,6 +173,7 @@ Other secrets used by later tasks (only if you work on them):
 dotnet user-secrets set "Authentication:Google:ClientId" "<id>"      # T11
 dotnet user-secrets set "Authentication:Google:ClientSecret" "<secret>"
 dotnet user-secrets set "Email:Password" "<smtp password>"           # T7 (Production SMTP)
+dotnet user-secrets set "Payment:WebhookSecret" "<any long random text>"   # T12 (optional in Development)
 ```
 
 **2. Create / reset the database**
@@ -186,7 +204,8 @@ dotnet ef migrations add <Name> --project src/Zyara.Repositories --startup-proje
 dotnet test
 ```
 
-Currently the test project covers the commission calculation rule (`CommissionCalculator`) and the geo distance rule (`GeoDistance.Haversine`).
+Currently the test project covers the commission rule (`CommissionCalculator`), the geo distance rules (`GeoDistance`),
+booking authorization handlers, and the card payment rules (payment state machine, webhook idempotency, signatures).
 As features are added, the strategy will be:
 
 - **Domain rule tests** run without a database or a clock.

@@ -38,12 +38,6 @@
 <div class="container-fluid py-4" dir="ltr" lang="en">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h1 class="h3 fw-bold mb-0">Bookings History</h1>
-        <div class="btn-group rounded-pill">
-            <a asp-area="Provider" asp-controller="Bookings" asp-action="Index" class="btn btn-outline-primary">Requests</a>
-            <a asp-area="Provider" asp-controller="Bookings" asp-action="History" class="btn btn-primary">History</a>
-            <a asp-area="Provider" asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary">Wallet</a>
-            <a asp-area="Provider" asp-controller="Schedule" asp-action="Index" class="btn btn-outline-primary">My schedule</a>
-        </div>
     </div>
 
     <form method="get" asp-area="Provider" asp-controller="Bookings" asp-action="History" class="row g-2 align-items-center mb-3">

@@ -21,43 +21,77 @@
         var isAdmin = User.IsInRole("Admin");
         var isProvider = User.IsInRole("Doctor") || User.IsInRole("Nurse");
         var isPatient = User.IsInRole("Patient");
+        var currentArea = ViewContext.RouteData.Values["area"]?.ToString();
+
+        bool IsActive(string controller, string? area = null) =>
+            string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(currentArea ?? "", area ?? "", StringComparison.OrdinalIgnoreCase);
+
+        string Active(string controller, string? area = null) => IsActive(controller, area) ? "is-active" : "";
     }
     <header>
         <nav class="navbar navbar-expand-lg navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow sticky-top site-navbar">
             <div class="container">
+                @if (isAdmin)
+                {
+                    <a class="navbar-brand" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index" aria-label="Zyara">
+                        <img class="d-none d-sm-block" src="~/images/branding/zyara-logo.svg" width="145" height="40" alt="Zyara" />
+                        <img class="d-sm-none" src="~/images/branding/zyara-icon.svg" width="36" height="36" alt="Zyara" />
+                    </a>
+                }
+                else if (isProvider)
+                {
+                    <a class="navbar-brand" asp-area="Provider" asp-controller="Schedule" asp-action="Index" aria-label="Zyara">
+                        <img class="d-none d-sm-block" src="~/images/branding/zyara-logo.svg" width="145" height="40" alt="Zyara" />
+                        <img class="d-sm-none" src="~/images/branding/zyara-icon.svg" width="36" height="36" alt="Zyara" />
+                    </a>
+                }
+                else
+                {
                 <a class="navbar-brand" asp-area="" asp-controller="Landing" asp-action="Index" aria-label="Zyara">
                     <img class="d-none d-sm-block" src="~/images/branding/zyara-logo.svg" width="145" height="40" alt="Zyara" />
                     <img class="d-sm-none" src="~/images/branding/zyara-icon.svg" width="36" height="36" alt="Zyara" />
                 </a>
+                }
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Open navigation menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse justify-content-between" id="navbarSupportedContent">
                     <ul class="navbar-nav flex-grow-1 align-items-lg-center">
-                        <li class="nav-item">
-                            <a class="nav-link @(isLanding ? "is-active" : "")" asp-area="" asp-controller="Landing" asp-action="Index" aria-current="@(isLanding ? "page" : null)">Services</a>
-                        </li>
-                        @* <li class="nav-item">
-                            <a class="nav-link @(isPrivacy ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="Privacy" aria-current="@(isPrivacy ? "page" : null)">Privacy</a>
-                        </li> *@
-                        @if (isPatient)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Patient" asp-action="Index">My bookings</a>
-                            </li>
-                        }
-                        @if (isProvider)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-action="showprofile" asp-controller="Providers">Provider Profile</a>
-                            </li>
-                        }
                         @if (isAdmin)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index">Admin</a>
+                            <li class="nav-item"><a class="nav-link @Active("AdminUsers", "Admin")" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index">Users</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("AdminProviders", "Admin")" asp-area="Admin" asp-controller="AdminProviders" asp-action="Index">Providers</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("AdminBookings", "Admin")" asp-area="Admin" asp-controller="AdminBookings" asp-action="Index">Bookings</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("AdminServices", "Admin")" asp-area="Admin" asp-controller="AdminServices" asp-action="Index">Services</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("AdminFees", "Admin")" asp-area="Admin" asp-controller="AdminFees" asp-action="Index">Fees</a></li>
+                        }
+                        else if (isProvider)
+                        {
+                            var isAccount = IsActive("Providers") || IsActive("ProviderCredentials") || IsActive("ProviderVerification");
+                            <li class="nav-item"><a class="nav-link @(IsActive("Bookings", "Provider") && currentAction != "History" ? "is-active" : "")" asp-area="Provider" asp-controller="Bookings" asp-action="Index">Requests</a></li>
+                            <li class="nav-item"><a class="nav-link @(IsActive("Bookings", "Provider") && currentAction == "History" ? "is-active" : "")" asp-area="Provider" asp-controller="Bookings" asp-action="History">History</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Schedule", "Provider")" asp-area="Provider" asp-controller="Schedule" asp-action="Index">Schedule</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Services", "Provider")" asp-area="Provider" asp-controller="Services" asp-action="Index">My services</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Wallet", "Provider")" asp-area="Provider" asp-controller="Wallet" asp-action="Index">Wallet</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle @(isAccount ? "is-active" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Profile</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Providers" asp-action="showprofile">My profile</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Providers" asp-action="EditProfile">Edit profile</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="ProviderCredentials" asp-action="Index">Credentials</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="ProviderVerification" asp-action="Status">Verification status</a></li>
+                                </ul>
                             </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link @(isLanding ? "is-active" : "")" asp-area="" asp-controller="Landing" asp-action="Index" aria-current="@(isLanding ? "page" : null)">Services</a></li>
+                            @if (isPatient)
+                            {
+                                <li class="nav-item"><a class="nav-link @Active("Patient")" asp-area="" asp-controller="Patient" asp-action="Index">My bookings</a></li>
+                            }
                         }
                     </ul>
                     <partial name="_LoginPartial" />

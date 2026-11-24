@@ -1,0 +1,38 @@
+@using Zyara.Domain.Enums
+@model Zyara.Services.Features.Payments.Dtos.CardResultDto
+@{
+    ViewData["Title"] = "Payment result";
+    var paid = Model.Status is PaymentStatus.Authorized or PaymentStatus.Captured;
+}
+
+<div class="container py-5" style="max-width: 520px;">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4 p-md-5 text-center">
+            @if (paid)
+            {
+                <div class="display-5 text-success mb-3"><i class="bi bi-check-circle-fill"></i></div>
+                <h1 class="h4 fw-bold">Payment received</h1>
+                <p class="text-muted">
+                    @Model.Amount.ToString("N2") EGP
+                    @if (!string.IsNullOrEmpty(Model.CardLast4))
+                    {
+                        <span>charged to @(Model.CardBrand ?? "your card") ending in @Model.CardLast4.</span>
+                    }
+                </p>
+                <a asp-controller="Booking" asp-action="Confirmation" asp-route-id="@Model.BookingId" class="btn btn-primary rounded-pill px-4">View my booking</a>
+            }
+            else
+            {
+                <div class="display-5 text-danger mb-3"><i class="bi bi-x-circle-fill"></i></div>
+                <h1 class="h4 fw-bold">Payment not completed</h1>
+                <p class="text-muted">Your card was not charged. You can try again or choose cash on arrival.</p>
+
+                <form asp-controller="CardPayment" asp-action="Checkout" method="post" class="d-inline">
+                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Try again</button>
+                </form>
+                <a asp-controller="Payment" asp-action="Create" asp-route-bookingId="@Model.BookingId" class="btn btn-link">Other payment options</a>
+            }
+        </div>
+    </div>
+</div>

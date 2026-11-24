@@ -318,6 +318,18 @@ namespace Zyara.Services.Migrations
                     b.Property<int>("BookingId")
                         .HasColumnType("int");
 
+                    b.Property<string>("CardBrand")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("CardLast4")
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
+                    b.Property<string>("GatewayReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -338,6 +350,10 @@ namespace Zyara.Services.Migrations
 
                     b.HasIndex("BookingId")
                         .IsUnique();
+
+                    b.HasIndex("GatewayReference")
+                        .IsUnique()
+                        .HasFilter("[GatewayReference] IS NOT NULL");
 
                     b.ToTable("Payments", (string)null);
                 });

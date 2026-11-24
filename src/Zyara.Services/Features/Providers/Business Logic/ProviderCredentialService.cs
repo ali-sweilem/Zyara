@@ -26,9 +26,10 @@ namespace Zyara.Services.Features.Providers
             _verification = verification;
         }
 
-        // Outside wwwroot => no public URL for these files
+        // Outside wwwroot (App_Data) => no public URL: files can only be read through
+        // ProviderCredentialsController.Download, which checks login + ownership (T6).
         private string UploadFolder =>
-            Path.Combine(_env.WebRootPath, "PrivateUploads", "credentials");
+            Path.Combine(_env.ContentRootPath, "App_Data", "PrivateUploads", "credentials");
 
         public Task<ProviderCredential?> GetCredentialAsync(int id)
         {

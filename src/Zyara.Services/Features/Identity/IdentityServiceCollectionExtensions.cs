@@ -21,6 +21,7 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IRegistrationService, RegistrationService>();   // T3 (Abdelrhman)
         services.AddScoped<ILoginService, LoginService>();
+        services.AddScoped<ITwoFactorService, TwoFactorService>();   // T10 (Youssef)
 
         services
             .AddIdentity<User, IdentityRole<int>>(options =>

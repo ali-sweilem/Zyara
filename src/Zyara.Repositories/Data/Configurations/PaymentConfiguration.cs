@@ -30,6 +30,15 @@ namespace Zyara.Repositories.Data.Configurations
                 .HasPrecision(18, 2)
                 .HasDefaultValue(0m);
 
+            builder.Property(p => p.GatewayReference).HasMaxLength(100);
+            builder.Property(p => p.CardBrand).HasMaxLength(30);
+            builder.Property(p => p.CardLast4).HasMaxLength(4);
+
+            // One payment per gateway reference: the same webhook can never create a second payment (T12)
+            builder.HasIndex(p => p.GatewayReference)
+                .IsUnique()
+                .HasFilter("[GatewayReference] IS NOT NULL");
+
             builder.Property(p => p.BookingId).IsRequired();
 
             builder.HasOne(p => p.Booking)

@@ -79,8 +79,9 @@ public class AccountController : Controller
 
         return role switch
         {
-            UserRole.Admin => RedirectToAction("Index", "Dashboard", new { area = "Admin" }),
+            UserRole.Admin => RedirectToAction("Index", "AdminUsers", new { area = "Admin" }),
             UserRole.Doctor or UserRole.Nurse => RedirectToAction("Index", "Schedule", new { area = "Provider" }),
+            UserRole.Patient => RedirectToAction("Index", "Patient", new { area = "" }),
             _ => RedirectToAction("Index", "Landing", new { area = "" })
         };
     }

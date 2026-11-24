@@ -11,16 +11,16 @@ public class PasswordRecoveryService : IPasswordRecoveryService
 {
     private readonly UserManager<User> _userManager;
     private readonly IAppEmailSender _emailSender;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ISessionService _sessions;
 
     public PasswordRecoveryService(
         UserManager<User> userManager,
         IAppEmailSender _emailSender,
-        IServiceProvider serviceProvider)
+        ISessionService sessions)
     {
         _userManager = userManager;
         this._emailSender = _emailSender;
-        _serviceProvider = serviceProvider;
+        _sessions = sessions;
     }
 
     public async Task ForgotPasswordAsync(string email, string originSchemeAndHost)
@@ -77,31 +77,15 @@ public class PasswordRecoveryService : IPasswordRecoveryService
         var result = await _userManager.ResetPasswordAsync(user, decodedToken, dto.Password);
         if (result.Succeeded)
         {
-            // ResetPasswordAsync inherently changes the SecurityStamp, which invalidates active sessions.
-            // In addition, if ISessionService is registered by Adham (T9), invoke InvalidateAsync(user.Id).
+            // ResetPasswordAsync already changes the SecurityStamp; InvalidateAsync makes the intent explicit
+            // and signs the other devices out. A failure here must not fail a reset that already succeeded.
             try
             {
-                var sessionServiceType = Type.GetType("Zyara.Services.Features.Identity.Interfaces.ISessionService, Zyara.Services");
-                if (sessionServiceType != null)
-                {
-                    var sessionService = _serviceProvider.GetService(sessionServiceType);
-                    if (sessionService != null)
-                    {
-                        var invalidateMethod = sessionServiceType.GetMethod("InvalidateAsync", new[] { typeof(int) });
-                        if (invalidateMethod != null)
-                        {
-                            var task = invalidateMethod.Invoke(sessionService, new object[] { user.Id }) as Task;
-                            if (task != null)
-                            {
-                                await task;
-                            }
-                        }
-                    }
-                }
+                await _sessions.InvalidateAsync(user.Id);
             }
             catch
             {
-                // Fallback: SecurityStamp change already handles cookie invalidation
+                // The SecurityStamp change from ResetPasswordAsync already covers the cookies.
             }
         }
 

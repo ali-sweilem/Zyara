@@ -11,6 +11,12 @@ namespace Zyara.Domain.Entities
         public decimal Amount { get; set; }
         public decimal RefundedAmount { get; set; }
 
+        // Online (card) payments only. The card itself never reaches our server (PCI):
+        // we keep the gateway's reference and the brand / last 4 digits for display.
+        public string? GatewayReference { get; set; }
+        public string? CardBrand { get; set; }
+        public string? CardLast4 { get; set; }
+
         public int BookingId { get; set; }
         public Booking? Booking { get; set; }
 

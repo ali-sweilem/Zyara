@@ -116,5 +116,29 @@ namespace Zyara.Services.Features.Payments
                 IsHomeVisit = isHomeVisit
             };
         }
+
+        public Task<bool> CaptureAsync(int bookingId) => Transition(bookingId, p => p.Capture());
+
+        public Task<bool> ReleaseAsync(int bookingId) => Transition(bookingId, p => p.Release());
+
+        public Task<bool> RefundAsync(int bookingId, decimal amount) => Transition(bookingId, p => p.Refund(amount));
+
+        private async Task<bool> Transition(int bookingId, Action<Payment> change)
+        {
+            var payment = await _db.Payments.FirstOrDefaultAsync(p => p.BookingId == bookingId);
+            if (payment is null || payment.Method != PaymentMethod.OnlinePayment) return false;
+
+            try
+            {
+                change(payment);   // the Payment entity validates the transition
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
     }
 }

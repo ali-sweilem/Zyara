@@ -32,6 +32,7 @@ namespace Zyara.Web.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Policy = PolicyNames.ProviderOnly)]
         public async Task<IActionResult> Upload(UploadCredentialDto dto)
         {
