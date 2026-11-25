@@ -27,5 +27,26 @@ public sealed class BookAppointmentDto
 
     [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
     public string? Notes { get; set; }
+
+    // Patient Addresses for Visit
+    public IReadOnlyList<Zyara.Services.Features.Patients.Dtos.PatientAddressItemDto> PatientAddresses { get; set; } = [];
+    public int? SelectedAddressId { get; set; }
+    public string? CustomAddress { get; set; }
+
+    // Payment Selection
+    public string PaymentMethod { get; set; } = "Cash"; // "Cash" or "Card"
+
+    // Card Details (when PaymentMethod == "Card")
+    [Display(Name = "Cardholder Name")]
+    public string? CardHolderName { get; set; }
+
+    [Display(Name = "Card Number")]
+    public string? CardNumber { get; set; }
+
+    [Display(Name = "Expiry Date (MM/YY)")]
+    public string? CardExpiry { get; set; }
+
+    [Display(Name = "CVV")]
+    public string? CardCvv { get; set; }
 }
 

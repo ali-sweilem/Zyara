@@ -1,175 +1,590 @@
 @model Zyara.Services.Features.Bookings.Dtos.BookAppointmentDto
 
 @{
-    ViewData["Title"] = $"Book Appointment — {Model.ProviderFullName}";
+    ViewData["Title"] = $"Confirm Booking — {Model.ProviderFullName}";
+
+    var selectedService = Model.ProviderServices.FirstOrDefault(s => s.Id == Model.SelectedProviderServiceId)
+                          ?? Model.ProviderServices.FirstOrDefault();
+    var selectedSlot = Model.AvailableSlots.FirstOrDefault(s => s.Id == Model.SelectedTimeSlotId)
+                       ?? Model.AvailableSlots.FirstOrDefault();
+    var isCard = string.Equals(Model.PaymentMethod, "Card", StringComparison.OrdinalIgnoreCase);
+    var hasAddresses = Model.PatientAddresses.Any();
 }
 
-<div class="container py-4 py-lg-5" style="max-width: 720px;">
+<div class="container py-4 py-lg-5">
 
     @* ── Back link ── *@
-    <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-       class="d-inline-flex align-items-center gap-1 text-muted text-decoration-none small mb-4">
-        <i class="bi bi-arrow-left"></i> Back to provider profile
-    </a>
+    <div class="mb-4">
+        <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
+           class="d-inline-flex align-items-center gap-2 text-decoration-none text-muted fw-semibold small">
+            <i class="bi bi-arrow-left"></i> Back to Provider Profile
+        </a>
+    </div>
 
-    @* ── Provider summary card ── *@
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4 d-flex align-items-center gap-4">
-            @await Html.PartialAsync("_Avatar", new AvatarDto
-            {
-                FullName = Model.ProviderFullName,
-                PhotoUrl = Model.ProviderPhotoUrl,
-                Id = Model.ProviderId,
-                Size = 72
-            })
+    @* ── Global validation summary ── *@
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger rounded-4 shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2 fw-bold mb-2">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                <span>Please correct the errors below to complete your booking:</span>
+            </div>
+            <div asp-validation-summary="All" class="mb-0 text-danger small"></div>
+        </div>
+    }
+
+    @if (selectedSlot == null || selectedService == null)
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4">
+            <i class="bi bi-calendar-x fs-1 text-warning mb-3"></i>
+            <h3 class="h4 fw-bold mb-2">Incomplete Selection</h3>
+            <p class="text-muted mb-4">Please return to the provider's profile to choose a service and an available time slot.</p>
             <div>
-                <h1 class="h4 fw-bold mb-1">@Model.ProviderFullName</h1>
-                <p class="text-muted mb-0 small">
-                    @(string.IsNullOrWhiteSpace(Model.ProviderSpecialty) ? "Healthcare Provider" : Model.ProviderSpecialty)
-                    @if (!string.IsNullOrWhiteSpace(Model.ProviderBaseCity))
-                    {
-                        <span class="ms-2"><i class="bi bi-geo-alt text-danger"></i> @Model.ProviderBaseCity</span>
-                    }
-                </p>
+                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
+                   class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-calendar-plus me-1"></i> Choose Service & Slot
+                </a>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <form asp-action="Book" asp-controller="Booking" method="post" id="bookingForm">
+            @Html.AntiForgeryToken()
 
-    @* ── Booking form card ── *@
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-body p-4 p-md-5">
-            <h2 class="h5 fw-bold mb-4">
-                <i class="bi bi-calendar2-check me-2 text-primary"></i>Book an Appointment
-            </h2>
+            @* Hidden fields carrying verified IDs from Details selection *@
+            <input type="hidden" asp-for="ProviderId" />
+            <input type="hidden" asp-for="SelectedProviderServiceId" value="@selectedService.Id" />
+            <input type="hidden" asp-for="SelectedTimeSlotId" value="@selectedSlot.Id" />
 
-            @* ── Global validation summary ── *@
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger rounded-3 mb-4" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <asp-validation-summary asp-validation-summary="All" class="mb-0 d-inline" />
-                </div>
-            }
+            <div class="row g-4 align-items-start">
 
-            @if (!Model.AvailableSlots.Any())
-            {
-                <div class="alert alert-warning rounded-3" role="alert">
-                    <i class="bi bi-calendar-x me-2"></i>
-                    This provider has no available slots right now. Please check back later.
-                </div>
-                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-                   class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-arrow-left me-1"></i> Back
-                </a>
-            }
-            else if (!Model.ProviderServices.Any())
-            {
-                <div class="alert alert-warning rounded-3" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    This provider has no active services listed. Booking is not possible at this time.
-                </div>
-                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-                   class="btn btn-outline-secondary rounded-pill">
-                    <i class="bi bi-arrow-left me-1"></i> Back
-                </a>
-            }
-            else
-            {
-                <form asp-action="Book" asp-controller="Booking" method="post">
-                    @Html.AntiForgeryToken()
+                @* ═══════════════════════════════════════════════════════════════
+                   LEFT COLUMN: Booking Details Summary, Address & Payment Method
+                   ═══════════════════════════════════════════════════════════════ *@
+                <div class="col-lg-7">
 
-                    @* ProviderId is a display field — read-only, re-submitted so the controller
-                       can repopulate the VM on a failed POST, but its value is re-validated
-                       server-side against the DB and never trusted for pricing. *@
-                    <input type="hidden" asp-for="ProviderId" />
+                    @* ── 1. Appointment Summary Card (ملخص بيانات الحجز المختار) ── *@
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4 p-md-5">
+                            <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+                                <h2 class="h5 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                    <i class="bi bi-calendar-check text-primary"></i>Appointment Details
+                                </h2>
+                                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
+                                   class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                    <i class="bi bi-pencil me-1"></i> Change
+                                </a>
+                            </div>
 
-                    @* ── 1. Service selector ── *@
-                    <div class="mb-4">
-                        <label asp-for="SelectedProviderServiceId" class="form-label fw-semibold">
-                            Select Service <span class="text-danger">*</span>
-                        </label>
-                        <select asp-for="SelectedProviderServiceId" class="form-select rounded-3">
-                            <option value="">— choose a service —</option>
-                            @foreach (var svc in Model.ProviderServices)
-                            {
-                                <option value="@svc.Id">@svc.Name — @svc.Fee.ToString("N0") EGP</option>
-                            }
-                        </select>
-                        <span asp-validation-for="SelectedProviderServiceId" class="text-danger small"></span>
-                    </div>
+                            @* Provider details banner *@
+                            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 mb-4">
+                                @await Html.PartialAsync("_Avatar", new AvatarDto
+                                {
+                                    FullName = Model.ProviderFullName,
+                                    PhotoUrl = Model.ProviderPhotoUrl,
+                                    Id = Model.ProviderId,
+                                    Size = 56
+                                })
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h3 class="h6 fw-bold mb-1 text-dark">@Model.ProviderFullName</h3>
+                                    <div class="text-muted small">
+                                        @(string.IsNullOrWhiteSpace(Model.ProviderSpecialty) ? "Healthcare Provider" : Model.ProviderSpecialty)
+                                        @if (!string.IsNullOrWhiteSpace(Model.ProviderBaseCity))
+                                        {
+                                            <span class="ms-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>@Model.ProviderBaseCity</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
 
-                    @* ── 2. Time slot selector ── *@
-                    <div class="mb-4">
-                        <label asp-for="SelectedTimeSlotId" class="form-label fw-semibold">
-                            Select Time Slot <span class="text-danger">*</span>
-                        </label>
-                        <select asp-for="SelectedTimeSlotId" class="form-select rounded-3">
-                            <option value="">— choose a slot —</option>
-                            @foreach (var slot in Model.AvailableSlots)
-                            {
-                                <option value="@slot.Id">@slot.Label</option>
-                            }
-                        </select>
-                        <span asp-validation-for="SelectedTimeSlotId" class="text-danger small"></span>
-                    </div>
+                            @* Summary highlights grid *@
+                            <div class="row g-3">
+                                @* Service highlight *@
+                                <div class="col-sm-6">
+                                    <div class="border rounded-3 p-3 h-100 bg-white">
+                                        <div class="small text-muted mb-1">
+                                            <i class="bi bi-clipboard2-pulse text-primary me-1"></i> Selected Service
+                                        </div>
+                                        <div class="fw-bold text-dark fs-6 mb-1">@selectedService.Name</div>
+                                        <div class="small text-primary fw-bold">@selectedService.Fee.ToString("N0") EGP</div>
+                                        @if (!string.IsNullOrWhiteSpace(selectedService.Description))
+                                        {
+                                            <div class="small text-muted mt-1 text-truncate">@selectedService.Description</div>
+                                        }
+                                    </div>
+                                </div>
 
-                    @* ── 3. Notes ── *@
-                    <div class="mb-4">
-                        <label asp-for="Notes" class="form-label fw-semibold">
-                            Notes <span class="text-muted fw-normal">(optional)</span>
-                        </label>
-                        <textarea asp-for="Notes" class="form-control rounded-3" rows="3"
-                                  placeholder="Any additional information for the provider…"
-                                  maxlength="500"></textarea>
-                        <div class="form-text text-end">
-                            <span id="notesCharCount">0</span> / 500
+                                @* Date & Time highlight *@
+                                <div class="col-sm-6">
+                                    <div class="border rounded-3 p-3 h-100 bg-white">
+                                        <div class="small text-muted mb-1">
+                                            <i class="bi bi-clock-history text-primary me-1"></i> Appointment Schedule
+                                        </div>
+                                        <div class="fw-bold text-dark fs-6 mb-1">@selectedSlot.Date.ToString("dddd, d MMMM yyyy")</div>
+                                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+                                            @selectedSlot.StartTime.ToString(@"hh\:mm") - @selectedSlot.EndTime.ToString(@"hh\:mm")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <span asp-validation-for="Notes" class="text-danger small"></span>
                     </div>
 
-                    @* ── Payment notice ── *@
-                    <div class="alert alert-light border small d-flex align-items-start gap-2 mb-4" role="note">
-                        <i class="bi bi-info-circle-fill text-primary mt-1 flex-shrink-0"></i>
-                        <span>
-                            Payment is <strong>cash on arrival</strong>. You will confirm payment details
-                            on the next screen before the booking is finalised.
-                        </span>
+                    @* ── 2. Patient Visit Address Selection (عنوان الزيارة) ── *@
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4 p-md-5">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h2 class="h5 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-geo-alt-fill text-danger"></i>Visit Location / Address
+                                    </h2>
+                                    <p class="text-muted small mb-0">Choose the address where the provider will visit you</p>
+                                </div>
+                                <a asp-controller="Patient" asp-action="Profile" target="_blank"
+                                   class="small text-primary text-decoration-none">
+                                    <i class="bi bi-plus-circle me-1"></i>Manage in Profile
+                                </a>
+                            </div>
+
+                            @if (hasAddresses)
+                            {
+                                <div class="vstack gap-2 mb-3" id="patientAddressesList">
+                                    @for (int a = 0; a < Model.PatientAddresses.Count; a++)
+                                    {
+                                        var addr = Model.PatientAddresses[a];
+                                        var isSelectedAddr = (Model.SelectedAddressId.HasValue && Model.SelectedAddressId.Value == addr.Id)
+                                                             || (!Model.SelectedAddressId.HasValue && a == 0);
+
+                                        <label class="address-card-item border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer transition @(isSelectedAddr ? "border-primary bg-primary-subtle bg-opacity-10 shadow-sm" : "bg-white")"
+                                               data-address-id="@addr.Id"
+                                               data-address-display="@addr.Label: @addr.StreetAndBuilding, @addr.District, @addr.City">
+                                            <input type="radio" asp-for="SelectedAddressId" value="@addr.Id"
+                                                   class="form-check-input mt-1 address-radio"
+                                                   checked="@isSelectedAddr" />
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="badge bg-secondary-subtle text-dark border px-2 py-1 rounded-pill small">
+                                                        <i class="bi bi-tag me-1"></i>@addr.Label
+                                                    </span>
+                                                    <span class="fw-bold text-dark fs-6">@addr.City, @addr.District</span>
+                                                </div>
+                                                <div class="small text-secondary">
+                                                    <i class="bi bi-pin-map me-1 text-muted"></i>@addr.StreetAndBuilding
+                                                </div>
+                                            </div>
+                                        </label>
+                                    }
+
+                                    @* Option to enter a different address *@
+                                    <label class="address-card-item border rounded-3 p-3 d-flex align-items-start gap-3 cursor-pointer transition bg-white"
+                                           id="customAddressOptionCard"
+                                           data-address-id="0"
+                                           data-address-display="Custom Visit Address">
+                                        <input type="radio" asp-for="SelectedAddressId" value="0"
+                                               class="form-check-input mt-1 address-radio"
+                                               id="useCustomAddressRadio" />
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold text-dark mb-1">
+                                                <i class="bi bi-pencil-square me-1 text-primary"></i>Use another address for this visit
+                                            </div>
+                                            <div class="small text-muted">Specify a custom address not in your saved list</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                @* Custom address input box (collapsible) *@
+                                <div id="customAddressBox" class="d-none mt-3 p-3 bg-light rounded-3 border">
+                                    <label asp-for="CustomAddress" class="form-label small fw-semibold text-dark">
+                                        Enter Visit Address (Building, Street, Floor, Apartment, District, City):
+                                    </label>
+                                    <textarea asp-for="CustomAddress" id="customAddressInput" class="form-control rounded-3" rows="2"
+                                              placeholder="e.g. Building 14, Street 9, Apt 3, Maadi, Cairo"></textarea>
+                                </div>
+                            }
+                            else
+                            {
+                                @* Fallback if patient has no saved addresses yet *@
+                                <div class="bg-light p-3 rounded-4 border mb-2">
+                                    <div class="d-flex align-items-center gap-2 text-warning-emphasis mb-2 small fw-semibold">
+                                        <i class="bi bi-info-circle-fill text-warning fs-5"></i>
+                                        <span>You do not have any saved addresses in your account.</span>
+                                    </div>
+                                    <label asp-for="CustomAddress" class="form-label small fw-semibold text-dark">
+                                        Please enter your home address for the visit <span class="text-danger">*</span>:
+                                    </label>
+                                    <textarea asp-for="CustomAddress" id="customAddressInput" class="form-control rounded-3" rows="2"
+                                              placeholder="Building number, Street, Apartment, District, City..." required></textarea>
+                                    <span asp-validation-for="CustomAddress" class="text-danger small"></span>
+                                </div>
+                            }
+                        </div>
                     </div>
 
-                    @* ── Actions ── *@
-                    <div class="d-flex flex-wrap gap-3">
-                        <button type="submit" class="btn btn-primary rounded-pill px-5">
-                            <i class="bi bi-calendar2-check me-1"></i> Confirm Booking
-                        </button>
-                        <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
-                           class="btn btn-outline-secondary rounded-pill px-4">
-                            Cancel
-                        </a>
+                    @* ── 3. Patient Notes (Optional) ── *@
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4 p-md-5">
+                            <h2 class="h5 fw-bold mb-3 d-flex align-items-center gap-2 text-dark">
+                                <i class="bi bi-chat-text text-primary"></i>Additional Notes <span class="text-muted fw-normal fs-6">(optional)</span>
+                            </h2>
+                            <textarea asp-for="Notes" id="Notes" class="form-control rounded-3" rows="3"
+                                      placeholder="Describe symptoms, patient condition, or instructions for reaching the door..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text text-end">
+                                <span id="notesCharCount">0</span> / 500
+                            </div>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
                     </div>
-                </form>
-            }
-        </div>
-    </div>
+
+                    @* ── 4. Payment Method Selection (طريقة وسيلة الدفع) ── *@
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4 p-md-5">
+                            <h2 class="h5 fw-bold mb-4 d-flex align-items-center gap-2 text-dark">
+                                <i class="bi bi-wallet2 text-primary"></i>Payment Method
+                            </h2>
+
+                            @* Payment cards *@
+                            <div class="row g-3 mb-4">
+                                @* Option 1: Cash on Arrival *@
+                                <div class="col-sm-6">
+                                    <label class="payment-method-card border rounded-4 p-3 d-block cursor-pointer position-relative h-100 transition @(!isCard ? "border-primary bg-primary-subtle bg-opacity-10 shadow-sm" : "bg-white")" id="payMethodCardCash">
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input" type="radio" asp-for="PaymentMethod" value="Cash" id="payMethodCash" checked="@(!isCard)">
+                                            <div class="ms-2">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <i class="bi bi-cash-stack text-success fs-4"></i>
+                                                    <span class="fw-bold text-dark">Cash on Arrival</span>
+                                                </div>
+                                                <p class="small text-muted mb-0">Pay directly in cash to the provider upon arrival at your location.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                @* Option 2: Credit / Debit Card *@
+                                <div class="col-sm-6">
+                                    <label class="payment-method-card border rounded-4 p-3 d-block cursor-pointer position-relative h-100 transition @(isCard ? "border-primary bg-primary-subtle bg-opacity-10 shadow-sm" : "bg-white")" id="payMethodCardCard">
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input" type="radio" asp-for="PaymentMethod" value="Card" id="payMethodCard" checked="@(isCard)">
+                                            <div class="ms-2">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <i class="bi bi-credit-card-2-front text-primary fs-4"></i>
+                                                    <span class="fw-bold text-dark">Credit / Debit Card</span>
+                                                </div>
+                                                <p class="small text-muted mb-0">Instant and secure simulated online card checkout.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            @* ── Card Inputs Section (Toggled dynamically) ── *@
+                            <div id="cardDetailsContainer" class="@(isCard ? "" : "d-none")">
+                                <div class="bg-light bg-opacity-75 rounded-4 p-4 border mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h3 class="h6 fw-bold mb-0 text-dark">
+                                            <i class="bi bi-shield-lock-fill text-primary me-2"></i>Enter Card Details
+                                        </h3>
+                                        <div class="d-flex gap-2">
+                                            <span class="badge bg-white border text-primary fw-semibold px-2 py-1"><i class="bi bi-credit-card me-1"></i>Visa</span>
+                                            <span class="badge bg-white border text-secondary fw-semibold px-2 py-1">Mastercard</span>
+                                        </div>
+                                    </div>
+
+                                    @* Demo Test Card Hint *@
+                                    <div class="alert alert-info py-2 px-3 small rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                        <div>
+                                            <i class="bi bi-info-circle me-1"></i> Demo Card: <code>4242 4242 4242 4242</code>
+                                        </div>
+                                        <button type="button" id="fillTestCardBtn" class="btn btn-sm btn-outline-info py-0 px-2 rounded-pill">
+                                            Fill Demo Card
+                                        </button>
+                                    </div>
+
+                                    @* 1. Cardholder Name *@
+                                    <div class="mb-3">
+                                        <label asp-for="CardHolderName" class="form-label small fw-semibold">Cardholder Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                                            <input asp-for="CardHolderName" id="cardHolderInput" class="form-control border-start-0 rounded-end-3"
+                                                   placeholder="Name as printed on card" autocomplete="cc-name" />
+                                        </div>
+                                        <span asp-validation-for="CardHolderName" class="text-danger small"></span>
+                                    </div>
+
+                                    @* 2. Card Number *@
+                                    <div class="mb-3">
+                                        <label asp-for="CardNumber" class="form-label small fw-semibold">Card Number <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-credit-card"></i></span>
+                                            <input asp-for="CardNumber" id="cardNumberInput" class="form-control border-start-0 rounded-end-3 font-monospace"
+                                                   placeholder="4242 4242 4242 4242" maxlength="19" autocomplete="cc-number" inputmode="numeric" />
+                                        </div>
+                                        <span asp-validation-for="CardNumber" class="text-danger small"></span>
+                                    </div>
+
+                                    @* 3. Expiry & CVV *@
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <label asp-for="CardExpiry" class="form-label small fw-semibold">Expiration Date</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar3"></i></span>
+                                                <input asp-for="CardExpiry" id="cardExpiryInput" class="form-control border-start-0 rounded-end-3 font-monospace"
+                                                       placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric" />
+                                            </div>
+                                            <span asp-validation-for="CardExpiry" class="text-danger small"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <label asp-for="CardCvv" class="form-label small fw-semibold">Security Code (CVV)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                                                <input asp-for="CardCvv" id="cardCvvInput" class="form-control border-start-0 rounded-end-3 font-monospace"
+                                                       placeholder="123" maxlength="4" autocomplete="cc-csc" inputmode="numeric" />
+                                            </div>
+                                            <span asp-validation-for="CardCvv" class="text-danger small"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                @* ═══════════════════════════════════════════════════════════════
+                   RIGHT COLUMN: Sticky Final Summary & Confirmation Checkout
+                   ═══════════════════════════════════════════════════════════════ *@
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 1.5rem; z-index: 10;">
+                        <div class="card-body p-4 p-xl-4">
+                            <h2 class="h5 fw-bold mb-3 border-bottom pb-3 text-dark">
+                                <i class="bi bi-receipt text-primary me-2"></i>Booking Overview
+                            </h2>
+
+                            @* Summary list *@
+                            <div class="vstack gap-3 mb-4">
+                                <div>
+                                    <div class="text-muted small">Service:</div>
+                                    <div class="fw-bold text-dark">@selectedService.Name</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-muted small">Appointment Time:</div>
+                                    <div class="fw-bold text-dark">@selectedSlot.Date.ToString("ddd d MMM yyyy") (@selectedSlot.StartTime.ToString(@"hh\:mm") - @selectedSlot.EndTime.ToString(@"hh\:mm"))</div>
+                                </div>
+
+                                <div>
+                                    <div class="text-muted small">Visit Location:</div>
+                                    <div class="fw-bold text-secondary small text-break" id="summaryAddressText">
+                                        @(hasAddresses ? (Model.PatientAddresses.FirstOrDefault(a => a.Id == Model.SelectedAddressId)?.Label ?? "Selected Address") : "Enter address")
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="text-muted small">Payment Method:</div>
+                                    <div id="summaryPaymentMethod">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">
+                                            <i class="bi bi-cash me-1"></i> Cash on Arrival
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Price breakdown *@
+                            <div class="border-top pt-3 mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2 small">
+                                    <span class="text-muted">Service Fee</span>
+                                    <span class="fw-semibold text-dark">@selectedService.Fee.ToString("N0") EGP</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3 small">
+                                    <span class="text-muted">Booking & Platform Fee</span>
+                                    <span class="text-success fw-semibold">Free (0 EGP)</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                    <span class="h6 fw-bold mb-0">Total Due:</span>
+                                    <span class="h4 fw-bold text-primary mb-0">@selectedService.Fee.ToString("N0") EGP</span>
+                                </div>
+                            </div>
+
+                            @* Submit Button *@
+                            <div class="d-grid gap-2">
+                                <button type="submit" id="submitBookingBtn" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                                    <i class="bi bi-shield-check me-1"></i> Confirm & Book Appointment
+                                </button>
+                                <a asp-controller="Providers" asp-action="Details" asp-route-id="@Model.ProviderId"
+                                   class="btn btn-outline-secondary rounded-pill">
+                                    Cancel
+                                </a>
+                            </div>
+
+                            @* Trust Badges *@
+                            <div class="border-top pt-3 mt-4 small text-muted text-center">
+                                <div class="d-flex justify-content-center align-items-center gap-3">
+                                    <span><i class="bi bi-shield-check text-success me-1"></i> Verified Healthcare</span>
+                                    <span><i class="bi bi-lock-fill text-primary me-1"></i> Secure Checkout</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    }
 </div>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
-        // Live character counter for the Notes textarea
         (function () {
-            const textarea = document.getElementById('Notes');
-            const counter = document.getElementById('notesCharCount');
-            if (!textarea || !counter) return;
+            // Address Selection Logic
+            const addressCards = document.querySelectorAll('.address-card-item');
+            const customAddressBox = document.getElementById('customAddressBox');
+            const customAddressInput = document.getElementById('customAddressInput');
+            const useCustomAddressRadio = document.getElementById('useCustomAddressRadio');
+            const summaryAddressText = document.getElementById('summaryAddressText');
 
-            function update() {
-                counter.textContent = textarea.value.length;
+            addressCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    addressCards.forEach(c => {
+                        c.classList.remove('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                        c.classList.add('bg-white');
+                        const r = c.querySelector('.address-radio');
+                        if (r) r.checked = false;
+                    });
+
+                    this.classList.add('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                    this.classList.remove('bg-white');
+                    const radio = this.querySelector('.address-radio');
+                    if (radio) radio.checked = true;
+
+                    const addrId = this.dataset.addressId;
+                    const addrDisplay = this.dataset.addressDisplay;
+
+                    if (addrId === '0') {
+                        if (customAddressBox) customAddressBox.classList.remove('d-none');
+                        if (summaryAddressText) {
+                            summaryAddressText.textContent = customAddressInput && customAddressInput.value ? customAddressInput.value : 'Custom Address';
+                        }
+                    } else {
+                        if (customAddressBox) customAddressBox.classList.add('d-none');
+                        if (summaryAddressText) {
+                            summaryAddressText.textContent = addrDisplay;
+                        }
+                    }
+                });
+            });
+
+            if (customAddressInput) {
+                customAddressInput.addEventListener('input', function () {
+                    if (useCustomAddressRadio && useCustomAddressRadio.checked && summaryAddressText) {
+                        summaryAddressText.textContent = this.value || 'Custom Address';
+                    }
+                });
             }
 
-            textarea.addEventListener('input', update);
-            update(); // initialise on page load (handles repopulated form on failed POST)
+            // Payment Method Selection Logic
+            const payMethodCash = document.getElementById('payMethodCash');
+            const payMethodCard = document.getElementById('payMethodCard');
+            const payCardCardContainer = document.getElementById('payMethodCardCard');
+            const payCardCashContainer = document.getElementById('payMethodCardCash');
+            const cardDetailsContainer = document.getElementById('cardDetailsContainer');
+            const summaryPaymentMethod = document.getElementById('summaryPaymentMethod');
+
+            // Card inputs
+            const fillTestCardBtn = document.getElementById('fillTestCardBtn');
+            const cardNumberInput = document.getElementById('cardNumberInput');
+            const cardHolderInput = document.getElementById('cardHolderInput');
+            const cardExpiryInput = document.getElementById('cardExpiryInput');
+            const cardCvvInput = document.getElementById('cardCvvInput');
+
+            function updatePaymentMethod() {
+                const isCardSelected = payMethodCard && payMethodCard.checked;
+
+                if (isCardSelected) {
+                    if (cardDetailsContainer) cardDetailsContainer.classList.remove('d-none');
+                    if (payCardCardContainer) {
+                        payCardCardContainer.classList.add('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                        payCardCardContainer.classList.remove('bg-white');
+                    }
+                    if (payCardCashContainer) {
+                        payCardCashContainer.classList.remove('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                        payCardCashContainer.classList.add('bg-white');
+                    }
+                    if (summaryPaymentMethod) {
+                        summaryPaymentMethod.innerHTML = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill"><i class="bi bi-credit-card me-1"></i> Credit / Debit Card</span>';
+                    }
+                } else {
+                    if (cardDetailsContainer) cardDetailsContainer.classList.add('d-none');
+                    if (payCardCashContainer) {
+                        payCardCashContainer.classList.add('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                        payCardCashContainer.classList.remove('bg-white');
+                    }
+                    if (payCardCardContainer) {
+                        payCardCardContainer.classList.remove('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                        payCardCardContainer.classList.add('bg-white');
+                    }
+                    if (summaryPaymentMethod) {
+                        summaryPaymentMethod.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill"><i class="bi bi-cash me-1"></i> Cash on Arrival</span>';
+                    }
+                }
+            }
+
+            if (payMethodCash) payMethodCash.addEventListener('change', updatePaymentMethod);
+            if (payMethodCard) payMethodCard.addEventListener('change', updatePaymentMethod);
+
+            // Test card autofill
+            if (fillTestCardBtn) {
+                fillTestCardBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (cardNumberInput) cardNumberInput.value = '4242 4242 4242 4242';
+                    if (cardHolderInput && !cardHolderInput.value) cardHolderInput.value = 'Patient User';
+                    if (cardExpiryInput && !cardExpiryInput.value) cardExpiryInput.value = '12/28';
+                    if (cardCvvInput && !cardCvvInput.value) cardCvvInput.value = '123';
+                });
+            }
+
+            // Card number formatting
+            if (cardNumberInput) {
+                cardNumberInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 16) value = value.slice(0, 16);
+                    const parts = [];
+                    for (let i = 0; i < value.length; i += 4) {
+                        parts.push(value.slice(i, i + 4));
+                    }
+                    e.target.value = parts.join(' ');
+                });
+            }
+
+            // Expiry date formatting (MM/YY)
+            if (cardExpiryInput) {
+                cardExpiryInput.addEventListener('input', function (e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 4) value = value.slice(0, 4);
+                    if (value.length > 2) {
+                        e.target.value = value.slice(0, 2) + '/' + value.slice(2);
+                    } else {
+                        e.target.value = value;
+                    }
+                });
+            }
+
+            // Notes character counter
+            const notesTextarea = document.getElementById('Notes');
+            const notesCounter = document.getElementById('notesCharCount');
+            if (notesTextarea && notesCounter) {
+                notesTextarea.addEventListener('input', function () {
+                    notesCounter.textContent = notesTextarea.value.length;
+                });
+                notesCounter.textContent = notesTextarea.value.length;
+            }
+
+            // Initialize on page load
+            updatePaymentMethod();
         }());
     </script>
 }
-
-
-

@@ -4,12 +4,23 @@
     var provider = Model.Provider;
     var reviewPage = Model.Reviews;
     var roleLabel = provider.Role == UserRole.Nurse ? "Nurse" : "Doctor";
-    var slotDays = provider.UpcomingSlots.GroupBy(slot => slot.Date.Date);
+    var slotDays = provider.UpcomingSlots
+        .GroupBy(slot => slot.Date.Date)
+        .OrderBy(g => g.Key)
+        .ToList();
+    var firstService = provider.Services.FirstOrDefault();
+    var firstSlotDay = slotDays.FirstOrDefault();
 }
 
 <div class="container py-4 py-lg-5">
     <div class="row g-4 align-items-start">
-        <main class="col-lg-8">
+
+        @* ═══════════════════════════════════════════════════════════════
+           LEFT COLUMN: Provider Profile, Bio, Services & Reviews
+           ═══════════════════════════════════════════════════════════════ *@
+        <main class="col-lg-7">
+
+            @* ── Provider Header Card ── *@
             <section class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4 p-md-5">
                     <div class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start gap-4">
@@ -25,7 +36,9 @@
                                 <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill">@roleLabel</span>
                                 @if (provider.IsAvailable)
                                 {
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Available</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                        <i class="bi bi-check-circle me-1"></i>Available for Booking
+                                    </span>
                                 }
                                 else
                                 {
@@ -33,7 +46,7 @@
                                 }
                             </div>
                             <h1 class="h2 fw-bold mb-1">@provider.FullName</h1>
-                            <p class="text-muted mb-2">@(string.IsNullOrWhiteSpace(provider.Specialty) ? roleLabel : provider.Specialty)</p>
+                            <p class="text-muted mb-2 fs-6">@(string.IsNullOrWhiteSpace(provider.Specialty) ? roleLabel : provider.Specialty)</p>
                             <div class="small text-muted d-flex flex-wrap justify-content-center justify-content-sm-start gap-3">
                                 @if (provider.ExperienceYears > 0)
                                 {
@@ -43,43 +56,69 @@
                                 {
                                     <span><i class="bi bi-geo-alt me-1 text-danger"></i>@provider.BaseCity</span>
                                 }
+                                @if (provider.RatingCount > 0)
+                                {
+                                    <span class="text-warning">
+                                        <i class="bi bi-star-fill"></i> @provider.AverageRating.ToString("0.0") (@provider.RatingCount reviews)
+                                    </span>
+                                }
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
+            @* ── About Section ── *@
             @if (!string.IsNullOrWhiteSpace(provider.Bio))
             {
                 <section class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4 p-md-5">
-                        <h2 class="h4 fw-bold mb-3">About</h2>
-                        <p class="mb-0 text-break">@provider.Bio</p>
+                        <h2 class="h5 fw-bold mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-person-lines-fill text-primary"></i>About Provider
+                        </h2>
+                        <p class="mb-0 text-secondary" style="line-height: 1.7;">@provider.Bio</p>
                     </div>
                 </section>
             }
 
+            @* ── Services List Card ── *@
             <section class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4 p-md-5">
-                    <h2 class="h4 fw-bold mb-3">Services</h2>
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="h5 fw-bold mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-clipboard2-pulse text-primary"></i>Offered Services
+                        </h2>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                            @provider.Services.Count Service@(provider.Services.Count != 1 ? "s" : "")
+                        </span>
+                    </div>
+
                     @if (provider.Services.Count == 0)
                     {
                         <div class="alert alert-light border mb-0">No services are currently listed.</div>
                     }
                     else
                     {
-                        <div class="list-group list-group-flush">
+                        <div class="vstack gap-3">
                             @foreach (var service in provider.Services)
                             {
-                                <div class="list-group-item px-0 d-flex flex-column flex-sm-row justify-content-between gap-3">
-                                    <div>
-                                        <h3 class="h6 fw-bold mb-1">@service.Name</h3>
+                                <div class="border rounded-4 p-3 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 bg-light bg-opacity-50">
+                                    <div class="flex-grow-1">
+                                        <h3 class="h6 fw-bold mb-1 text-dark">@service.Name</h3>
                                         @if (!string.IsNullOrWhiteSpace(service.Description))
                                         {
-                                            <p class="small text-muted mb-0 text-break">@service.Description</p>
+                                            <p class="small text-muted mb-0">@service.Description</p>
                                         }
                                     </div>
-                                    <div class="fw-semibold text-nowrap">@service.Fee.ToString("N0") EGP</div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="text-sm-end">
+                                            <div class="fw-bold text-primary fs-5">@service.Fee.ToString("N0") <small class="fs-6 text-muted">EGP</small></div>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill choose-service-btn px-3"
+                                                data-service-id="@service.Id">
+                                            Select Service
+                                        </button>
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -87,21 +126,27 @@
                 </div>
             </section>
 
+            @* ── Reviews Section ── *@
             <section id="reviews" class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 p-md-5">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                        <h2 class="h4 fw-bold mb-0">Reviews</h2>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+                        <h2 class="h5 fw-bold mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-chat-heart text-primary"></i>Patient Reviews
+                        </h2>
                         @if (provider.RatingCount > 0)
                         {
-                            <span class="text-warning" aria-label="@provider.AverageRating.ToString("0.0") out of 5 stars">
-                                <i class="bi bi-star-fill"></i> @provider.AverageRating.ToString("0.0") (@provider.RatingCount)
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-2 fs-6">
+                                <i class="bi bi-star-fill text-warning me-1"></i> @provider.AverageRating.ToString("0.0") / 5 (@provider.RatingCount reviews)
                             </span>
                         }
                     </div>
 
                     @if (reviewPage.Items.Count == 0)
                     {
-                        <div class="alert alert-light border mb-0">No reviews yet.</div>
+                        <div class="alert alert-light border rounded-3 p-4 text-center mb-0">
+                            <i class="bi bi-chat-square-text text-muted fs-3 d-block mb-2"></i>
+                            <p class="mb-0 text-muted">No reviews yet for this provider.</p>
+                        </div>
                     }
                     else
                     {
@@ -130,7 +175,7 @@
                                             </div>
                                             @if (!string.IsNullOrWhiteSpace(review.Comment))
                                             {
-                                                <p class="mb-0 text-break">@review.Comment</p>
+                                                <p class="mb-0 text-break text-secondary small">@review.Comment</p>
                                             }
                                         </div>
                                     </div>
@@ -168,67 +213,357 @@
             </section>
         </main>
 
-        <aside class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 1rem;">
-                <div class="card-body p-4">
-                    <h2 class="h5 fw-bold mb-3">Appointment information</h2>
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="small text-muted">Starting price</div>
-                        @if (provider.MinFee.HasValue)
+        @* ═══════════════════════════════════════════════════════════════
+           RIGHT COLUMN: Interactive Calendar & Booking Engine (Vezeeta style)
+           ═══════════════════════════════════════════════════════════════ *@
+        <aside class="col-lg-5">
+            <div id="bookingWidgetCard" class="card border-0 shadow rounded-4 sticky-lg-top" style="top: 1.5rem; z-index: 10;">
+                <div class="card-body p-4 p-xl-4">
+
+                    @* Widget Header *@
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+                        <div>
+                            <h2 class="h5 fw-bold mb-1 text-dark">
+                                <i class="bi bi-calendar-check text-primary me-2"></i>Book an Appointment
+                            </h2>
+                            <span class="small text-muted">Select service & preferred time</span>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Instant
+                        </span>
+                    </div>
+
+                    @* ── Step 1: Select Medical Service ── *@
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-0">
+                                <span class="badge bg-primary text-white rounded-circle me-1" style="width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">1</span>
+                                Choose Service
+                            </label>
+                            <span class="small text-muted" id="selectedServicePriceBadge">
+                                @(firstService != null ? $"{firstService.Fee:N0} EGP" : "")
+                            </span>
+                        </div>
+
+                        @if (provider.Services.Count == 0)
                         {
-                            <div class="h4 fw-bold mb-0">@provider.MinFee.Value.ToString("N0") <small class="fs-6 text-muted">EGP</small></div>
+                            <div class="alert alert-light border small mb-0">No services currently listed.</div>
                         }
                         else
                         {
-                            <div class="text-muted fst-italic">Price not available</div>
+                            <div class="service-selector-list vstack gap-2" id="serviceOptionsList">
+                                @for (int s = 0; s < provider.Services.Count; s++)
+                                {
+                                    var svc = provider.Services[s];
+                                    var isSelected = s == 0;
+                                    <div class="service-card-item border rounded-3 p-3 cursor-pointer transition @(isSelected ? "border-primary bg-primary-subtle bg-opacity-10 shadow-sm" : "bg-white")"
+                                         data-service-id="@svc.Id"
+                                         data-service-name="@svc.Name"
+                                         data-service-fee="@svc.Fee">
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="radio" name="detailsServiceRadio" value="@svc.Id"
+                                                       class="form-check-input m-0 cursor-pointer service-radio"
+                                                       checked="@isSelected" id="service_radio_@svc.Id" />
+                                                <div>
+                                                    <label for="service_radio_@svc.Id" class="fw-bold text-dark mb-0 cursor-pointer d-block fs-6">
+                                                        @svc.Name
+                                                    </label>
+                                                    @if (!string.IsNullOrWhiteSpace(svc.Description))
+                                                    {
+                                                        <div class="small text-muted text-truncate" style="max-width: 220px;">
+                                                            @svc.Description
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="text-end flex-shrink-0">
+                                                <span class="fw-bold text-primary fs-6">@svc.Fee.ToString("N0")</span>
+                                                <span class="small text-muted">EGP</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         }
                     </div>
 
-                    <h3 class="h6 fw-bold mb-3">Next available slots</h3>
-                    @if (!slotDays.Any())
-                    {
-                        <div class="alert alert-light border">No upcoming slots are available.</div>
-                    }
-                    else
-                    {
-                        <div class="vstack gap-3 mb-4">
-                            @foreach (var day in slotDays)
-                            {
-                                <div>
-                                    <div class="small fw-semibold text-muted mb-2">@day.Key.ToString("dddd, d MMMM")</div>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @foreach (var slot in day)
-                                        {
-                                            <span class="badge bg-light text-dark border">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</span>
-                                        }
-                                    </div>
-                                </div>
-                            }
+                    @* ── Step 2: Calendar Date Strip (الأيام المتاحة) ── *@
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label fw-bold text-dark small text-uppercase mb-0">
+                                <span class="badge bg-primary text-white rounded-circle me-1" style="width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">2</span>
+                                Select Date (Calendar)
+                            </label>
+                            <span class="small text-muted">
+                                <i class="bi bi-calendar3 me-1 text-primary"></i>Available Days
+                            </span>
                         </div>
-                    }
 
-                    @if (provider.IsAvailable)
-                    {
-                        <a asp-controller="Booking" asp-action="Book" asp-route-providerId="@provider.Id"
-                           class="btn btn-primary w-100 rounded-pill">
-                            <i class="bi bi-calendar2-check me-1"></i> Book Appointment
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="d-block" tabindex="0"
-                              data-bs-toggle="tooltip" data-bs-placement="top"
-                              data-bs-title="No available slots at the moment">
-                            <button class="btn btn-secondary w-100 rounded-pill" type="button"
-                                    disabled aria-disabled="true">
-                                <i class="bi bi-calendar2-x me-1"></i> No Slots Available
+                        @if (!slotDays.Any())
+                        {
+                            <div class="alert alert-warning border-0 bg-warning-subtle text-warning-emphasis rounded-3 p-3 small mb-0">
+                                <i class="bi bi-calendar-x me-1"></i> No upcoming available slots for this provider.
+                            </div>
+                        }
+                        else
+                        {
+                            @* Horizontal Calendar Strip *@
+                            <div class="position-relative mb-3">
+                                <div class="d-flex gap-2 overflow-auto pb-2 calendar-strip" id="calendarDaysStrip" style="scrollbar-width: thin;">
+                                    @for (int d = 0; d < slotDays.Count; d++)
+                                    {
+                                        var day = slotDays[d];
+                                        var isSelectedDay = d == 0;
+                                        var dateObj = day.Key;
+                                        var isToday = dateObj.Date == DateTime.Today;
+                                        var isTomorrow = dateObj.Date == DateTime.Today.AddDays(1);
+                                        var dayName = isToday ? "Today" : (isTomorrow ? "Tomorrow" : dateObj.ToString("ddd"));
+
+                                        <button type="button"
+                                                class="calendar-date-card btn text-center p-2 rounded-3 border flex-shrink-0 transition @(isSelectedDay ? "btn-primary active text-white border-primary shadow-sm" : "btn-light bg-white text-dark")"
+                                                data-day-index="@d"
+                                                data-date-str="@dateObj.ToString("yyyy-MM-dd")"
+                                                data-date-display="@dateObj.ToString("dddd, d MMMM yyyy")"
+                                                style="min-width: 82px;">
+                                            <span class="d-block small text-uppercase fw-semibold @(isSelectedDay ? "text-white-50" : "text-muted")">
+                                                @dayName
+                                            </span>
+                                            <span class="d-block fs-5 fw-bold my-1">
+                                                @dateObj.ToString("d MMM")
+                                            </span>
+                                            <span class="badge @(isSelectedDay ? "bg-white text-primary" : "bg-primary-subtle text-primary") rounded-pill" style="font-size: 10px;">
+                                                @day.Count() @(day.Count() == 1 ? "slot" : "slots")
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+                            @* ── Step 3: Time Slots for Selected Date ── *@
+                            <div>
+                                <div class="small fw-semibold text-muted mb-2 d-flex align-items-center justify-content-between">
+                                    <span>
+                                        <i class="bi bi-clock me-1 text-primary"></i>Available Times:
+                                    </span>
+                                    <strong class="text-dark small" id="selectedDateDisplayTitle">
+                                        @slotDays.First().Key.ToString("dddd, d MMMM")
+                                    </strong>
+                                </div>
+
+                                @for (int d = 0; d < slotDays.Count; d++)
+                                {
+                                    var day = slotDays[d];
+                                    var isSelectedDay = d == 0;
+                                    <div class="day-slots-panel @(isSelectedDay ? "" : "d-none")" data-day-index="@d">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var slot in day)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-outline-primary btn-sm rounded-pill time-slot-pill py-2 px-3 transition"
+                                                        data-slot-id="@slot.Id"
+                                                        data-slot-label="@day.Key.ToString("ddd d MMM") — @slot.StartTime.ToString(@"hh\:mm") to @slot.EndTime.ToString(@"hh\:mm")"
+                                                        data-slot-time="@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")">
+                                                    <i class="bi bi-clock me-1"></i>
+                                                    @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @* ── Step 4: Summary & Proceed to Book CTA ── *@
+                    <div class="border-top pt-3 mt-4">
+                        <div id="bookingSummaryCard" class="bg-light rounded-3 p-3 mb-3 border">
+                            <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                <span class="text-muted">Selected Service:</span>
+                                <span class="fw-bold text-dark" id="summaryServiceText">@(firstService?.Name ?? "—")</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                <span class="text-muted">Appointment Time:</span>
+                                <span class="fw-bold text-primary" id="summarySlotText">Please select a time slot</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top small">
+                                <span class="text-muted fw-semibold">Consultation Fee:</span>
+                                <span class="h6 fw-bold text-primary mb-0" id="summaryFeeText">@(firstService != null ? $"{firstService.Fee:N0} EGP" : "—")</span>
+                            </div>
+                        </div>
+
+                        @if (provider.IsAvailable && slotDays.Any())
+                        {
+                            <a id="proceedToBookBtn"
+                               href="@Url.Action("Book", "Booking", new { providerId = provider.Id, serviceId = firstService?.Id })"
+                               class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm disabled">
+                                <i class="bi bi-clock me-1"></i> Select a Time Slot to Book
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary btn-lg w-100 rounded-pill" type="button" disabled>
+                                <i class="bi bi-calendar2-x me-1"></i> Currently Unavailable
                             </button>
-                        </span>
-                    }
+                        }
+
+                        <div class="text-center small text-muted mt-3">
+                            <i class="bi bi-shield-check text-success me-1"></i> Flexible booking with free cancellation
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </aside>
+
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const providerId = '@provider.Id';
+            let selectedServiceId = '@(firstService?.Id ?? 0)';
+            let selectedServiceFee = '@(firstService?.Fee.ToString("N0") ?? "0")';
+            let selectedServiceName = '@(firstService?.Name ?? "")';
+            let selectedSlotId = null;
+            let selectedSlotLabel = null;
 
+            const summaryServiceText = document.getElementById('summaryServiceText');
+            const summarySlotText = document.getElementById('summarySlotText');
+            const summaryFeeText = document.getElementById('summaryFeeText');
+            const selectedServicePriceBadge = document.getElementById('selectedServicePriceBadge');
+            const proceedToBookBtn = document.getElementById('proceedToBookBtn');
+            const selectedDateDisplayTitle = document.getElementById('selectedDateDisplayTitle');
+
+            function updateBookingUrl() {
+                if (!proceedToBookBtn) return;
+                let url = '@Url.Action("Book", "Booking")?providerId=' + providerId;
+                if (selectedServiceId && selectedServiceId !== '0') {
+                    url += '&serviceId=' + selectedServiceId;
+                }
+                if (selectedSlotId) {
+                    url += '&slotId=' + selectedSlotId;
+                    proceedToBookBtn.classList.remove('disabled');
+                    proceedToBookBtn.innerHTML = '<i class="bi bi-calendar2-check-fill me-1"></i> Book Appointment (' + selectedServiceFee + ' EGP)';
+                } else {
+                    proceedToBookBtn.classList.add('disabled');
+                    proceedToBookBtn.innerHTML = '<i class="bi bi-clock me-1"></i> Select a Time Slot to Book';
+                }
+                proceedToBookBtn.href = url;
+            }
+
+            // 1. Service selection
+            document.querySelectorAll('.service-card-item').forEach(card => {
+                card.addEventListener('click', function () {
+                    document.querySelectorAll('.service-card-item').forEach(c => {
+                        c.classList.remove('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                        c.classList.add('bg-white');
+                        const radio = c.querySelector('.service-radio');
+                        if (radio) radio.checked = false;
+                    });
+
+                    this.classList.add('border-primary', 'bg-primary-subtle', 'bg-opacity-10', 'shadow-sm');
+                    this.classList.remove('bg-white');
+                    const radio = this.querySelector('.service-radio');
+                    if (radio) radio.checked = true;
+
+                    selectedServiceId = this.dataset.serviceId;
+                    selectedServiceName = this.dataset.serviceName;
+                    const feeNum = parseFloat(this.dataset.serviceFee) || 0;
+                    selectedServiceFee = feeNum.toLocaleString('en-US');
+
+                    if (summaryServiceText) summaryServiceText.textContent = selectedServiceName;
+                    if (summaryFeeText) summaryFeeText.textContent = selectedServiceFee + ' EGP';
+                    if (selectedServicePriceBadge) selectedServicePriceBadge.textContent = selectedServiceFee + ' EGP';
+
+                    updateBookingUrl();
+                });
+            });
+
+            // Also support clicking "Select Service" from the left services list
+            document.querySelectorAll('.choose-service-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const svcId = this.dataset.serviceId;
+                    const targetCard = document.querySelector('.service-card-item[data-service-id="' + svcId + '"]');
+                    if (targetCard) {
+                        targetCard.click();
+                        const widget = document.getElementById('bookingWidgetCard');
+                        if (widget) {
+                            widget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }
+                });
+            });
+
+            // 2. Calendar Date strip selection
+            const dateCards = document.querySelectorAll('.calendar-date-card');
+            const dayPanels = document.querySelectorAll('.day-slots-panel');
+
+            dateCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const dayIndex = this.dataset.dayIndex;
+                    const dateDisplay = this.dataset.dateDisplay;
+
+                    // Update date cards styling
+                    dateCards.forEach(c => {
+                        c.classList.remove('btn-primary', 'active', 'text-white', 'border-primary', 'shadow-sm');
+                        c.classList.add('btn-light', 'bg-white', 'text-dark');
+                        const sub = c.querySelector('span:first-child');
+                        if (sub) { sub.classList.remove('text-white-50'); sub.classList.add('text-muted'); }
+                        const badge = c.querySelector('.badge');
+                        if (badge) { badge.classList.remove('bg-white', 'text-primary'); badge.classList.add('bg-primary-subtle', 'text-primary'); }
+                    });
+
+                    this.classList.remove('btn-light', 'bg-white', 'text-dark');
+                    this.classList.add('btn-primary', 'active', 'text-white', 'border-primary', 'shadow-sm');
+                    const sub = this.querySelector('span:first-child');
+                    if (sub) { sub.classList.remove('text-muted'); sub.classList.add('text-white-50'); }
+                    const badge = this.querySelector('.badge');
+                    if (badge) { badge.classList.remove('bg-primary-subtle', 'text-primary'); badge.classList.add('bg-white', 'text-primary'); }
+
+                    // Switch visible time slot panel
+                    dayPanels.forEach(p => {
+                        if (p.dataset.dayIndex === dayIndex) {
+                            p.classList.remove('d-none');
+                        } else {
+                            p.classList.add('d-none');
+                        }
+                    });
+
+                    if (selectedDateDisplayTitle) {
+                        selectedDateDisplayTitle.textContent = dateDisplay;
+                    }
+                });
+            });
+
+            // 3. Time slot selection
+            document.querySelectorAll('.time-slot-pill').forEach(pill => {
+                pill.addEventListener('click', function () {
+                    document.querySelectorAll('.time-slot-pill').forEach(p => {
+                        p.classList.remove('btn-primary', 'text-white', 'shadow-sm');
+                        p.classList.add('btn-outline-primary');
+                    });
+
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-primary', 'text-white', 'shadow-sm');
+
+                    selectedSlotId = this.dataset.slotId;
+                    selectedSlotLabel = this.dataset.slotLabel;
+
+                    if (summarySlotText) {
+                        summarySlotText.textContent = selectedSlotLabel;
+                        summarySlotText.classList.remove('text-muted');
+                        summarySlotText.classList.add('text-primary');
+                    }
+
+                    updateBookingUrl();
+                });
+            });
+
+            // Initialize URL
+            updateBookingUrl();
+        });
+    </script>
+}
