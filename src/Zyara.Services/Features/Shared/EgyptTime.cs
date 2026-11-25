@@ -20,6 +20,9 @@ public static class EgyptTime
         return TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZone);
     }
 
+    public static DateTime ConvertEgyptToUtc(DateTime egyptLocal) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(egyptLocal, DateTimeKind.Unspecified), TimeZone);
+
     private static TimeZoneInfo ResolveTimeZone()
     {
         try

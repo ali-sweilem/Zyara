@@ -55,19 +55,35 @@ namespace Zyara.Services.Features.Providers
                 string.Equals(criteria.SortBy?.Trim(), "distance", StringComparison.OrdinalIgnoreCase);
 
             // Project computed values ONCE into intermediate shape
-            var intermediate = baseQuery.Select(p => new
-            {
-                Provider = p,
-                MinFee = p.ProviderServices
-                    .Where(ps => ps.Service == null || ps.Service.IsActive)
-                    .Select(ps => (decimal?)ps.Fee)
-                    .Min(),
-                IsAvailable = p.TimeSlots.Any(ts =>
-                    ts.Status == TimeSlotStatus.Available &&
-                    (ts.Date > today || (ts.Date == today && ts.StartTime > nowTime))),
-                WeightedRating = ((double)p.RatingCount / ((double)p.RatingCount + BayesianM)) * p.AverageRating
-                                 + (BayesianM / ((double)p.RatingCount + BayesianM)) * BayesianC
-            });
+            // Rating is computed from the Reviews table itself (not from the cached
+            // Provider.AverageRating / RatingCount columns), so the stars on the card can never be stale
+            // or zero just because the cached columns were not refreshed.
+            var intermediate = baseQuery
+                .Select(p => new
+                {
+                    Provider = p,
+                    MinFee = p.ProviderServices
+                        .Where(ps => ps.Service == null || ps.Service.IsActive)
+                        .Select(ps => (decimal?)ps.Fee)
+                        .Min(),
+                    IsAvailable = p.TimeSlots.Any(ts =>
+                        ts.Status == TimeSlotStatus.Available &&
+                        (ts.Date > today || (ts.Date == today && ts.StartTime > nowTime))),
+                    ReviewCount = p.Bookings.Count(b => b.Review != null),
+                    ReviewAverage = p.Bookings
+                        .Where(b => b.Review != null)
+                        .Average(b => (double?)b.Review!.Stars) ?? 0.0
+                })
+                .Select(x => new
+                {
+                    x.Provider,
+                    x.MinFee,
+                    x.IsAvailable,
+                    x.ReviewCount,
+                    x.ReviewAverage,
+                    WeightedRating = ((double)x.ReviewCount / ((double)x.ReviewCount + BayesianM)) * x.ReviewAverage
+                                     + (BayesianM / ((double)x.ReviewCount + BayesianM)) * BayesianC
+                });
 
             // 1. Provider type is applied before search and pagination.
             if (criteria.ProviderType.HasValue)
@@ -118,7 +134,7 @@ namespace Zyara.Services.Features.Providers
             if (criteria.MinRating.HasValue && criteria.MinRating.Value > 0)
             {
                 var minRating = criteria.MinRating.Value;
-                intermediate = intermediate.Where(x => x.Provider.AverageRating >= minRating);
+                intermediate = intermediate.Where(x => x.ReviewAverage >= minRating);
             }
 
             // 8. Price range
@@ -150,8 +166,8 @@ namespace Zyara.Services.Features.Providers
                 Specialty = x.Provider.Specialty,
                 ExperienceYears = x.Provider.ExperienceYears,
                 BaseCity = x.Provider.BaseCity,
-                AverageRating = x.Provider.AverageRating,
-                RatingCount = x.Provider.RatingCount,
+                AverageRating = Math.Round(x.ReviewAverage, 2),
+                RatingCount = x.ReviewCount,
                 MinFee = x.MinFee,
                 IsAvailable = x.IsAvailable,
                 PhotoUrl = x.Provider.PhotoUrl
@@ -231,8 +247,8 @@ namespace Zyara.Services.Features.Providers
             {
                 case "rating":
                     intermediate = intermediate
-                        .OrderByDescending(x => x.Provider.AverageRating)
-                        .ThenByDescending(x => x.Provider.RatingCount)
+                        .OrderByDescending(x => x.ReviewAverage)
+                        .ThenByDescending(x => x.ReviewCount)
                         .ThenBy(x => x.Provider.Id);
                     break;
 
@@ -263,7 +279,7 @@ namespace Zyara.Services.Features.Providers
                     intermediate = intermediate
                         .OrderByDescending(x => x.IsAvailable)
                         .ThenByDescending(x => x.WeightedRating)
-                        .ThenByDescending(x => x.Provider.RatingCount)
+                        .ThenByDescending(x => x.ReviewCount)
                         .ThenBy(x => x.Provider.Id);
                     break;
             }

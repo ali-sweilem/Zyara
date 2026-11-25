@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Zyara.Services.Features.Patients.Dtos;
 using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Services.Features.Bookings.Dtos;
@@ -14,6 +15,9 @@ public sealed class BookAppointmentDto
     public string ProviderSpecialty { get; set; } = string.Empty;
     public string? ProviderPhotoUrl { get; set; }
     public string ProviderBaseCity { get; set; } = string.Empty;
+    public double ProviderAverageRating { get; set; }
+    public int ProviderRatingCount { get; set; }
+    public IReadOnlyList<PatientAddressItemDto> PatientAddresses { get; set; } = [];
     public IReadOnlyList<BookingSlotDto> AvailableSlots { get; set; } = [];
     public IReadOnlyList<ProviderServiceItemDto> ProviderServices { get; set; } = [];
 
@@ -24,6 +28,12 @@ public sealed class BookAppointmentDto
     [Required(ErrorMessage = "Please select a service.")]
     [Range(1, int.MaxValue, ErrorMessage = "Please select a valid service.")]
     public int SelectedProviderServiceId { get; set; }
+
+    /// <summary>Required (and checked server-side) only when the chosen service is a home visit.</summary>
+    public int? SelectedAddressId { get; set; }
+
+    /// <summary>Used by the service layer (set by the controller from SelectedAddressId).</summary>
+    public int? AddressId { get; set; }
 
     [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
     public string? Notes { get; set; }

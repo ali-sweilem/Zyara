@@ -1,4 +1,5 @@
 using Zyara.Domain.Entities;
+using Zyara.Domain.Enums;
 using Zyara.Services.Common;
 using Zyara.Services.Features.Wallet.Dtos;
 
@@ -13,6 +14,13 @@ public interface IWalletService
     /// call <see cref="ApplyBalanceDeltaAsync"/> inside the same transaction.
     /// </summary>
     decimal RecordBookingSettlement(Booking booking);
+
+    /// <summary>
+    /// Adds ONE extra ledger line (cancellation compensation / penalty, collected patient penalty). Does not save.
+    /// Returns the balance change (= amount); the caller applies it with <see cref="ApplyBalanceDeltaAsync"/> inside the same transaction.
+    /// Pass bookingId = null when the booking already has (or will get) its settlement line: the ledger allows only ONE line per booking.
+    /// </summary>
+    decimal RecordEntry(int providerId, int? bookingId, WalletTransactionType type, decimal amount, string description);
 
     /// <summary>Atomic, relative balance update in SQL (no lost updates when two bookings finish at once).</summary>
     Task ApplyBalanceDeltaAsync(int providerId, decimal delta, CancellationToken cancellationToken = default);

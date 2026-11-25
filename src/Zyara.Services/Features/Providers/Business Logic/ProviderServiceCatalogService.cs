@@ -109,10 +109,10 @@ public sealed class ProviderServiceCatalogService : IProviderServiceCatalogServi
             .AnyAsync(ps => ps.ProviderId == providerId && ps.ServiceId == service.Id, cancellationToken);
         if (already) return ServiceResult.Fail("You already offer this service.");
 
-        // commission is calculated from the platform settings at booking time; we store the current rate for reference
+        // the platform's share is calculated from the platform settings at booking time; we store the current rate for reference
         var commission = await _settings.Query().AsNoTracking()
-            .Select(s => (decimal?)s.CommissionPercentage)
-            .FirstOrDefaultAsync(cancellationToken) ?? new PlatformSettings().CommissionPercentage;
+            .Select(s => (decimal?)s.ServiceFeePercentage)
+            .FirstOrDefaultAsync(cancellationToken) ?? new PlatformSettings().ServiceFeePercentage;
 
         _offers.Add(new ProviderService
         {

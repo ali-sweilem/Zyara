@@ -144,11 +144,18 @@ public sealed class BookingService : IBookingService
             .FirstOrDefaultAsync(cancellationToken)
             ?? new PlatformSettings(); // fallback to defaults if none seeded
 
+        // The platform's share of the visit (taken from the provider's earnings after the visit).
+        var serviceFee = CommissionCalculator.Calculate(
+            providerService.Fee,
+            settings.ServiceFeePercentage / 100m);
+
+        // The cancellation commission: fixed now, so a later change of the percentage does not change this booking.
         var commission = CommissionCalculator.Calculate(
             providerService.Fee,
             settings.CommissionPercentage / 100m);
 
-        var totalPrice = providerService.Fee + settings.ServiceFee;
+        // The patient pays the service price only.
+        var totalPrice = providerService.Fee;
 
         // --- 8. Create the booking and mark the slot as Booked in a single SaveChanges ---
         var booking = new Booking
@@ -158,7 +165,7 @@ public sealed class BookingService : IBookingService
             ServiceId = providerService.ServiceId,
             TimeSlotId = slot.Id,
             Status = BookingStatus.PendingProviderApproval,
-            ServiceFee = settings.ServiceFee,
+            ServiceFee = serviceFee,
             TotalPrice = totalPrice,
             Commission = commission,
             OtpCode = string.Empty

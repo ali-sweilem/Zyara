@@ -30,6 +30,7 @@ public sealed class PatientProfileDto
     public DateTime MemberSince { get; init; }          // UTC
     public bool TwoFactorEnabled { get; init; }
     public bool HasPassword { get; init; }              // false for accounts created with Google
+    public decimal OutstandingPenalty { get; init; }    // unpaid cancellation penalty
 
     public int TotalBookings { get; init; }
     public int CompletedVisits { get; init; }

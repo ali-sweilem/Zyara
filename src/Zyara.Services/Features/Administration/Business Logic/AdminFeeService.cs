@@ -34,16 +34,16 @@ namespace Zyara.Services.Features.Administration
 
             return new PlatformSettingsDto
             {
-                ServiceFee = settings.ServiceFee,
+                ServiceFeePercentage = settings.ServiceFeePercentage,
                 CommissionPercentage = settings.CommissionPercentage
             };
         }
 
         public async Task<ServiceResult> UpdateSettingsAsync(PlatformSettingsDto dto, CancellationToken cancellationToken = default)
         {
-            if (dto.ServiceFee < 0)
+            if (dto.ServiceFeePercentage < 0 || dto.ServiceFeePercentage > 100)
             {
-                return ServiceResult.Fail("Service fee cannot be negative.");
+                return ServiceResult.Fail("Service fee must be between 0 and 100.");
             }
 
             if (dto.CommissionPercentage < 0 || dto.CommissionPercentage > 100)
@@ -61,7 +61,7 @@ namespace Zyara.Services.Features.Administration
                 _db.PlatformSettings.Add(settings);
             }
 
-            settings.ServiceFee = dto.ServiceFee;
+            settings.ServiceFeePercentage = dto.ServiceFeePercentage;
             settings.CommissionPercentage = dto.CommissionPercentage;
 
             await _unitOfWork.ExecuteInTransactionAsync(

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Zyara.Services.Features.Authorization;
+using Zyara.Services.Features.Bookings.Interfaces;
 using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Patients;
 using Zyara.Services.Features.Patients.Dtos;
@@ -13,6 +14,7 @@ namespace Zyara.Web.Controllers;
 public sealed class PatientController(
     IPatientPortalService portal,
     IPatientProfileService profile,
+    IBookingCancellationService cancellations,
     ICurrentUser currentUser) : Controller
 {
     [HttpGet]
@@ -26,8 +28,8 @@ public sealed class PatientController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Cancel(int bookingId, CancellationToken cancellationToken)
     {
-        var result = await portal.CancelBookingAsync(currentUser.RequireUserId(), bookingId, cancellationToken);
-        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Booking cancelled." : result.Error;
+        var result = await cancellations.CancelByPatientAsync(currentUser.RequireUserId(), bookingId, cancellationToken);
+        TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? result.Value!.Message : result.Error;
         return RedirectToAction(nameof(Index));
     }
 

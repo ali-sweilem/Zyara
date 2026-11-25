@@ -42,17 +42,17 @@ public sealed class WalletService : IWalletService
 
         if (payment is { Method: PaymentMethod.OnlinePayment, Status: PaymentStatus.Captured })
         {
-            // the patient paid the platform: the provider gets price - platform fee - commission
+            // the patient paid the platform: the provider gets the price minus the platform's fee
             type = WalletTransactionType.OnlineEarning;
-            amount = booking.TotalPrice - booking.ServiceFee - booking.Commission;
-            description = $"Booking #{booking.Id}: online payment (your share after commission)";
+            amount = booking.TotalPrice - booking.ServiceFee;
+            description = $"Booking #{booking.Id}: online payment (your share after the platform fee)";
         }
         else if (payment is { Method: PaymentMethod.CashOnArrival, Status: PaymentStatus.Collected })
         {
-            // the provider kept the cash: he owes the platform its fee + commission
+            // the provider kept the cash: he owes the platform its fee
             type = WalletTransactionType.CashCommission;
-            amount = -(booking.ServiceFee + booking.Commission);
-            description = $"Booking #{booking.Id}: cash collected (platform fee + commission)";
+            amount = -booking.ServiceFee;
+            description = $"Booking #{booking.Id}: cash collected (platform fee)";
         }
         else
         {
@@ -68,6 +68,23 @@ public sealed class WalletService : IWalletService
             Type = type,
             Amount = amount,
             Description = description,
+            CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
+        });
+
+        return amount;
+    }
+
+    public decimal RecordEntry(int providerId, int? bookingId, WalletTransactionType type, decimal amount, string description)
+    {
+        if (amount == 0m) return 0m;
+
+        _transactions.Add(new WalletTransaction
+        {
+            ProviderId = providerId,
+            BookingId = bookingId,
+            Type = type,
+            Amount = amount,
+            Description = description.Length > 200 ? description[..200] : description,
             CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
         });
 

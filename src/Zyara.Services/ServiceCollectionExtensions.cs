@@ -50,6 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPatientPortalService, PatientPortalService>();
         services.AddScoped<IPatientProfileService, PatientProfileService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<IBookingCancellationService, BookingCancellationService>();
 
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IProviderBookingService, ProviderBookingService>();   // provider booking lifecycle
@@ -63,9 +64,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminBookingService, AdminBookingService>();
         services.AddScoped<IAdminProviderReviewService, AdminProviderReviewService>();
 
-
-        services.AddScoped<IBookingMaintenanceService, BookingMaintenanceService>();
-        services.AddHostedService<BookingMaintenanceWorker>();
         // Identity + the 5 stubs (T1)
         services.AddZyaraIdentity(config, env);
         return services;

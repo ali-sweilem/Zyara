@@ -13,6 +13,9 @@ namespace Zyara.Services.Features.Administration.Interfaces
 
         /// <summary>Flips IsActive. Returns false if the user does not exist.</summary>
         Task<bool> ToggleUserActiveAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>Sets a provider's same-day cancellation count to zero and lifts the booking suspension. False if he does not exist.</summary>
+        Task<bool> ResetProviderCancellationsAsync(int providerId, CancellationToken cancellationToken = default);
     }
 }
 

@@ -13,15 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="App_Data\PrivateUploads\credentials\2efa0ad5-8750-4d64-a829-44d7f71777cc.pdf" />
-    <Content Include="App_Data\PrivateUploads\credentials\58183339-e406-4e61-b282-bc9338ddc783.jpeg" />
-    <Content Include="App_Data\PrivateUploads\credentials\597191ff-99ce-4ab5-96eb-da27bdd0d1b5.jpg" />
-    <Content Include="App_Data\PrivateUploads\credentials\6ea471f5-ef36-4b2e-a261-bc693d9b3388.jpeg" />
-    <Content Include="App_Data\PrivateUploads\credentials\c30444aa-a419-4094-952b-64ceafe9c208.jpeg" />
-    <Content Include="App_Data\PrivateUploads\credentials\e1cce02e-9fae-4026-a086-815963162ae2.jpg" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- BCrypt removed in T1: ASP.NET Core Identity hashes the passwords now -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
       <PrivateAssets>all</PrivateAssets>
@@ -33,6 +24,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Zyara.Services\Zyara.Services.csproj" />
     <ProjectReference Include="..\Zyara.Repositories\Zyara.Repositories.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="App_Data\" />
   </ItemGroup>
 
 

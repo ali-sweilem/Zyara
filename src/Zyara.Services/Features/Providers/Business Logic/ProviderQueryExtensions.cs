@@ -8,7 +8,10 @@ namespace Zyara.Services.Features.Providers;
 internal static class ProviderQueryExtensions
 {
     public static IQueryable<Provider> PubliclyVisible(this IQueryable<Provider> query) =>
-        query.Where(p => p.VerificationStatus == VerificationStatus.Verified && p.IsActive);
+        query.Where(p => p.VerificationStatus == VerificationStatus.Verified
+                         && p.IsActive
+                         // two same-day cancellations in a week: no new bookings until the suspension ends
+                         && (p.BookingsSuspendedUntilUtc == null || p.BookingsSuspendedUntilUtc <= DateTime.UtcNow));
 
     /// <summary>
     /// T13: cheap SQL pre-filter (rectangle around the point). Providers without GPS are excluded.

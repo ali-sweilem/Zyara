@@ -95,6 +95,14 @@
                             <td>
                                 @b.ServiceName
                                 <div class="text-muted small">@(b.IsHomeVisit ? "Home visit" : "Remote consultation")</div>
+                                @if (b.IsHomeVisit && !string.IsNullOrWhiteSpace(b.AddressText))
+                                {
+                                    <div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>@b.AddressText</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(b.Notes))
+                                {
+                                    <div class="text-muted small"><i class="bi bi-chat-left-text me-1"></i>@b.Notes</div>
+                                }
                             </td>
                             <td>@When(b)</td>
                             <td>@b.TotalPrice.ToString("0.##") EGP</td>

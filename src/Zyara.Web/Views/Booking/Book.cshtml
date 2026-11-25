@@ -24,6 +24,27 @@
             })
             <div>
                 <h1 class="h4 fw-bold mb-1">@Model.ProviderFullName</h1>
+                <div class="mb-1 small">
+                    @if (Model.ProviderRatingCount == 0)
+                    {
+                        <span class="badge bg-light text-muted border rounded-pill px-2 py-1">New</span>
+                        <span class="text-muted ms-1">(No reviews yet)</span>
+                    }
+                    else
+                    {
+                        double bookRating = Math.Clamp(Model.ProviderAverageRating, 0, 5);
+                        int bookFull = (int)Math.Floor(bookRating);
+                        bool bookHalf = (bookRating - bookFull) >= 0.4;
+                        int bookEmpty = 5 - bookFull - (bookHalf ? 1 : 0);
+                        <span class="text-warning" aria-label="@bookRating.ToString("0.0") out of 5 stars">
+                            @for (int i = 0; i < bookFull; i++) { <i class="bi bi-star-fill"></i> }
+                            @if (bookHalf) { <i class="bi bi-star-half"></i> }
+                            @for (int i = 0; i < bookEmpty; i++) { <i class="bi bi-star"></i> }
+                        </span>
+                        <strong class="ms-1">@bookRating.ToString("0.0")</strong>
+                        <span class="text-muted">(@Model.ProviderRatingCount)</span>
+                    }
+                </div>
                 <p class="text-muted mb-0 small">
                     @(string.IsNullOrWhiteSpace(Model.ProviderSpecialty) ? "Healthcare Provider" : Model.ProviderSpecialty)
                     @if (!string.IsNullOrWhiteSpace(Model.ProviderBaseCity))
@@ -92,10 +113,35 @@
                             <option value="">— choose a service —</option>
                             @foreach (var svc in Model.ProviderServices)
                             {
-                                <option value="@svc.Id">@svc.Name — @svc.Fee.ToString("N0") EGP</option>
+                                <option value="@svc.Id" data-home-visit="@(svc.IsHomeVisit ? "true" : "false")">@svc.Name — @svc.Fee.ToString("N0") EGP</option>
                             }
                         </select>
                         <span asp-validation-for="SelectedProviderServiceId" class="text-danger small"></span>
+                    </div>
+
+                    @* ── 1b. Address (home visits only; shown by the script below) ── *@
+                    <div class="mb-4" id="addressGroup" style="display:none">
+                        <label asp-for="SelectedAddressId" class="form-label fw-semibold">
+                            Visit Address <span class="text-danger">*</span>
+                        </label>
+                        @if (Model.PatientAddresses.Any())
+                        {
+                            <select asp-for="SelectedAddressId" class="form-select rounded-3">
+                                <option value="">— choose an address —</option>
+                                @foreach (var addr in Model.PatientAddresses)
+                                {
+                                    <option value="@addr.Id">@addr.Label — @addr.StreetAndBuilding, @addr.District, @addr.City</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning rounded-3 mb-0 small">
+                                You have no saved address yet.
+                                <a asp-controller="Patient" asp-action="Profile">Add an address in your profile</a>,
+                                then come back to book a home visit.
+                            </div>
+                        }
                     </div>
 
                     @* ── 2. Time slot selector ── *@
@@ -155,6 +201,21 @@
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
+        // Show the address picker only when the selected service is a home visit
+        (function () {
+            const service = document.getElementById('SelectedProviderServiceId');
+            const group = document.getElementById('addressGroup');
+            if (!service || !group) return;
+
+            function toggle() {
+                const opt = service.options[service.selectedIndex];
+                group.style.display = opt && opt.dataset.homeVisit === 'true' ? '' : 'none';
+            }
+
+            service.addEventListener('change', toggle);
+            toggle();
+        }());
+
         // Live character counter for the Notes textarea
         (function () {
             const textarea = document.getElementById('Notes');

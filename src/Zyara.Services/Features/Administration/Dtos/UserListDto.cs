@@ -9,6 +9,10 @@ namespace Zyara.Services.Features.Administration.Dtos
         public string Email { get; init; } = string.Empty;
         public UserRole Role { get; init; }
         public bool IsActive { get; init; }
+
+        // Providers only (filled after the page is loaded)
+        public int SameDayCancellations { get; set; }
+        public bool BookingsSuspended { get; set; }
     }
 }
 

@@ -26,6 +26,14 @@ namespace Zyara.Domain.Entities
         public double AverageRating { get; set; }
         public int RatingCount { get; set; }
         public decimal WalletBalance { get; set; }
+
+        // Same-day cancellations (the provider cancelled a confirmed booking on the day of the visit).
+        // The count restarts every week (Saturday): CancellationWeekStart says which week the count belongs to.
+        public int SameDayCancellationCount { get; set; }
+        public DateTime? CancellationWeekStart { get; set; }
+
+        /// <summary>While this is in the future the provider receives no new bookings. Null = not suspended.</summary>
+        public DateTime? BookingsSuspendedUntilUtc { get; set; }
         
         // Location for search & distance filtering
         public string BaseCity { get; set; } = string.Empty;

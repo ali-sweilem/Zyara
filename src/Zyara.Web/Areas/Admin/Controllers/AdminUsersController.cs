@@ -36,6 +36,16 @@ namespace Zyara.Web.Areas.Admin.Controllers
             TempData[found ? "Success" : "Error"] = found ? "User status updated." : "User not found.";
             return RedirectToAction(nameof(Index), new { role, page });
         }
+
+        // POST /Admin/AdminUsers/ResetCancellations : a provider's same-day cancellations back to zero (lifts the pause)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetCancellations(int id, UserRole? role, int page = 1, CancellationToken cancellationToken = default)
+        {
+            var found = await _users.ResetProviderCancellationsAsync(id, cancellationToken);
+            TempData[found ? "Success" : "Error"] = found ? "Cancellations reset to zero. New bookings are open again." : "Provider not found.";
+            return RedirectToAction(nameof(Index), new { role, page });
+        }
     }
 }
 

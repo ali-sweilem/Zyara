@@ -5,42 +5,66 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
+using Zyara.Domain.Rules;
 using Zyara.Repositories.Data.Repositories;
-using Zyara.Services.Common;
 using Zyara.Services.Features.Patients.Dtos;
+using Zyara.Services.Features.Shared;
 
 namespace Zyara.Services.Features.Patients;
 
+/// <summary>The patient's bookings page. Cancelling lives in BookingCancellationService (it moves money).</summary>
 public sealed class PatientPortalService(
     IRepository<Patient> patients,
     IRepository<Booking> bookings,
     IRepository<Address> addresses,
-    IUnitOfWork unitOfWork) : IPatientPortalService
+    TimeProvider timeProvider) : IPatientPortalService
 {
     public async Task<PatientDashboardDto?> GetDashboardAsync(int patientId, CancellationToken cancellationToken = default)
     {
-        var patient = await patients.FirstOrDefaultAsync(p => p.Id == patientId, cancellationToken);
+        var patient = await patients.Query()
+            .AsNoTracking()
+            .Where(p => p.Id == patientId)
+            .Select(p => new { p.FullName, p.OutstandingPenalty })
+            .FirstOrDefaultAsync(cancellationToken);
+
         if (patient is null) return null;
 
-        var patientBookings = await bookings.Query()
+        var rows = await bookings.Query()
             .AsNoTracking()
-            .Include(b => b.Provider)
-            .Include(b => b.Service)
-            .Include(b => b.TimeSlot)
             .Where(b => b.PatientId == patientId)
             .OrderByDescending(b => b.TimeSlot!.Date)
             .Take(20)
-            .Select(b => new PatientBookingDto
+            .Select(b => new
             {
-                Id = b.Id,
+                b.Id,
                 ProviderName = b.Provider!.FullName,
                 ServiceName = b.Service!.Name,
-                Status = b.Status,
+                b.Status,
                 HasReview = b.Review != null,
-                Date = DateOnly.FromDateTime(b.TimeSlot!.Date),
-                StartTime = b.TimeSlot.StartTime
+                SlotDate = b.TimeSlot!.Date,
+                b.TimeSlot.StartTime,
+                b.Commission
             })
             .ToListAsync(cancellationToken);
+
+        // what cancelling would cost right now: only a CONFIRMED booking, only in the last hour before the visit
+        var now = EgyptTime.Now(timeProvider);
+        var patientBookings = rows
+            .Select(r => new PatientBookingDto
+            {
+                Id = r.Id,
+                ProviderName = r.ProviderName,
+                ServiceName = r.ServiceName,
+                Status = r.Status,
+                HasReview = r.HasReview,
+                Date = DateOnly.FromDateTime(r.SlotDate),
+                StartTime = r.StartTime,
+                CancelPenalty = (r.Status is BookingStatus.Confirmed or BookingStatus.ConfirmedCollectionPending)
+                                && CancellationRules.IsLatePatientCancel(r.SlotDate.Date + r.StartTime, now)
+                    ? r.Commission
+                    : 0m
+            })
+            .ToList();
 
         var patientAddresses = await addresses.Query()
             .AsNoTracking()
@@ -57,24 +81,9 @@ public sealed class PatientPortalService(
         return new PatientDashboardDto
         {
             PatientName = patient.FullName,
+            OutstandingPenalty = patient.OutstandingPenalty,
             Bookings = patientBookings,
             Addresses = patientAddresses
         };
-    }
-
-    public async Task<ServiceResult<bool>> CancelBookingAsync(int patientId, int bookingId, CancellationToken cancellationToken = default)
-    {
-        var booking = await bookings.Query()
-            .Include(b => b.TimeSlot)
-            .FirstOrDefaultAsync(b => b.Id == bookingId && b.PatientId == patientId, cancellationToken);
-
-        if (booking is null) return ServiceResult<bool>.Fail("Booking not found.");
-        if (booking.Status is not (BookingStatus.PendingProviderApproval or BookingStatus.Confirmed))
-            return ServiceResult<bool>.Fail("This booking cannot be cancelled at its current status.");
-
-        booking.Status = BookingStatus.Cancelled;
-        if (booking.TimeSlot is not null) booking.TimeSlot.Status = TimeSlotStatus.Available;
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        return ServiceResult<bool>.Ok(true);
     }
 }

@@ -8,9 +8,14 @@ namespace Zyara.Domain.Entities
     {
         public int Id { get; set; }
         public BookingStatus Status { get; set; }
-        public decimal ServiceFee { get; set; }
-        public decimal TotalPrice { get; set; }
-        public decimal Commission { get; set; }
+        public decimal ServiceFee { get; set; }      // the platform's share of the visit (ServiceFeePercentage x price), fixed when booked
+        public decimal TotalPrice { get; set; }      // what the patient pays: the service price
+        public decimal Commission { get; set; }      // the cancellation commission (CommissionPercentage x price), fixed when booked
+
+        // Cancellation
+        public CancelledBy? CancelledBy { get; set; }
+        public DateTime? CancelledAt { get; set; }   // UTC
+        public decimal CancellationFee { get; set; } // what the canceller had to pay (0 = free cancellation)
         public string OtpCode { get; set; } = string.Empty;
 
         // FKs

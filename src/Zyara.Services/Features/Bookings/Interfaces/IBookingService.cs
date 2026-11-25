@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Zyara.Domain.Entities;
 using Zyara.Services.Common;
 using Zyara.Services.Features.Bookings.Dtos;
+using Zyara.Services.Features.Patients.Dtos;
 
 namespace Zyara.Services.Features.Bookings.Interfaces;
 
@@ -17,6 +18,11 @@ public interface IBookingService
     /// </summary>
     Task<IReadOnlyList<BookingSlotDto>> GetAvailableSlotsAsync(
         int providerId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>The patient's saved addresses (for the home-visit picker on the Book page).</summary>
+    Task<IReadOnlyList<PatientAddressItemDto>> GetPatientAddressesAsync(
+        int patientId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

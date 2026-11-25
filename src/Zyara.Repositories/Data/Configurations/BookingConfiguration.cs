@@ -29,6 +29,14 @@ namespace Zyara.Repositories.Data.Configurations
                 .IsRequired()
                 .HasPrecision(18, 2);
 
+            builder.Property(b => b.CancellationFee)
+                .IsRequired()
+                .HasPrecision(18, 2);
+
+            builder.Property(b => b.CancelledBy)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
             builder.Property(b => b.OtpCode)
                 .IsRequired(false)
                 .HasMaxLength(10);
@@ -66,7 +74,11 @@ namespace Zyara.Repositories.Data.Configurations
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
-            builder.HasIndex(b => b.TimeSlotId).IsUnique();
+            // One ACTIVE booking per slot. Cancelled / rejected / expired / no-show bookings keep their TimeSlotId
+            // for history, so they must not block the slot from being booked again.
+            builder.HasIndex(b => b.TimeSlotId)
+                .IsUnique()
+                .HasFilter("[Status] NOT IN ('Cancelled', 'Rejected', 'Expired', 'NoShow')");
 
             // Booking (1) <-> Payment (1): one-to-one, FK on Payment, Cascade
             builder.HasOne(b => b.Payment)

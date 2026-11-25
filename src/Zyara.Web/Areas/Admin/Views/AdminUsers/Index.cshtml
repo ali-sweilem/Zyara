@@ -1,3 +1,4 @@
+@using Zyara.Domain.Enums
 @model AdminUsersIndexDto
 
 @{
@@ -32,7 +33,7 @@ else
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead>
-                <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Same-day cancellations (this week)</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var u in Model.Users.Items)
@@ -44,7 +45,31 @@ else
                         <td>
                             <span class="badge @(u.IsActive ? "bg-success" : "bg-secondary")">@(u.IsActive ? "Active" : "Inactive")</span>
                         </td>
+                        <td>
+                            @if (u.Role == UserRole.Doctor || u.Role == UserRole.Nurse)
+                            {
+                                <span>@u.SameDayCancellations</span>
+                                @if (u.BookingsSuspended)
+                                {
+                                    <span class="badge bg-danger ms-1">New bookings paused</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td class="text-end">
+                            @if ((u.Role == UserRole.Doctor || u.Role == UserRole.Nurse) && (u.SameDayCancellations > 0 || u.BookingsSuspended))
+                            {
+                                <form asp-area="Admin" asp-controller="AdminUsers" asp-action="ResetCancellations" method="post" class="d-inline"
+                                      onsubmit="return confirm('Reset this provider&#39;s cancellations to zero and open new bookings again?');">
+                                    <input type="hidden" name="id" value="@u.Id" />
+                                    <input type="hidden" name="role" value="@(Model.Role?.ToString())" />
+                                    <input type="hidden" name="page" value="@Model.Users.Page" />
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Reset cancellations</button>
+                                </form>
+                            }
                             <form asp-area="Admin" asp-controller="AdminUsers" asp-action="Toggle" method="post" class="d-inline">
                                 <input type="hidden" name="id" value="@u.Id" />
                                 <input type="hidden" name="role" value="@(Model.Role?.ToString())" />

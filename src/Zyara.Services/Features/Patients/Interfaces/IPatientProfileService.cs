@@ -1,7 +1,7 @@
 using Zyara.Services.Common;
 using Zyara.Services.Features.Patients.Dtos;
 
-namespace Zyara.Services.Features.Patients;
+namespace Zyara.Services.Features.Patients.Interfaces;
 
 /// <summary>The patient's own profile. patientId always comes from ICurrentUser, never from a form or URL.</summary>
 public interface IPatientProfileService

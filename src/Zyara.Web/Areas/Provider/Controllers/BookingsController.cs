@@ -16,11 +16,16 @@ namespace Zyara.Web.Areas.Provider.Controllers
     public sealed class BookingsController : Controller
     {
         private readonly IProviderBookingService _bookings;
+        private readonly IBookingCancellationService _cancellations;
         private readonly ICurrentUser _currentUser;
 
-        public BookingsController(IProviderBookingService bookings, ICurrentUser currentUser)
+        public BookingsController(
+            IProviderBookingService bookings,
+            IBookingCancellationService cancellations,
+            ICurrentUser currentUser)
         {
             _bookings = bookings;
+            _cancellations = cancellations;
             _currentUser = currentUser;
         }
 
@@ -28,7 +33,9 @@ namespace Zyara.Web.Areas.Provider.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            var model = await _bookings.GetRequestsAsync(_currentUser.RequireUserId(), cancellationToken);
+            var providerId = _currentUser.RequireUserId();
+            var model = await _bookings.GetRequestsAsync(providerId, cancellationToken);
+            model.CancellationStatus = await _cancellations.GetProviderStatusAsync(providerId, cancellationToken);
             return View(model);
         }
 
@@ -64,6 +71,19 @@ namespace Zyara.Web.Areas.Provider.Controllers
         public async Task<IActionResult> Complete(int id, CancellationToken cancellationToken) =>
             Done(await _bookings.CompleteAsync(_currentUser.RequireUserId(), id, cancellationToken),
                  "Booking completed.");
+
+        // POST /Provider/Bookings/Cancel/5 : cancel a CONFIRMED booking (same-day cancellations cost money and count)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken)
+        {
+            var result = await _cancellations.CancelByProviderAsync(_currentUser.RequireUserId(), id, cancellationToken);
+
+            if (result.Succeeded) TempData["Message"] = result.Value!.Message;
+            else TempData["Error"] = result.Error;
+
+            return RedirectToAction(nameof(Index));
+        }
 
         private IActionResult Done(ServiceResult result, string successMessage)
         {

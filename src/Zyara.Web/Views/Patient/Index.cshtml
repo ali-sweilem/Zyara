@@ -16,6 +16,14 @@
 
     @if (TempData["Success"] is string success) { <div class="alert alert-success">@success</div> }
     @if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
+    @if (Model.OutstandingPenalty > 0)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            You have an unpaid cancellation penalty of <strong>@Model.OutstandingPenalty.ToString("0.##") EGP</strong>.
+            It will be collected with your next completed visit.
+        </div>
+    }
 
     <div class="row g-4">
         <div class="col-lg-8">
@@ -34,6 +42,9 @@
                                 <tbody>
                                 @foreach (var booking in Model.Bookings)
                                 {
+                                    var cancelText = booking.CancelPenalty > 0
+                                        ? $"Cancelling now, less than 1 hour before the visit, costs a penalty of {booking.CancelPenalty:0.##} EGP. Cancel anyway?"
+                                        : "Cancel this booking?";
                                     <tr>
                                         <td>@booking.ServiceName</td>
                                         <td>@booking.ProviderName</td>
@@ -42,7 +53,7 @@
                                         <td class="text-end">
                                             @if (booking.CanCancel)
                                             {
-                                                <form asp-action="Cancel" method="post" class="d-inline">
+                                                <form asp-action="Cancel" method="post" class="d-inline" onsubmit="return confirm('@cancelText');">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="bookingId" value="@booking.Id" />
                                                     <button class="btn btn-sm btn-outline-danger rounded-pill" type="submit">Cancel</button>

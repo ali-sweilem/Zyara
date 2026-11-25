@@ -58,6 +58,7 @@ public sealed class PatientProfileService : IPatientProfileService
                 x.PhotoUrl,
                 x.CreatedAt,
                 x.TwoFactorEnabled,
+                x.OutstandingPenalty,
                 HasPassword = x.PasswordHash != null
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -95,6 +96,7 @@ public sealed class PatientProfileService : IPatientProfileService
             MemberSince = p.CreatedAt,
             TwoFactorEnabled = p.TwoFactorEnabled,
             HasPassword = p.HasPassword,
+            OutstandingPenalty = p.OutstandingPenalty,
             TotalBookings = totalBookings,
             CompletedVisits = completed,
             ReviewsWritten = reviewsWritten,

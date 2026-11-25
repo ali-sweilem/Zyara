@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
+using Zyara.Domain.Rules;
 using Zyara.Repositories.Data.Repositories;
 using Zyara.Services.Common;
 using Zyara.Services.Features.Bookings.Dtos;
@@ -48,7 +49,9 @@ public sealed class ProviderBookingService : IProviderBookingService
             Status = b.Status,
             TotalPrice = b.TotalPrice,
             PaymentMethod = b.Payment != null ? b.Payment.Method : (PaymentMethod?)null,
-            PaymentStatus = b.Payment != null ? b.Payment.Status : (PaymentStatus?)null
+            PaymentStatus = b.Payment != null ? b.Payment.Status : (PaymentStatus?)null,
+            Commission = b.Commission,
+            PatientOutstandingPenalty = b.Patient.OutstandingPenalty
         };
 
     public async Task<ProviderBookingsPageDto> GetRequestsAsync(int providerId, CancellationToken cancellationToken = default)
@@ -64,6 +67,13 @@ public sealed class ProviderBookingService : IProviderBookingService
                          || b.Status == BookingStatus.Started))
             .Select(ToItem)
             .ToListAsync(cancellationToken);
+
+        // what cancelling would cost right now (only on the day of the visit)
+        var now = EgyptTime.Now(_timeProvider);
+        foreach (var row in rows)
+        {
+            row.CancelPenaltyNow = CancellationRules.IsSameDay(row.Date.Date + row.StartTime, now) ? row.Commission : 0m;
+        }
 
         return new ProviderBookingsPageDto
         {
@@ -183,6 +193,17 @@ public sealed class ProviderBookingService : IProviderBookingService
         // Wallet: ledger line (tracked) + relative balance update, all in ONE transaction with the status change.
         var delta = _wallet.RecordBookingSettlement(booking);
 
+        // An earlier cancellation penalty of this patient (cash / unpaid bookings) is collected by the provider with this
+        // visit. It belongs to the platform, so it is debited from the provider's wallet (BookingId stays null: the
+        // ledger allows only one line per booking, and this booking already has its settlement line).
+        var penalty = booking.Patient?.OutstandingPenalty ?? 0m;
+        if (penalty > 0m)
+        {
+            booking.Patient!.OutstandingPenalty = 0m;
+            delta += _wallet.RecordEntry(booking.ProviderId, null, WalletTransactionType.PenaltyCollection, -penalty,
+                $"Booking #{booking.Id}: earlier cancellation penalty collected from the patient (belongs to the platform)");
+        }
+
         await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
             await _unitOfWork.SaveChangesAsync(ct);
@@ -200,6 +221,7 @@ public sealed class ProviderBookingService : IProviderBookingService
             .Include(b => b.TimeSlot)
             .Include(b => b.Service)
             .Include(b => b.Payment)
+            .Include(b => b.Patient)
             .FirstOrDefaultAsync(b => b.Id == bookingId && b.ProviderId == providerId, ct);
 
     /// <summary>Pending bookings whose appointment time passed without an answer become Expired.</summary>

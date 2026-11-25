@@ -7,6 +7,9 @@ namespace Zyara.Services.Features.Patients.Dtos;
 public sealed class PatientDashboardDto
 {
     public string PatientName { get; init; } = string.Empty;
+
+    /// <summary>An unpaid cancellation penalty, collected with the next completed visit.</summary>
+    public decimal OutstandingPenalty { get; init; }
     public IReadOnlyList<PatientBookingDto> Bookings { get; init; } = Array.Empty<PatientBookingDto>();
     public IReadOnlyList<PatientAddressDto> Addresses { get; init; } = Array.Empty<PatientAddressDto>();
 }
@@ -19,8 +22,11 @@ public sealed class PatientBookingDto
     public BookingStatus Status { get; init; }
     public DateOnly? Date { get; init; }
     public TimeSpan? StartTime { get; init; }
-    public bool CanCancel => Status is BookingStatus.PendingProviderApproval or BookingStatus.Confirmed;
+    public bool CanCancel => Status is BookingStatus.PendingProviderApproval or BookingStatus.Confirmed or BookingStatus.ConfirmedCollectionPending;
     public bool HasReview { get; init; }
+
+    /// <summary>What cancelling this booking right now would cost (0 = free).</summary>
+    public decimal CancelPenalty { get; init; }
     public bool CanReview => Status == BookingStatus.Completed && !HasReview;
 }
 

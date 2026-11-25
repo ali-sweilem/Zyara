@@ -207,9 +207,16 @@ namespace Zyara.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AddressId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Commission")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("OtpCode")
                         .HasMaxLength(10)
@@ -241,6 +248,8 @@ namespace Zyara.Services.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AddressId");
 
                     b.HasIndex("PatientId");
 
@@ -958,6 +967,11 @@ namespace Zyara.Services.Migrations
 
             modelBuilder.Entity("Zyara.Domain.Entities.Booking", b =>
                 {
+                    b.HasOne("Zyara.Domain.Entities.Address", "Address")
+                        .WithMany()
+                        .HasForeignKey("AddressId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Zyara.Domain.Entities.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
@@ -981,6 +995,8 @@ namespace Zyara.Services.Migrations
                         .HasForeignKey("Zyara.Domain.Entities.Booking", "TimeSlotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Address");
 
                     b.Navigation("Patient");
 

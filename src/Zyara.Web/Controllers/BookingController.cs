@@ -42,7 +42,7 @@ public sealed class BookingController : Controller
     [HttpGet]
     public async Task<IActionResult> Book(int providerId, CancellationToken cancellationToken)
     {
-        var vm = await BuildViewModelAsync(providerId, cancellationToken);
+        var vm = await BuildViewModelAsync(providerId, _currentUser.RequireUserId(), cancellationToken);
         if (vm is null)
         {
             return NotFound();
@@ -66,7 +66,7 @@ public sealed class BookingController : Controller
         if (!ModelState.IsValid)
         {
             // Repopulate read-only fields before returning the view
-            var refreshed = await BuildViewModelAsync(providerId, cancellationToken);
+            var refreshed = await BuildViewModelAsync(providerId, _currentUser.RequireUserId(), cancellationToken);
             if (refreshed is null)
             {
                 return NotFound();
@@ -75,6 +75,7 @@ public sealed class BookingController : Controller
             // Keep the patient's selections
             refreshed.SelectedTimeSlotId = form.SelectedTimeSlotId;
             refreshed.SelectedProviderServiceId = form.SelectedProviderServiceId;
+            refreshed.SelectedAddressId = form.SelectedAddressId;
             refreshed.Notes = form.Notes;
 
             return View(refreshed);
@@ -88,6 +89,7 @@ public sealed class BookingController : Controller
             PatientId = patientId,
             TimeSlotId = form.SelectedTimeSlotId,
             ProviderServiceId = form.SelectedProviderServiceId,
+            AddressId = form.SelectedAddressId,
             Notes = form.Notes
         };
 
@@ -98,13 +100,15 @@ public sealed class BookingController : Controller
             // Service-level validation error (slot taken, provider not found, etc.)
             ModelState.AddModelError(string.Empty, result.Error!);
 
-            var refreshed = await BuildViewModelAsync(providerId, cancellationToken);
+            var refreshed = await BuildViewModelAsync(providerId, patientId, cancellationToken);
             if (refreshed is null)
             {
                 return NotFound();
             }
 
+            refreshed.SelectedTimeSlotId = form.SelectedTimeSlotId;
             refreshed.SelectedProviderServiceId = form.SelectedProviderServiceId;
+            refreshed.SelectedAddressId = form.SelectedAddressId;
             refreshed.Notes = form.Notes;
 
             return View(refreshed);
@@ -154,6 +158,7 @@ public sealed class BookingController : Controller
     /// </summary>
     private async Task<BookAppointmentDto?> BuildViewModelAsync(
         int providerId,
+        int patientId,
         CancellationToken cancellationToken)
     {
         var provider = await _providerDetailsService.GetDetailsAsync(providerId, cancellationToken);
@@ -163,6 +168,7 @@ public sealed class BookingController : Controller
         }
 
         var slots = await _bookingService.GetAvailableSlotsAsync(providerId, cancellationToken);
+        var addresses = await _bookingService.GetPatientAddressesAsync(patientId, cancellationToken);
 
         return new BookAppointmentDto
         {
@@ -171,6 +177,9 @@ public sealed class BookingController : Controller
             ProviderSpecialty = provider.Specialty,
             ProviderPhotoUrl = provider.PhotoUrl,
             ProviderBaseCity = provider.BaseCity,
+            ProviderAverageRating = provider.AverageRating,
+            ProviderRatingCount = provider.RatingCount,
+            PatientAddresses = addresses,
             AvailableSlots = slots,
             ProviderServices = provider.Services
         };

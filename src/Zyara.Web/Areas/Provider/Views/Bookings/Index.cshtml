@@ -41,6 +41,23 @@
         <div class="alert alert-danger border-0 shadow-sm">@TempData["Error"]</div>
     }
 
+    @if (Model.CancellationStatus.IsSuspended)
+    {
+        <div class="alert alert-danger border-0 shadow-sm">
+            <i class="bi bi-slash-circle me-1"></i>
+            New bookings are paused: you cancelled @Model.CancellationStatus.Limit bookings on the day of the visit this week.
+            Patients can book you again from @(Model.CancellationStatus.SuspendedUntil?.ToString("ddd, dd MMM")), or earlier if an admin resets it.
+        </div>
+    }
+    else if (Model.CancellationStatus.CountThisWeek > 0)
+    {
+        <div class="alert alert-warning border-0 shadow-sm">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            You cancelled @Model.CancellationStatus.CountThisWeek of @Model.CancellationStatus.Limit allowed same-day bookings this week.
+            At @Model.CancellationStatus.Limit, new bookings are paused until the new week starts.
+        </div>
+    }
+
     @* ───────── 1) waiting for the provider ───────── *@
     <h2 class="h5 fw-bold mb-3">New booking requests <span class="badge bg-warning text-dark">@Model.Pending.Count</span></h2>
     @if (!Model.Pending.Any())
@@ -114,6 +131,16 @@
                                 }
                             </div>
 
+                            @if (b.PatientOutstandingPenalty > 0m)
+                            {
+                                <div class="alert alert-warning py-2 small mb-3">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    This patient owes an earlier cancellation penalty. Collect
+                                    <strong>@b.PatientOutstandingPenalty.ToString("0.##") EGP</strong> extra with this visit:
+                                    it is deducted from your wallet when you complete the visit and belongs to the platform.
+                                </div>
+                            }
+
                             @if (b.Status == BookingStatus.Started)
                             {
                                 <div class="d-flex flex-wrap gap-2">
@@ -140,6 +167,14 @@
                                 {
                                     <div class="form-text">Ask the patient for the 4-digit code shown on their booking confirmation.</div>
                                 }
+                            
+                                var cancelText = b.CancelPenaltyNow > 0m
+                                    ? $"Cancelling on the day of the visit costs {b.CancelPenaltyNow:0.##} EGP and counts toward the weekly limit of {Model.CancellationStatus.Limit}. Cancel anyway?"
+                                    : "Cancel this booking? The patient will be notified.";
+                                <form asp-area="Provider" asp-controller="Bookings" asp-action="Cancel" asp-route-id="@b.Id" method="post" class="mt-2"
+                                      onsubmit="return confirm('@cancelText');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Cancel booking</button>
+                                </form>
                             }
                         </div>
                     </div>

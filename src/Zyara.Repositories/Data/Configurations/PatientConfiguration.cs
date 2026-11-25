@@ -14,6 +14,8 @@ namespace Zyara.Repositories.Data.Configurations
             // DateOnly? is mapped to a nullable SQL "date" column automatically.
             // Do NOT call ToTable() here: Patient shares the Users table (TPH).
 
+            builder.Property(p => p.OutstandingPenalty).HasPrecision(18, 2);
+
             builder.HasMany(p => p.Addresses)
                 .WithOne(a => a.Patient)
                 .HasForeignKey(a => a.PatientId)

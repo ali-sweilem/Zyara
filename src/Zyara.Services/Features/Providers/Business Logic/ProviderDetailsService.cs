@@ -44,8 +44,10 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                 ExperienceYears = p.ExperienceYears,
                 BaseCity = p.BaseCity,
                 Gender = p.Gender,
-                AverageRating = p.AverageRating,
-                RatingCount = p.RatingCount,
+                // Live from the Reviews table so it always matches the reviews list below
+                AverageRating = Math.Round(
+                    p.Bookings.Where(b => b.Review != null).Average(b => (double?)b.Review!.Stars) ?? 0.0, 2),
+                RatingCount = p.Bookings.Count(b => b.Review != null),
                 PhotoUrl = p.PhotoUrl,
                 MinFee = p.ProviderServices
                     .Where(ps => ps.Service != null && ps.Service.IsActive)
@@ -59,7 +61,8 @@ public sealed class ProviderDetailsService : IProviderDetailsService
                         Id = ps.Id,
                         Name = ps.Service!.Name,
                         Description = ps.Service.Description,
-                        Fee = ps.Fee
+                        Fee = ps.Fee,
+                        IsHomeVisit = ps.Service.Type != ServiceType.RemoteConsultation
                     })
                     .ToList(),
                 UpcomingSlots = p.TimeSlots
