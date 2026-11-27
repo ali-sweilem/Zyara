@@ -38,8 +38,21 @@ public sealed class ProviderBookingService : IProviderBookingService
         new ProviderBookingItemDto
         {
             Id = b.Id,
-            PatientName = b.Patient!.FullName,
-            PatientPhone = b.Patient.PhoneNumber,
+            // Privacy rule: name and phone are hidden until booking is accepted.
+            // Pending => show generic label; Confirmed/Started/Completed => reveal the care recipient's details.
+            PatientName = b.Status == BookingStatus.PendingProviderApproval
+                ? "Patient (pending)"
+                : b.CareRecipient != null ? b.CareRecipient.FullName : b.Patient!.FullName,
+            PatientPhone = b.Status == BookingStatus.PendingProviderApproval
+                ? null
+                : b.CareRecipient != null ? b.CareRecipient.PhoneNumber : b.Patient!.PhoneNumber,
+            // Medical details always visible
+            CareRecipientGender = b.CareRecipient != null ? (Zyara.Domain.Enums.Gender?)b.CareRecipient.Gender : null,
+            CareRecipientDateOfBirth = b.CareRecipient != null ? b.CareRecipient.DateOfBirth : null,
+            CareRecipientBloodType = b.CareRecipient != null ? b.CareRecipient.BloodType : null,
+            CareRecipientChronicConditions = b.CareRecipient != null ? b.CareRecipient.ChronicConditions : null,
+            CareRecipientAllergies = b.CareRecipient != null ? b.CareRecipient.Allergies : null,
+            CareRecipientCurrentMedications = b.CareRecipient != null ? b.CareRecipient.CurrentMedications : null,
             ServiceName = b.Service!.Name,
             IsHomeVisit = b.Service.Type != ServiceType.RemoteConsultation,
             Date = b.TimeSlot!.Date,

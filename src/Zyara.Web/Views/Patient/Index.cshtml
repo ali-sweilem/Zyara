@@ -1,75 +1,155 @@
 @model Zyara.Services.Features.Patients.Dtos.PatientDashboardDto
 @using Zyara.Domain.Enums
 @{
-    ViewData["Title"] = "My Dashboard";
+    ViewData["Title"] = "My bookings";
 }
 
-<div class="container py-4">
+<div class="container py-4" style="max-width: 1040px;">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <p class="text-primary fw-semibold mb-1">Patient Portal</p>
-            <h1 class="h3 mb-1">Welcome, @Model.PatientName</h1>
-            <p class="text-muted mb-0">Manage your visits and saved addresses.</p>
+            <p class="text-primary fw-semibold small mb-1">Patient Portal</p>
+            <h1 class="h3 fw-bold mb-1">Welcome, @Model.PatientName</h1>
+            <p class="text-muted mb-0">Manage your visits, view prescriptions, and track your bookings.</p>
         </div>
-        <a class="btn btn-primary rounded-pill px-4" asp-controller="Home" asp-action="Index">Find a provider</a>
+        <a class="btn btn-primary rounded-pill px-4" asp-controller="Landing" asp-action="Index">
+            <i class="bi bi-search me-1"></i>Find a provider
+        </a>
     </div>
 
-    @if (TempData["Success"] is string success) { <div class="alert alert-success">@success</div> }
-    @if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
+    @if (TempData["Success"] is string success) { <div class="alert alert-success border-0 shadow-sm rounded-3"><i class="bi bi-check-circle me-1"></i>@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger border-0 shadow-sm rounded-3"><i class="bi bi-exclamation-circle me-1"></i>@error</div> }
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <section class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">My bookings</h2>
-                    @if (Model.Bookings.Count == 0)
+    @* ── My Bookings Table (Full Width) ── *@
+    <section class="card border rounded-3 bg-white mb-4 overflow-hidden">
+        <div class="card-header bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
+            <h2 class="h5 fw-bold mb-0"><i class="bi bi-calendar2-check me-2 text-primary"></i>My bookings</h2>
+            <span class="badge bg-light text-secondary border rounded-pill px-3 py-1">@Model.Bookings.Count total</span>
+        </div>
+
+        @if (Model.Bookings.Count == 0)
+        {
+            <div class="card-body p-5 text-center">
+                <i class="bi bi-calendar-x fs-1 text-muted mb-2 d-block"></i>
+                <p class="text-muted mb-3">You do not have any bookings yet.</p>
+                <a class="btn btn-outline-primary rounded-pill px-4" asp-controller="Landing" asp-action="Index">Browse services</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 bookings-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Service</th>
+                            <th>Provider</th>
+                            <th>Date &amp; Time</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var booking in Model.Bookings)
                     {
-                        <p class="text-muted mb-0">You do not have any bookings yet.</p>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead><tr><th>Service</th><th>Provider</th><th>Date</th><th>Status</th><th></th></tr></thead>
-                                <tbody>
-                                @foreach (var booking in Model.Bookings)
+                        var statusBadge = booking.Status switch
+                        {
+                            BookingStatus.PendingProviderApproval => ("bg-warning-subtle text-warning-emphasis", "Pending Approval"),
+                            BookingStatus.Confirmed => ("bg-primary-subtle text-primary-emphasis", "Confirmed"),
+                            BookingStatus.ConfirmedCollectionPending => ("bg-primary-subtle text-primary-emphasis", "Confirmed"),
+                            BookingStatus.Started => ("bg-info-subtle text-info-emphasis", "Started"),
+                            BookingStatus.Completed => ("bg-success-subtle text-success-emphasis", "Completed"),
+                            BookingStatus.Cancelled => ("bg-secondary-subtle text-secondary-emphasis", "Cancelled"),
+                            BookingStatus.Rejected => ("bg-danger-subtle text-danger-emphasis", "Rejected"),
+                            BookingStatus.Expired => ("bg-secondary-subtle text-secondary-emphasis", "Expired"),
+                            BookingStatus.NoShow => ("bg-danger-subtle text-danger-emphasis", "No Show"),
+                            _ => ("bg-light text-dark", booking.Status.ToString())
+                        };
+                        <tr>
+                            <td class="ps-4 fw-semibold text-dark">@booking.ServiceName</td>
+                            <td class="text-secondary">@booking.ProviderName</td>
+                            <td class="small text-nowrap">
+                                <span class="fw-medium text-dark">@(booking.Date?.ToString("dd MMM yyyy") ?? "—")</span>
+                                @if (booking.StartTime.HasValue)
                                 {
-                                    <tr>
-                                        <td>@booking.ServiceName</td>
-                                        <td>@booking.ProviderName</td>
-                                        <td>@booking.Date @booking.StartTime</td>
-                                        <td><span class="badge text-bg-light">@booking.Status</span></td>
-                                        <td class="text-end">
-                                            @if (booking.CanCancel)
-                                            {
-                                                <form asp-action="Cancel" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="bookingId" value="@booking.Id" />
-                                                    <button class="btn btn-sm btn-outline-danger rounded-pill" type="submit">Cancel</button>
-                                                </form>
-                                            }
-                                            @if (booking.CanReview)
-                                            {
-                                                <a class="btn btn-sm btn-primary rounded-pill mt-2" asp-controller="Reviews" asp-action="Create" asp-route-bookingId="@booking.Id">Rate visit</a>
-                                            }
-                                        </td>
-                                    </tr>
+                                    <span class="text-muted ms-1">· @booking.StartTime.Value.ToString(@"hh\:mm")</span>
                                 }
-                                </tbody>
-                            </table>
+                            </td>
+                            <td class="text-nowrap">
+                                <span class="badge @statusBadge.Item1 rounded-pill px-3 py-1">@statusBadge.Item2</span>
+                            </td>
+                            <td class="text-end pe-4 text-nowrap">
+                                <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                    @if (booking.Status is BookingStatus.PendingProviderApproval or BookingStatus.Confirmed or BookingStatus.ConfirmedCollectionPending or BookingStatus.Started)
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary rounded-pill"
+                                           asp-controller="Booking" asp-action="Confirmation" asp-route-id="@booking.Id"
+                                           title="View booking details & arrival OTP">
+                                            <i class="bi bi-qr-code me-1"></i>Details / OTP
+                                        </a>
+                                    }
+                                    @if (booking.Status == BookingStatus.Completed)
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary rounded-pill"
+                                           asp-controller="MedicalRecords" asp-action="Details" asp-route-bookingId="@booking.Id">
+                                            <i class="bi bi-file-medical me-1"></i>Visit record
+                                        </a>
+                                    }
+                                    @if (booking.CanReview)
+                                    {
+                                        <a class="btn btn-sm btn-primary rounded-pill"
+                                           asp-controller="Reviews" asp-action="Create" asp-route-bookingId="@booking.Id">
+                                            <i class="bi bi-star me-1"></i>Rate visit
+                                        </a>
+                                    }
+                                    @if (booking.CanCancel)
+                                    {
+                                        <form asp-action="Cancel" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="bookingId" value="@booking.Id" />
+                                            <button class="btn btn-sm btn-outline-danger rounded-pill" type="submit"
+                                                    onclick="return confirm('Cancel this booking?')">
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (booking.Status is BookingStatus.Cancelled or BookingStatus.Rejected or BookingStatus.Expired or BookingStatus.NoShow)
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    @* ── Saved Addresses Strip ── *@
+    <section class="card border rounded-3 bg-white">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-primary"></i>Saved addresses</h2>
+                <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-action="Profile" style="min-height: 32px;">Manage addresses</a>
+            </div>
+            @if (Model.Addresses.Count == 0)
+            {
+                <p class="text-muted small mb-0">No saved addresses yet. Add one in your profile for faster booking.</p>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-3 g-3">
+                    @foreach (var address in Model.Addresses)
+                    {
+                        <div class="col">
+                            <div class="detail-block">
+                                <div class="detail-label">@address.Label</div>
+                                <div class="small text-dark fw-medium">@address.FullAddress</div>
+                            </div>
                         </div>
                     }
                 </div>
-            </section>
+            }
         </div>
-        <div class="col-lg-4">
-            <section class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Saved addresses</h2>
-                    @if (Model.Addresses.Count == 0) { <p class="text-muted mb-0">No saved addresses yet.</p> }
-                    else { <ul class="list-group list-group-flush">@foreach (var address in Model.Addresses) { <li class="list-group-item px-0"><strong>@address.Label</strong><br /><span class="text-muted small">@address.FullAddress</span></li> }</ul> }
-                </div>
-            </section>
-        </div>
-    </div>
+    </section>
 </div>

@@ -59,6 +59,19 @@ public sealed class ProvidersController : Controller
 
     [HttpGet]
     [Authorize(Policy = PolicyNames.ProviderOnly)]
+    public async Task<IActionResult> Settings()
+    {
+        var providerId = _currentUser.RequireUserId();
+        var model = await _providerDetailsService.showprofile(providerId);
+        if (model == null)
+        {
+            return NotFound();
+        }
+        return View(model);
+    }
+
+    [HttpGet]
+    [Authorize(Policy = PolicyNames.ProviderOnly)]
     public async Task<IActionResult> EditProfile()
     {
         var providerId = _currentUser.RequireUserId();

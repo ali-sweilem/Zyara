@@ -1,74 +1,154 @@
 @model IReadOnlyList<PendingProviderDto>
 @{
-    ViewData["Title"] = "Review Providers";
+    ViewData["Title"] = "Manage Providers";
+    var selectedStatus = ViewData["SelectedStatus"] as VerificationStatus?;
+    var showAll = (ViewData["ShowAll"] as bool?) == true;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 fw-bold mb-0">Providers waiting for review</h2>
-    <span class="text-muted small">@Model.Count pending</span>
-</div>
+<div class="container py-4" style="max-width: 1100px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <p class="text-primary fw-semibold small mb-1">Admin Panel</p>
+            <h1 class="h3 fw-bold mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>Providers Verification</h1>
+        </div>
+        <span class="badge bg-light text-secondary border rounded-pill px-3 py-2">@Model.Count shown</span>
+    </div>
 
-@if (TempData["Success"] is string ok)
-{
-    <div class="alert alert-success py-2">@ok</div>
-}
-@if (TempData["Error"] is string err)
-{
-    <div class="alert alert-danger py-2">@err</div>
-}
-
-@if (Model.Count == 0)
-{
-    <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">No providers are waiting for review.</div>
-}
-else
-{
-    @foreach (var p in Model)
+    @if (TempData["Success"] is string ok)
     {
-        <div class="card border-0 shadow-sm rounded-4 mb-3">
-            <div class="card-body">
-                <div class="d-flex justify-content-between flex-wrap gap-2">
-                    <div>
-                        <h5 class="mb-1">@p.FullName <span class="badge bg-secondary">@p.Role</span></h5>
-                        <div class="text-muted small">@p.Email</div>
-                        <div class="small">@p.Specialty, @p.ExperienceYears years of experience@(string.IsNullOrEmpty(p.BaseCity) ? "" : " | " + p.BaseCity)</div>
-                    </div>
-                    <div>
-                        <div class="small fw-semibold">Documents</div>
-                        @if (p.Credentials.Count == 0)
-                        {
-                            <div class="text-muted small">No documents uploaded.</div>
-                        }
-                        else
-                        {
-                            foreach (var c in p.Credentials)
-                            {
-                                <div class="small">
-                                    <a asp-area="" asp-controller="ProviderCredentials" asp-action="Download"
-                                       asp-route-id="@c.Id">@c.DocumentType (@c.FileExtension)</a>
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
+        <div class="alert alert-success border-0 shadow-sm rounded-3 py-2"><i class="bi bi-check-circle me-1"></i>@ok</div>
+    }
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-danger border-0 shadow-sm rounded-3 py-2"><i class="bi bi-exclamation-circle me-1"></i>@err</div>
+    }
 
-                <hr />
+    @* ── Status Tabs ── *@
+    <ul class="nav nav-pills gap-2 mb-4">
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3 @(!showAll && selectedStatus == VerificationStatus.Pending ? "active" : "bg-white border text-dark")"
+               asp-area="Admin" asp-controller="AdminProviders" asp-action="Index" asp-route-status="@VerificationStatus.Pending">
+                <i class="bi bi-clock me-1"></i>Pending
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3 @(!showAll && selectedStatus == VerificationStatus.Verified ? "active" : "bg-white border text-dark")"
+               asp-area="Admin" asp-controller="AdminProviders" asp-action="Index" asp-route-status="@VerificationStatus.Verified">
+                <i class="bi bi-patch-check me-1"></i>Verified
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3 @(!showAll && selectedStatus == VerificationStatus.Rejected ? "active" : "bg-white border text-dark")"
+               asp-area="Admin" asp-controller="AdminProviders" asp-action="Index" asp-route-status="@VerificationStatus.Rejected">
+                <i class="bi bi-x-circle me-1"></i>Rejected
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3 @(showAll ? "active" : "bg-white border text-dark")"
+               asp-area="Admin" asp-controller="AdminProviders" asp-action="Index" asp-route-all="true">
+                All
+            </a>
+        </li>
+    </ul>
 
-                <div class="d-flex flex-wrap gap-2 align-items-start">
-                    <form asp-area="Admin" asp-controller="AdminProviders" asp-action="Review" method="post">
-                        <input type="hidden" name="id" value="@p.Id" />
-                        <input type="hidden" name="approve" value="true" />
-                        <button class="btn btn-success btn-sm">Approve</button>
-                    </form>
-
-                    <form asp-area="Admin" asp-controller="AdminProviders" asp-action="Review" method="post" class="d-flex gap-2">
-                        <input type="hidden" name="id" value="@p.Id" />
-                        <input type="hidden" name="approve" value="false" />
-                        <input name="reason" class="form-control form-control-sm" placeholder="Reason for rejection" required maxlength="500" />
-                        <button class="btn btn-outline-danger btn-sm">Reject</button>
-                    </form>
-                </div>
-            </div>
+    @if (Model.Count == 0)
+    {
+        <div class="card border rounded-3 bg-white p-5 text-center text-muted">
+            <i class="bi bi-person-check fs-1 mb-2 d-block"></i>
+            No providers found in this category.
         </div>
     }
-}
+    else
+    {
+        @foreach (var p in Model)
+        {
+            var statusBadge = p.VerificationStatus switch
+            {
+                VerificationStatus.Pending => ("bg-warning-subtle text-warning-emphasis", "Pending"),
+                VerificationStatus.Verified => ("bg-success-subtle text-success-emphasis", "Verified"),
+                VerificationStatus.Rejected => ("bg-danger-subtle text-danger-emphasis", "Rejected"),
+                _ => ("bg-light text-dark", p.VerificationStatus.ToString())
+            };
+
+            <div class="card border rounded-3 bg-white mb-3">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between flex-wrap gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h2 class="h5 fw-bold mb-0">@p.FullName</h2>
+                                <span class="badge bg-light text-dark border rounded-pill">@p.Role</span>
+                                <span class="badge @statusBadge.Item1 rounded-pill">@statusBadge.Item2</span>
+                            </div>
+                            <div class="text-muted small mb-1"><i class="bi bi-envelope me-1"></i>@p.Email</div>
+                            <div class="small text-secondary">
+                                <i class="bi bi-briefcase me-1"></i>@(string.IsNullOrWhiteSpace(p.Specialty) ? "General" : p.Specialty)
+                                · @p.ExperienceYears yrs experience
+                                @if (!string.IsNullOrEmpty(p.BaseCity))
+                                {
+                                    <text> · <i class="bi bi-geo-alt me-1"></i>@p.BaseCity</text>
+                                }
+                            </div>
+                            @if (p.VerificationStatus == VerificationStatus.Rejected && !string.IsNullOrWhiteSpace(p.RejectionReason))
+                            {
+                                <div class="small text-danger mt-2">
+                                    <i class="bi bi-exclamation-circle me-1"></i><strong>Rejection reason:</strong> @p.RejectionReason
+                                </div>
+                            }
+                        </div>
+
+                        <div class="text-md-end">
+                            <div class="small fw-semibold text-dark mb-1">Uploaded Documents</div>
+                            @if (p.Credentials.Count == 0)
+                            {
+                                <div class="text-muted small">No documents uploaded.</div>
+                            }
+                            else
+                            {
+                                foreach (var c in p.Credentials)
+                                {
+                                    <div class="small mb-1">
+                                        <a asp-area="" asp-controller="ProviderCredentials" asp-action="Download"
+                                           asp-route-id="@c.Id" class="text-decoration-none">
+                                            <i class="bi bi-file-earmark-arrow-down me-1"></i>@c.DocumentType (@c.FileExtension)
+                                        </a>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        @if (p.VerificationStatus != VerificationStatus.Verified)
+                        {
+                            <form asp-area="Admin" asp-controller="AdminProviders" asp-action="Review" method="post">
+                                <input type="hidden" name="id" value="@p.Id" />
+                                <input type="hidden" name="approve" value="true" />
+                                <input type="hidden" name="returnStatus" value="@selectedStatus" />
+                                <input type="hidden" name="all" value="@showAll" />
+                                <button class="btn btn-primary btn-sm rounded-pill px-3" style="min-height:36px;">
+                                    <i class="bi bi-check2-circle me-1"></i>Approve
+                                </button>
+                            </form>
+                        }
+
+                        <form asp-area="Admin" asp-controller="AdminProviders" asp-action="Review" method="post" class="d-flex flex-grow-1 gap-2" style="max-width:480px;">
+                            <input type="hidden" name="id" value="@p.Id" />
+                            <input type="hidden" name="approve" value="false" />
+                            <input type="hidden" name="returnStatus" value="@selectedStatus" />
+                            <input type="hidden" name="all" value="@showAll" />
+                            <input name="reason" class="form-control form-control-sm" style="min-height:36px;"
+                                   placeholder="@(p.VerificationStatus == VerificationStatus.Verified ? "Reason to revoke verification..." : "Reason for rejection...")"
+                                   required maxlength="500" />
+                            <button class="btn btn-outline-danger btn-sm rounded-pill px-3 text-nowrap" style="min-height:36px;"
+                                    onclick="return confirm('@(p.VerificationStatus == VerificationStatus.Verified ? "Revoke this provider verification?" : "Reject this provider?")')">
+                                @(p.VerificationStatus == VerificationStatus.Verified ? "Revoke" : "Reject")
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

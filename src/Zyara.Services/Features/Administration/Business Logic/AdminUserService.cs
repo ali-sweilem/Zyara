@@ -28,13 +28,27 @@ namespace Zyara.Services.Features.Administration
             _sessions = sessions;
         }
 
-        public Task<PagedResult<UserListDto>> GetUsersAsync(UserRole? role,int page,int pageSize = 10,CancellationToken cancellationToken = default)
+        public Task<PagedResult<UserListDto>> GetUsersAsync(
+            UserRole? role,
+            string? search = null,
+            int page = 1,
+            int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
             var query = _users.Query().AsNoTracking();
 
             if (role.HasValue)
             {
                 query = query.Where(u => u.Role == role.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(u =>
+                    u.FullName.Contains(term) ||
+                    (u.Email != null && u.Email.Contains(term)) ||
+                    (u.PhoneNumber != null && u.PhoneNumber.Contains(term)));
             }
 
             return query
@@ -45,9 +59,11 @@ namespace Zyara.Services.Features.Administration
                     {
                         Id = u.Id,
                         FullName = u.FullName,
-                        Email = u.Email,
+                        Email = u.Email ?? string.Empty,
+                        PhoneNumber = u.PhoneNumber ?? string.Empty,
                         Role = u.Role,
-                        IsActive = u.IsActive
+                        IsActive = u.IsActive,
+                        CreatedAt = u.CreatedAt
                     },
                     page,
                     pageSize,
@@ -55,12 +71,17 @@ namespace Zyara.Services.Features.Administration
                     cancellationToken: cancellationToken);
         }
 
-        public async Task<bool> ToggleUserActiveAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<ServiceResult> ToggleUserActiveAsync(int id, int currentAdminId, CancellationToken cancellationToken = default)
         {
+            if (id == currentAdminId)
+            {
+                return ServiceResult.Fail("You cannot deactivate your own account.");
+            }
+
             var user = await _users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null)
             {
-                return false;
+                return ServiceResult.Fail("User not found.");
             }
 
             user.IsActive = !user.IsActive;
@@ -73,8 +94,7 @@ namespace Zyara.Services.Features.Administration
                 await _sessions.InvalidateAsync(user.Id);
             }
 
-            return true;
+            return ServiceResult.Ok();
         }
     }
 }
-

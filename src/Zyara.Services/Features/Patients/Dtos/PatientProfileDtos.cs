@@ -37,6 +37,10 @@ public sealed class PatientProfileDto
 
     public IReadOnlyList<PatientAddressItemDto> Addresses { get; init; } = Array.Empty<PatientAddressItemDto>();
     public int MaxAddresses { get; init; }
+
+    public IReadOnlyList<CareRecipientDto> CareRecipients { get; init; } = Array.Empty<CareRecipientDto>();
+    public int MaxCareRecipients { get; init; } = 3;
+    public bool HasSelfCareRecipient { get; init; }
 }
 
 public sealed class EditPatientProfileDto

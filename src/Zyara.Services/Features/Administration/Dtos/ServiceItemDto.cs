@@ -6,6 +6,7 @@ namespace Zyara.Services.Features.Administration.Dtos
     {
         public int Id { get; init; }
         public string Name { get; init; } = string.Empty;
+        public string? Description { get; init; }
         public ServiceType Type { get; init; }
         public bool IsActive { get; init; }
     }

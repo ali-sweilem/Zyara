@@ -42,7 +42,7 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "provider-home",
     pattern: "Provider",
-    defaults: new { area = "Provider", controller = "Schedule", action = "Index" });
+    defaults: new { area = "Provider", controller = "Dashboard", action = "Index" });
 
 // Map Area routes (e.g. /Provider/Bookings/Index)
 app.MapControllerRoute(

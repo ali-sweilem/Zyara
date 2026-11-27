@@ -7,6 +7,7 @@ using Zyara.Domain.Entities;
 using Zyara.Domain.Enums;
 using Zyara.Repositories.Data.Repositories;
 using Zyara.Services.Common;
+using Zyara.Services.Features.Notifications.Interfaces;
 using Zyara.Services.Features.Patients.Dtos;
 
 namespace Zyara.Services.Features.Patients;
@@ -15,6 +16,7 @@ public sealed class PatientPortalService(
     IRepository<Patient> patients,
     IRepository<Booking> bookings,
     IRepository<Address> addresses,
+    INotificationService notifications,
     IUnitOfWork unitOfWork) : IPatientPortalService
 {
     public async Task<PatientDashboardDto?> GetDashboardAsync(int patientId, CancellationToken cancellationToken = default)
@@ -74,6 +76,14 @@ public sealed class PatientPortalService(
 
         booking.Status = BookingStatus.Cancelled;
         if (booking.TimeSlot is not null) booking.TimeSlot.Status = TimeSlotStatus.Available;
+
+        notifications.Notify(
+            booking.ProviderId,
+            NotificationType.BookingCancelled,
+            "Booking cancelled by patient",
+            $"Booking #{booking.Id} was cancelled by the patient. Your time slot is available again.",
+            "/Provider/Bookings/History");
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return ServiceResult<bool>.Ok(true);
     }

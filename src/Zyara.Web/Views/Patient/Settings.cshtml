@@ -1,0 +1,177 @@
+@using Zyara.Domain.Enums
+@model Zyara.Services.Features.Patients.Dtos.PatientProfileDto
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="container py-4" style="max-width:960px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1"><i class="bi bi-gear me-2 text-primary"></i>Settings</h1>
+            <p class="text-muted mb-0">Manage your account preferences and security.</p>
+        </div>
+        <a class="btn btn-outline-primary rounded-pill px-4" asp-action="Profile">
+            <i class="bi bi-arrow-left me-1"></i>Back to Profile
+        </a>
+    </div>
+
+    @if (TempData["Success"] is string success) { <div class="alert alert-success border-0 shadow-sm rounded-3"><i class="bi bi-check-circle me-1"></i>@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger border-0 shadow-sm rounded-3"><i class="bi bi-exclamation-circle me-1"></i>@error</div> }
+
+    <div class="row g-4">
+        @* ── Left: Navigation ── *@
+        <div class="col-lg-3">
+            <nav class="settings-nav nav flex-lg-column gap-1">
+                <a class="nav-link active" href="#security-section">
+                    <i class="bi bi-shield-lock me-2"></i>Security
+                </a>
+                <a class="nav-link" href="#notifications-section">
+                    <i class="bi bi-bell me-2"></i>Notifications
+                </a>
+                <a class="nav-link" href="#privacy-section">
+                    <i class="bi bi-eye me-2"></i>Privacy
+                </a>
+                <a class="nav-link" href="#account-section">
+                    <i class="bi bi-person-x me-2"></i>Account
+                </a>
+            </nav>
+        </div>
+
+        @* ── Right: Settings Panels ── *@
+        <div class="col-lg-9">
+
+            @* ── Security ── *@
+            <section id="security-section" class="card border rounded-3 bg-white mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Security</h2>
+
+                    <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                        <div>
+                            <div class="fw-semibold">Two-factor authentication</div>
+                            <div class="small @(Model.TwoFactorEnabled ? "text-success" : "text-muted")">
+                                <i class="bi @(Model.TwoFactorEnabled ? "bi-check-circle-fill" : "bi-x-circle") me-1"></i>
+                                @(Model.TwoFactorEnabled ? "Enabled" : "Not enabled")
+                            </div>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="TwoFactor" asp-action="Manage">Manage</a>
+                    </div>
+
+                    @if (Model.HasPassword)
+                    {
+                        <div class="pt-3">
+                            <h3 class="h6 fw-semibold mb-3">Change password</h3>
+                            <form asp-action="ChangePassword" method="post" autocomplete="off">
+                                <div class="mb-2">
+                                    <input name="CurrentPassword" type="password" class="form-control" placeholder="Current password" autocomplete="current-password" required />
+                                </div>
+                                <div class="mb-2">
+                                    <input name="NewPassword" type="password" class="form-control" placeholder="New password" autocomplete="new-password" minlength="8" required />
+                                </div>
+                                <div class="mb-3">
+                                    <input name="ConfirmNewPassword" type="password" class="form-control" placeholder="Confirm new password" autocomplete="new-password" required />
+                                </div>
+                                <div class="form-text mb-3">At least 8 characters, with an uppercase letter, a lowercase letter and a digit.</div>
+                                <button type="submit" class="btn btn-primary rounded-pill px-4">Update password</button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pt-3">
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-google me-1"></i>This account signs in with Google, so there is no password to change.
+                            </p>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            @* ── Notifications ── *@
+            <section id="notifications-section" class="card border rounded-3 bg-white mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-bell me-2 text-primary"></i>Notifications</h2>
+                    <p class="text-muted small mb-3">Choose what you would like to be notified about.</p>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-semibold small">Booking confirmations</div>
+                            <div class="text-muted" style="font-size:.8rem;">Get notified when a provider accepts or declines your booking.</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-semibold small">Appointment reminders</div>
+                            <div class="text-muted" style="font-size:.8rem;">Receive reminders before your upcoming visits.</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <div class="fw-semibold small">Promotional emails</div>
+                            <div class="text-muted" style="font-size:.8rem;">Receive tips, news and special offers from Zyara.</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" disabled>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Notification preferences are coming soon.</p>
+                </div>
+            </section>
+
+            @* ── Privacy ── *@
+            <section id="privacy-section" class="card border rounded-3 bg-white mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-eye me-2 text-primary"></i>Privacy</h2>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-semibold small">Profile visibility</div>
+                            <div class="text-muted" style="font-size:.8rem;">Your name is shown to providers only after a booking is accepted.</div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill px-2 py-1">Protected</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <div class="fw-semibold small">Medical data sharing</div>
+                            <div class="text-muted" style="font-size:.8rem;">Medical details of patients on your account are shared with the provider during a booking.</div>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill px-2 py-1">Per booking</span>
+                    </div>
+                </div>
+            </section>
+
+            @* ── Account / Danger Zone ── *@
+            <section id="account-section" class="card border rounded-3 bg-white">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-person-x me-2 text-danger"></i>Account</h2>
+                    <p class="text-muted small mb-3">Permanent actions that cannot be undone.</p>
+                    <div class="d-flex justify-content-between align-items-center py-2 border rounded-3 px-3" style="border-color: var(--zy-danger-bg) !important;">
+                        <div>
+                            <div class="fw-semibold small text-danger">Delete account</div>
+                            <div class="text-muted" style="font-size:.8rem;">Permanently delete your account and all associated data.</div>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3" disabled>Delete</button>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i>Account deletion will be available in a future update.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.settings-nav .nav-link').forEach(link => {
+            link.addEventListener('click', function () {
+                document.querySelectorAll('.settings-nav .nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+}
+

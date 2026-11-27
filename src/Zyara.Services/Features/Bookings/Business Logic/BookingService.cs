@@ -96,6 +96,18 @@ public sealed class BookingService : IBookingService
             return ServiceResult<int>.Fail("Patient account not found. Please log in and try again.");
         }
 
+        // --- 2b. Validate care recipient belongs to this patient ------------------
+        var careRecipientExists = await _db.CareRecipients
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == dto.SelectedCareRecipientId
+                        && c.PatientId == dto.PatientId
+                        && !c.IsArchived, cancellationToken);
+
+        if (!careRecipientExists)
+        {
+            return ServiceResult<int>.Fail("Please choose who this visit is for.");
+        }
+
         // --- 3. Load the chosen time slot with a tracking query (we will update it) -
         var slot = await _db.TimeSlots
             .FirstOrDefaultAsync(ts =>
@@ -154,6 +166,7 @@ public sealed class BookingService : IBookingService
         var booking = new Booking
         {
             PatientId = dto.PatientId,
+            CareRecipientId = dto.SelectedCareRecipientId,
             ProviderId = dto.ProviderId,
             ServiceId = providerService.ServiceId,
             TimeSlotId = slot.Id,

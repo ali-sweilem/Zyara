@@ -4,9 +4,9 @@
 
     var badge = Model.Status switch
     {
-        VerificationStatus.Verified => "bg-success",
-        VerificationStatus.Rejected => "bg-danger",
-        _ => "bg-warning text-dark"
+        VerificationStatus.Verified => "bg-success-subtle text-success-emphasis",
+        VerificationStatus.Rejected => "bg-danger-subtle text-danger-emphasis",
+        _ => "bg-warning-subtle text-warning-emphasis"
     };
 
     var message = Model.Status switch
@@ -17,13 +17,18 @@
     };
 }
 
-<div class="container provider-page my-4">
-    <div class="card provider-card overflow-hidden">
-        <div class="provider-hero text-white p-4 p-md-5">
-            <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 mb-3"><i class="bi bi-shield-check me-1"></i> Provider Verification</span>
-            <h1 class="h2 fw-bold mb-1">Verification Status</h1>
-            <p class="text-white-50 mb-0">Track the review status of your provider documents.</p>
+<div class="container py-4" style="max-width: 720px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <p class="text-primary fw-semibold small mb-1">Provider Portal</p>
+            <h1 class="h3 fw-bold mb-0"><i class="bi bi-shield-check me-2 text-primary"></i>Verification Status</h1>
         </div>
+        <a asp-controller="Providers" asp-action="showprofile" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i>Back to Profile
+        </a>
+    </div>
+
+    <div class="card border rounded-3 bg-white">
         <div class="card-body p-4 p-md-5 text-center">
             <div class="provider-status-icon mx-auto mb-3"><i class="bi bi-shield-check"></i></div>
             <div><span class="badge @badge rounded-pill px-3 py-2 fs-6">@Model.Status</span></div>
@@ -31,10 +36,14 @@
 
             @if (Model.Status == VerificationStatus.Rejected && !string.IsNullOrWhiteSpace(Model.RejectionReason))
             {
-                <div class="alert alert-danger border-0 rounded-4 text-start mb-4"><strong>Reason:</strong> @Model.RejectionReason</div>
+                <div class="alert alert-danger border-0 rounded-3 text-start mb-4">
+                    <strong>Reason:</strong> @Model.RejectionReason
+                </div>
             }
 
-            <a asp-controller="ProviderCredentials" asp-action="Index" class="btn btn-primary rounded-pill px-4"><i class="bi bi-folder2-open me-1"></i> Manage My Documents</a>
+            <a asp-controller="ProviderCredentials" asp-action="Index" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-folder2-open me-1"></i> Manage My Documents
+            </a>
         </div>
     </div>
 </div>

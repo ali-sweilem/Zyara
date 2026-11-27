@@ -39,6 +39,14 @@ namespace Zyara.Web.Areas.Admin.Controllers
             TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Service added to the catalog." : result.Error;
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(int id, string? name, string? description, ServiceType type, CancellationToken cancellationToken)
+        {
+            var result = await _services.UpdateServiceAsync(id, name, description, type, cancellationToken);
+            TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? "Service updated." : result.Error;
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
-

@@ -123,6 +123,7 @@ public sealed class BookingController : Controller
             }
 
             // Keep the patient's selections
+            refreshed.SelectedCareRecipientId = form.SelectedCareRecipientId;
             refreshed.SelectedTimeSlotId = form.SelectedTimeSlotId;
             refreshed.SelectedProviderServiceId = form.SelectedProviderServiceId;
             refreshed.SelectedAddressId = form.SelectedAddressId;
@@ -173,6 +174,7 @@ public sealed class BookingController : Controller
             PatientId = patientId,
             TimeSlotId = form.SelectedTimeSlotId,
             ProviderServiceId = form.SelectedProviderServiceId,
+            SelectedCareRecipientId = form.SelectedCareRecipientId,
             Notes = finalNotes,
             PaymentMethod = form.PaymentMethod,
             CardHolderName = form.CardHolderName,
@@ -194,6 +196,7 @@ public sealed class BookingController : Controller
                 return NotFound();
             }
 
+            refreshed.SelectedCareRecipientId = form.SelectedCareRecipientId;
             refreshed.SelectedTimeSlotId = form.SelectedTimeSlotId;
             refreshed.SelectedProviderServiceId = form.SelectedProviderServiceId;
             refreshed.SelectedAddressId = form.SelectedAddressId;
@@ -296,6 +299,7 @@ public sealed class BookingController : Controller
         var patientId = _currentUser.RequireUserId();
         var profile = await _patientProfileService.GetAsync(patientId, cancellationToken);
         var addresses = profile?.Addresses ?? Array.Empty<PatientAddressItemDto>();
+        var recipients = profile?.CareRecipients ?? Array.Empty<Zyara.Services.Features.Patients.Dtos.CareRecipientDto>();
 
         return new BookAppointmentDto
         {
@@ -308,7 +312,9 @@ public sealed class BookingController : Controller
             AvailableSlots = slots,
             ProviderServices = provider.Services,
             PatientAddresses = addresses,
-            SelectedAddressId = addresses.FirstOrDefault()?.Id
+            SelectedAddressId = addresses.FirstOrDefault()?.Id,
+            CareRecipients = recipients,
+            SelectedCareRecipientId = recipients.FirstOrDefault()?.Id ?? 0
         };
     }
 }

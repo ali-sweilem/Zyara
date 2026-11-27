@@ -6,59 +6,96 @@
     var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 }
 
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div class="d-flex align-items-center gap-3">
-            @await Html.PartialAsync("_Avatar", new AvatarDto { FullName = Model.FullName, PhotoUrl = Model.PhotoUrl, Id = 0, Size = 72 })
-            <div>
-                <p class="text-primary fw-semibold mb-1">Patient Portal</p>
-                <h1 class="h3 mb-1">@Model.FullName</h1>
-                <p class="text-muted mb-0 small">Member since @Model.MemberSince.ToString("MMM yyyy")</p>
+<div class="container py-4" style="max-width:960px;">
+
+    @if (TempData["Success"] is string success) { <div class="alert alert-success border-0 shadow-sm rounded-3"><i class="bi bi-check-circle me-1"></i>@success</div> }
+    @if (TempData["Error"] is string error) { <div class="alert alert-danger border-0 shadow-sm rounded-3"><i class="bi bi-exclamation-circle me-1"></i>@error</div> }
+
+    @* ── Profile Header Card ── *@
+    <section class="card border rounded-3 bg-white mb-4 overflow-hidden">
+        <div class="provider-hero-banner"></div>
+        <div class="card-body p-4" style="margin-top:-40px;">
+            <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3">
+                <div class="position-relative flex-shrink-0">
+                    @await Html.PartialAsync("_Avatar", new AvatarDto { FullName = Model.FullName, PhotoUrl = Model.PhotoUrl, Id = 0, Size = 100 })
+                </div>
+                <div class="text-center text-md-start flex-grow-1 pt-md-4">
+                    <h1 class="h3 fw-bold mb-1">@Model.FullName</h1>
+                    <p class="text-muted mb-1">
+                        Patient Portal · Member since @Model.MemberSince.ToString("MMM yyyy")
+                    </p>
+                    @if (!string.IsNullOrWhiteSpace(Model.Email))
+                    {
+                        <p class="text-secondary small mb-0">
+                            <i class="bi bi-envelope me-1"></i>@Model.Email
+                            @if (Model.EmailConfirmed)
+                            {
+                                <span class="badge bg-success-subtle text-success-emphasis rounded-pill ms-1"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>
+                            }
+                        </p>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-2 pt-md-4">
+                    <a class="btn btn-outline-primary rounded-pill px-3" asp-action="Index">
+                        <i class="bi bi-calendar2-check me-1"></i>My bookings
+                    </a>
+                    <a class="btn btn-outline-secondary rounded-pill px-3" asp-action="Settings">
+                        <i class="bi bi-gear me-1"></i>Settings
+                    </a>
+                </div>
             </div>
         </div>
-        <a class="btn btn-outline-primary rounded-pill px-4" asp-action="Index">My bookings</a>
-    </div>
+    </section>
 
-    @if (TempData["Success"] is string success) { <div class="alert alert-success border-0 shadow-sm">@success</div> }
-    @if (TempData["Error"] is string error) { <div class="alert alert-danger border-0 shadow-sm">@error</div> }
-
-    @* ───────── numbers ───────── *@
+    @* ── Stats Row ── *@
     <div class="row g-3 mb-4">
         <div class="col-4">
-            <div class="card border-0 shadow-sm rounded-4 text-center h-100"><div class="card-body py-3">
-                <div class="h3 fw-bold mb-0">@Model.TotalBookings</div><div class="text-muted small">Bookings</div></div></div>
+            <div class="card border rounded-3 bg-white text-center h-100">
+                <div class="card-body py-3">
+                    <div class="h4 fw-bold text-primary mb-0">@Model.TotalBookings</div>
+                    <div class="text-muted small"><i class="bi bi-calendar-check me-1"></i>Bookings</div>
+                </div>
+            </div>
         </div>
         <div class="col-4">
-            <div class="card border-0 shadow-sm rounded-4 text-center h-100"><div class="card-body py-3">
-                <div class="h3 fw-bold mb-0">@Model.CompletedVisits</div><div class="text-muted small">Completed visits</div></div></div>
+            <div class="card border rounded-3 bg-white text-center h-100">
+                <div class="card-body py-3">
+                    <div class="h4 fw-bold text-primary mb-0">@Model.CompletedVisits</div>
+                    <div class="text-muted small"><i class="bi bi-check2-circle me-1"></i>Completed visits</div>
+                </div>
+            </div>
         </div>
         <div class="col-4">
             <a asp-controller="Reviews" asp-action="Index" class="text-decoration-none text-reset">
-                <div class="card border-0 shadow-sm rounded-4 text-center h-100"><div class="card-body py-3">
-                    <div class="h3 fw-bold mb-0">@Model.ReviewsWritten</div><div class="text-muted small">Reviews written</div></div></div>
+                <div class="card border rounded-3 bg-white text-center h-100">
+                    <div class="card-body py-3">
+                        <div class="h4 fw-bold text-primary mb-0">@Model.ReviewsWritten</div>
+                        <div class="text-muted small"><i class="bi bi-star me-1"></i>Reviews written</div>
+                    </div>
+                </div>
             </a>
         </div>
     </div>
 
     <div class="row g-4">
-        @* ───────── personal information ───────── *@
+        @* ───────── Personal Information ───────── *@
         <div class="col-lg-7">
-            <section class="card border-0 shadow-sm rounded-4 h-100">
+            <section class="card border rounded-3 bg-white h-100">
                 <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Personal information</h2>
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-person-vcard me-2 text-primary"></i>Personal information</h2>
                     <form asp-action="UpdateProfile" method="post">
                         <div class="mb-3">
-                            <label class="form-label fw-semibold" for="FullName">Full name</label>
+                            <label class="form-label fw-semibold small" for="FullName">Full name</label>
                             <input id="FullName" name="FullName" class="form-control" value="@Model.FullName" maxlength="100" required />
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Email</label>
+                            <label class="form-label fw-semibold small">Email</label>
                             <div class="input-group">
                                 <input class="form-control" value="@Model.Email" readonly />
                                 @if (Model.EmailConfirmed)
                                 {
-                                    <span class="input-group-text text-success"><i class="bi bi-patch-check-fill me-1"></i> Confirmed</span>
+                                    <span class="input-group-text text-success bg-white"><i class="bi bi-patch-check-fill me-1"></i> Confirmed</span>
                                 }
                             </div>
                             <div class="form-text">Your email is your sign-in name, so it cannot be changed here.</div>
@@ -66,17 +103,17 @@
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold" for="PhoneNumber">Phone number</label>
+                                <label class="form-label fw-semibold small" for="PhoneNumber">Phone number</label>
                                 <input id="PhoneNumber" name="PhoneNumber" type="tel" class="form-control" value="@Model.PhoneNumber" maxlength="20" placeholder="e.g. 01012345678" required />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold" for="DateOfBirth">Date of birth</label>
+                                <label class="form-label fw-semibold small" for="DateOfBirth">Date of birth</label>
                                 <input id="DateOfBirth" name="DateOfBirth" type="date" class="form-control" value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd"))" max="@today" />
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-semibold" for="Gender">Gender</label>
+                            <label class="form-label fw-semibold small" for="Gender">Gender</label>
                             <select id="Gender" name="Gender" class="form-select" required>
                                 @if (!Enum.IsDefined(Model.Gender))
                                 {
@@ -87,79 +124,41 @@
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary rounded-pill px-4">Save changes</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-check2-circle me-1"></i>Save changes
+                        </button>
                     </form>
                 </div>
             </section>
         </div>
 
-        @* ───────── security ───────── *@
-        <div class="col-lg-5">
-            <section class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <h2 class="h5 mb-3">Security</h2>
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <div class="fw-semibold">Two-factor authentication</div>
-                            <div class="small @(Model.TwoFactorEnabled ? "text-success" : "text-muted")">@(Model.TwoFactorEnabled ? "Enabled" : "Not enabled")</div>
-                        </div>
-                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="TwoFactor" asp-action="Manage">Manage</a>
-                    </div>
-                    <hr />
-
-                    <h3 class="h6 mb-3">Change password</h3>
-                    @if (!Model.HasPassword)
-                    {
-                        <p class="text-muted small mb-0">This account signs in with Google, so there is no password to change.</p>
-                    }
-                    else
-                    {
-                        <form asp-action="ChangePassword" method="post" autocomplete="off">
-                            <div class="mb-2">
-                                <input name="CurrentPassword" type="password" class="form-control" placeholder="Current password" autocomplete="current-password" required />
-                            </div>
-                            <div class="mb-2">
-                                <input name="NewPassword" type="password" class="form-control" placeholder="New password" autocomplete="new-password" minlength="8" required />
-                            </div>
-                            <div class="mb-3">
-                                <input name="ConfirmNewPassword" type="password" class="form-control" placeholder="Confirm new password" autocomplete="new-password" required />
-                            </div>
-                            <div class="form-text mb-3">At least 8 characters, with an uppercase letter, a lowercase letter and a digit. Other devices are signed out.</div>
-                            <button type="submit" class="btn btn-outline-primary rounded-pill px-4">Update password</button>
-                        </form>
-                    }
-                </div>
-            </section>
-        </div>
-
-        @* ───────── addresses ───────── *@
-        <div class="col-12">
-            <section class="card border-0 shadow-sm rounded-4">
+        @* ───────── Right Column: Addresses & Security Link ───────── *@
+        <div class="col-lg-5 d-flex flex-column gap-4">
+            <section class="card border rounded-3 bg-white">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="h5 mb-0">Saved addresses</h2>
+                        <h2 class="h5 fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-primary"></i>Saved addresses</h2>
                         <span class="text-muted small">@Model.Addresses.Count / @Model.MaxAddresses</span>
                     </div>
 
                     @if (Model.Addresses.Count == 0)
                     {
-                        <p class="text-muted">No saved addresses yet.</p>
+                        <p class="text-muted small mb-3">No saved addresses yet.</p>
                     }
                     else
                     {
                         <ul class="list-group list-group-flush mb-3">
                             @foreach (var a in Model.Addresses)
                             {
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2">
                                     <div>
-                                        <strong>@a.Label</strong><br />
+                                        <strong class="small">@a.Label</strong><br />
                                         <span class="text-muted small">@a.StreetAndBuilding, @a.District, @a.City</span>
                                     </div>
-                                    <form asp-action="DeleteAddress" method="post" class="d-inline">
+                                    <form asp-action="DeleteAddress" method="post" class="d-inline flex-shrink-0">
                                         <input type="hidden" name="id" value="@a.Id" />
-                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                                                onclick="return confirm('Delete this address?')"><i class="bi bi-trash"></i></button>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-2"
+                                                onclick="return confirm('Delete this address?')" aria-label="Delete address"><i class="bi bi-trash"></i></button>
                                     </form>
                                 </li>
                             }
@@ -168,19 +167,461 @@
 
                     @if (Model.Addresses.Count < Model.MaxAddresses)
                     {
-                        <h3 class="h6 mb-3">Add an address</h3>
+                        <h3 class="h6 fw-semibold mb-2 pt-2 border-top">Add an address</h3>
                         <form asp-action="AddAddress" method="post">
                             <div class="row g-2">
-                                <div class="col-md-3"><input name="Label" class="form-control" placeholder="Name (e.g. Home)" maxlength="50" required /></div>
-                                <div class="col-md-3"><input name="City" class="form-control" placeholder="City" maxlength="60" required /></div>
-                                <div class="col-md-3"><input name="District" class="form-control" placeholder="District" maxlength="60" required /></div>
-                                <div class="col-md-3"><input name="StreetAndBuilding" class="form-control" placeholder="Street and building" maxlength="200" required /></div>
+                                <div class="col-6"><input name="Label" class="form-control form-control-sm" placeholder="Label (e.g. Home)" maxlength="50" required /></div>
+                                <div class="col-6"><input name="City" class="form-control form-control-sm" placeholder="City" maxlength="60" required /></div>
+                                <div class="col-6"><input name="District" class="form-control form-control-sm" placeholder="District" maxlength="60" required /></div>
+                                <div class="col-6"><input name="StreetAndBuilding" class="form-control form-control-sm" placeholder="Street & building" maxlength="200" required /></div>
                             </div>
-                            <button type="submit" class="btn btn-primary rounded-pill px-4 mt-3">Add address</button>
+                            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-3">
+                                <i class="bi bi-plus-lg me-1"></i>Add address
+                            </button>
                         </form>
+                    }
+                </div>
+            </section>
+
+            <section class="card border rounded-3 bg-white">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Account &amp; Security</h2>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-semibold small">Two-factor authentication</div>
+                            <div class="small @(Model.TwoFactorEnabled ? "text-success" : "text-muted")">
+                                @(Model.TwoFactorEnabled ? "Enabled" : "Not enabled")
+                            </div>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="TwoFactor" asp-action="Manage">Manage</a>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-3">
+                        <div>
+                            <div class="fw-semibold small">Password &amp; preferences</div>
+                            <div class="text-muted small">Manage password and privacy</div>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-action="Settings">Settings</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        @* ───────── Patients on my account (CareRecipients) ───────── *@
+        <div class="col-12">
+            <section class="card border rounded-3 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h2 class="h5 fw-bold mb-1"><i class="bi bi-people me-2 text-primary"></i>Patients on my account</h2>
+                            <p class="text-muted small mb-0">Choose who the visit is for when booking. Medical details are shared with the provider; name and phone are hidden until the booking is accepted.</p>
+                        </div>
+                        <span class="text-muted small fw-semibold">@Model.CareRecipients.Count / @Model.MaxCareRecipients</span>
+                    </div>
+
+                    @if (Model.CareRecipients.Count > 0)
+                    {
+                        <div class="row g-3 mb-4">
+                            @foreach (var cr in Model.CareRecipients)
+                            {
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card border rounded-3 h-100 shadow-none">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                                <span class="badge @(cr.IsSelf ? "bg-primary" : "bg-secondary-subtle text-dark border") rounded-pill">
+                                                    @cr.Relationship
+                                                    @if (cr.IsSelf) { <text> (you)</text> }
+                                                </span>
+                                                <span class="text-muted small">Slot @cr.Slot</span>
+                                            </div>
+                                            <div class="fw-semibold">@cr.FullName</div>
+                                            @if (cr.Age.HasValue)
+                                            {
+                                                <div class="text-muted small">Age @cr.Age</div>
+                                            }
+                                            @if (cr.BloodType.HasValue)
+                                            {
+                                                <div class="small mt-1"><i class="bi bi-droplet-fill text-danger me-1"></i>@cr.BloodTypeDisplay</div>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(cr.ChronicConditions) && cr.ChronicConditions != "Not provided")
+                                            {
+                                                <div class="small text-muted mt-1 text-truncate" title="@cr.ChronicConditions">
+                                                    <i class="bi bi-heart-pulse me-1"></i>@cr.ChronicConditions
+                                                </div>
+                                            }
+
+                                            <div class="d-flex gap-2 mt-3">
+                                                @* Edit modal trigger *@
+                                                <button class="btn btn-outline-primary btn-sm rounded-pill"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editCrModal"
+                                                        data-cr-id="@cr.Id"
+                                                        data-cr-relationship="@((int)cr.Relationship)"
+                                                        data-cr-is-self="@cr.IsSelf.ToString().ToLower()"
+                                                        data-cr-fullname="@cr.FullName"
+                                                        data-cr-phone="@cr.PhoneNumber"
+                                                        data-cr-dob="@cr.DateOfBirth?.ToString("yyyy-MM-dd")"
+                                                        data-cr-gender="@((int)cr.Gender)"
+                                                        data-cr-bloodtype="@(cr.BloodType.HasValue ? ((int)cr.BloodType.Value).ToString() : "0")"
+                                                        data-cr-chronic="@cr.ChronicConditions"
+                                                        data-cr-allergies="@cr.Allergies"
+                                                        data-cr-medications="@cr.CurrentMedications"
+                                                        data-cr-notes="@cr.Notes">
+                                                    <i class="bi bi-pencil me-1"></i>Edit
+                                                </button>
+                                                <form asp-action="DeleteCareRecipient" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@cr.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill"
+                                                            onclick="return confirm('@(cr.IsSelf ? "Remove yourself from the patients list?" : "Remove this patient?")')" aria-label="Remove patient">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-4">No patients added yet. Add yourself or a family member to book visits.</p>
+                    }
+
+                    @if (Model.CareRecipients.Count < Model.MaxCareRecipients)
+                    {
+                        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addCrModal">
+                            <i class="bi bi-person-plus me-2"></i>Add patient
+                        </button>
+                    }
+                    else
+                    {
+                        <p class="text-muted small"><i class="bi bi-info-circle me-1"></i>You have reached the limit of 3 patients. Remove one to add another.</p>
                     }
                 </div>
             </section>
         </div>
     </div>
 </div>
+
+@* ─────────────────────── Add CareRecipient Modal ─────────────────────── *@
+<div class="modal fade" id="addCrModal" tabindex="-1" aria-labelledby="addCrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="addCrModalLabel">Add a patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCrForm" asp-action="AddCareRecipient" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div id="addCrError" class="alert alert-danger border-0 rounded-3 small d-none" role="alert"></div>
+                    @* Step 1: Who is this patient? *@
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Is this patient the account owner?</label>
+                        <div class="d-flex gap-3">
+                            @if (!Model.HasSelfCareRecipient)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="IsAccountOwner" id="isOwnerYes" value="true" onchange="toggleSelfFields(true)" />
+                                    <label class="form-check-label" for="isOwnerYes">Yes (that's me)</label>
+                                </div>
+                            }
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="IsAccountOwner" id="isOwnerNo" value="false" checked onchange="toggleSelfFields(false)" />
+                                <label class="form-check-label" for="isOwnerNo">No, someone else</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Non-self: Relationship + demographic fields *@
+                    <div id="nonSelfFields">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Relationship <span class="text-danger">*</span></label>
+                            <select name="Relationship" class="form-select">
+                                <option value="">Select...</option>
+                                <option value="2">Spouse</option>
+                                <option value="3">Parent</option>
+                                <option value="4">Child</option>
+                                <option value="5">Sibling</option>
+                                <option value="6">Other</option>
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Full name <span class="text-danger">*</span></label>
+                                <input name="FullName" class="form-control" maxlength="100" placeholder="Patient's full name" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phone number <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input name="PhoneNumber" class="form-control" maxlength="20" placeholder="e.g. 01012345678" id="addCrPhone" />
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('addCrPhone').value='@Model.PhoneNumber'">Use mine</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Date of birth <span class="text-danger">*</span></label>
+                                <input name="DateOfBirth" type="date" class="form-control" max="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Gender <span class="text-danger">*</span></label>
+                                <select name="Gender" class="form-select">
+                                    <option value="">Select...</option>
+                                    <option value="1">Male</option>
+                                    <option value="2">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Self: show account DOB if missing *@
+                    <div id="selfNote" class="d-none alert alert-info border-0 rounded-3 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Your name, phone, and gender will be copied from your profile automatically.
+                        @if (!Model.DateOfBirth.HasValue)
+                        {
+                            <span> Please provide your date of birth below.</span>
+                        }
+                    </div>
+                    <div id="selfDobField" class="d-none mb-3">
+                        <label class="form-label fw-semibold">Your date of birth <span class="text-danger">*</span></label>
+                        <input name="DateOfBirth" id="selfDobInput" type="date" class="form-control" max="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <hr class="my-3" />
+                    <h6 class="fw-semibold mb-3">Medical information <span class="text-muted fw-normal small">(enter "None" if not applicable)</span></h6>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Blood type <span class="text-danger">*</span></label>
+                        <select name="BloodType" class="form-select">
+                            <option value="">Select...</option>
+                            <option value="1">A+</option><option value="2">A-</option>
+                            <option value="3">B+</option><option value="4">B-</option>
+                            <option value="5">AB+</option><option value="6">AB-</option>
+                            <option value="7">O+</option><option value="8">O-</option>
+                            <option value="0">Unknown</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chronic conditions <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2 mb-1">
+                            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="this.closest('.mb-3').querySelector('textarea').value='None'">None</button>
+                        </div>
+                        <textarea name="ChronicConditions" class="form-control" rows="2" maxlength="500" placeholder="e.g. Diabetes, Hypertension"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Allergies <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2 mb-1">
+                            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="this.closest('.mb-3').querySelector('textarea').value='None'">None</button>
+                        </div>
+                        <textarea name="Allergies" class="form-control" rows="2" maxlength="500" placeholder="e.g. Penicillin, Peanuts"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Current medications <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2 mb-1">
+                            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="this.closest('.mb-3').querySelector('textarea').value='None'">None</button>
+                        </div>
+                        <textarea name="CurrentMedications" class="form-control" rows="2" maxlength="500" placeholder="e.g. Metformin 500mg"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes <span class="text-muted fw-normal small">(optional)</span></label>
+                        <textarea name="Notes" class="form-control" rows="2" maxlength="1000" placeholder="Any additional information for the provider..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Add patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* ─────────────────────── Edit CareRecipient Modal ─────────────────────── *@
+<div class="modal fade" id="editCrModal" tabindex="-1" aria-labelledby="editCrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="editCrModalLabel">Edit patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCrForm" asp-action="UpdateCareRecipient" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editCrId" />
+                <div class="modal-body">
+                    <div id="editCrError" class="alert alert-danger border-0 rounded-3 small d-none" role="alert"></div>
+                    <div id="editSelfNote" class="d-none alert alert-info border-0 rounded-3 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Name, phone, and gender are managed in your profile settings above.
+                    </div>
+                    <div id="editNonSelfFields">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Relationship <span class="text-danger">*</span></label>
+                            <select name="Relationship" id="editCrRelationship" class="form-select">
+                                <option value="2">Spouse</option>
+                                <option value="3">Parent</option>
+                                <option value="4">Child</option>
+                                <option value="5">Sibling</option>
+                                <option value="6">Other</option>
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Full name <span class="text-danger">*</span></label>
+                                <input name="FullName" id="editCrFullName" class="form-control" maxlength="100" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phone number <span class="text-danger">*</span></label>
+                                <input name="PhoneNumber" id="editCrPhone" class="form-control" maxlength="20" />
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Date of birth <span class="text-danger">*</span></label>
+                                <input name="DateOfBirth" id="editCrDob" type="date" class="form-control" max="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Gender <span class="text-danger">*</span></label>
+                                <select name="Gender" id="editCrGender" class="form-select">
+                                    <option value="1">Male</option>
+                                    <option value="2">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-3" />
+                    <h6 class="fw-semibold mb-3">Medical information <span class="text-muted fw-normal small">(enter "None" if not applicable)</span></h6>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Blood type <span class="text-danger">*</span></label>
+                        <select name="BloodType" id="editCrBloodType" class="form-select">
+                            <option value="1">A+</option><option value="2">A-</option>
+                            <option value="3">B+</option><option value="4">B-</option>
+                            <option value="5">AB+</option><option value="6">AB-</option>
+                            <option value="7">O+</option><option value="8">O-</option>
+                            <option value="0">Unknown</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chronic conditions <span class="text-danger">*</span></label>
+                        <div class="mb-1"><button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="document.getElementById('editCrChronic').value='None'">None</button></div>
+                        <textarea name="ChronicConditions" id="editCrChronic" class="form-control" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Allergies <span class="text-danger">*</span></label>
+                        <div class="mb-1"><button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="document.getElementById('editCrAllergies').value='None'">None</button></div>
+                        <textarea name="Allergies" id="editCrAllergies" class="form-control" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Current medications <span class="text-danger">*</span></label>
+                        <div class="mb-1"><button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="document.getElementById('editCrMeds').value='None'">None</button></div>
+                        <textarea name="CurrentMedications" id="editCrMeds" class="form-control" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes <span class="text-muted fw-normal small">(optional)</span></label>
+                        <textarea name="Notes" id="editCrNotes" class="form-control" rows="2" maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // ── Add modal: toggle fields depending on IsAccountOwner selection ──
+    function toggleSelfFields(isSelf) {
+        var nonSelf = document.getElementById('nonSelfFields');
+        nonSelf.classList.toggle('d-none', isSelf);
+        nonSelf.querySelectorAll('input, select').forEach(function (el) { el.disabled = isSelf; });
+        document.getElementById('selfNote').classList.toggle('d-none', !isSelf);
+        var selfDobInput = document.getElementById('selfDobInput');
+        if (selfDobInput) selfDobInput.disabled = !isSelf;
+        @if (!Model.DateOfBirth.HasValue)
+        {
+            <text>
+            document.getElementById('selfDobField').classList.toggle('d-none', !isSelf);
+            </text>
+        }
+    }
+    toggleSelfFields(false);
+
+    // ── Edit modal: populate from data-* attributes ──
+    document.getElementById('editCrModal')?.addEventListener('show.bs.modal', function (e) {
+        var errBox = document.getElementById('editCrError');
+        if (errBox) { errBox.classList.add('d-none'); errBox.textContent = ''; }
+
+        var btn = e.relatedTarget;
+        var isSelf = btn.dataset.crIsSelf === 'true';
+        document.getElementById('editCrId').value = btn.dataset.crId;
+        document.getElementById('editCrChronic').value = btn.dataset.crChronic || '';
+        document.getElementById('editCrAllergies').value = btn.dataset.crAllergies || '';
+        document.getElementById('editCrMeds').value = btn.dataset.crMedications || '';
+        document.getElementById('editCrNotes').value = btn.dataset.crNotes || '';
+        document.getElementById('editCrBloodType').value = btn.dataset.crBloodtype || '0';
+
+        var nonSelf = document.getElementById('editNonSelfFields');
+        var selfNote = document.getElementById('editSelfNote');
+        nonSelf.querySelectorAll('input, select').forEach(function (el) { el.disabled = isSelf; });
+        if (isSelf) {
+            nonSelf.classList.add('d-none');
+            selfNote.classList.remove('d-none');
+        } else {
+            nonSelf.classList.remove('d-none');
+            selfNote.classList.add('d-none');
+            document.getElementById('editCrRelationship').value = btn.dataset.crRelationship;
+            document.getElementById('editCrFullName').value = btn.dataset.crFullname || '';
+            document.getElementById('editCrPhone').value = btn.dataset.crPhone || '';
+            document.getElementById('editCrDob').value = btn.dataset.crDob || '';
+            document.getElementById('editCrGender').value = btn.dataset.crGender || '1';
+        }
+    });
+
+    // ── Submit CareRecipient modals via fetch so validation errors stay inside the modal ──
+    function bindCareRecipientModalForm(formId, errorBoxId, modalId) {
+        var form = document.getElementById(formId);
+        var errorBox = document.getElementById(errorBoxId);
+        var modalEl = document.getElementById(modalId);
+        if (!form || !errorBox) return;
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            errorBox.classList.add('d-none');
+            errorBox.textContent = '';
+
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            try {
+                var response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                    return;
+                }
+
+                var data = await response.json().catch(function () { return null; });
+                errorBox.textContent = (data && data.error) ? data.error : 'Please check the patient details and try again.';
+                errorBox.classList.remove('d-none');
+                modalEl?.querySelector('.modal-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } catch (err) {
+                errorBox.textContent = 'Something went wrong. Please try again.';
+                errorBox.classList.remove('d-none');
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        });
+    }
+
+    bindCareRecipientModalForm('addCrForm', 'addCrError', 'addCrModal');
+    bindCareRecipientModalForm('editCrForm', 'editCrError', 'editCrModal');
+</script>
+}

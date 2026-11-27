@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Zyara.Services.Features.Patients.Dtos;
 using Zyara.Services.Features.Providers.Dtos;
 
 namespace Zyara.Services.Features.Bookings.Dtos;
@@ -29,9 +30,17 @@ public sealed class BookAppointmentDto
     public string? Notes { get; set; }
 
     // Patient Addresses for Visit
-    public IReadOnlyList<Zyara.Services.Features.Patients.Dtos.PatientAddressItemDto> PatientAddresses { get; set; } = [];
+    public IReadOnlyList<PatientAddressItemDto> PatientAddresses { get; set; } = [];
     public int? SelectedAddressId { get; set; }
     public string? CustomAddress { get; set; }
+
+    // ── Care recipient (who the visit is for) ──
+    /// <summary>Loaded from DB for the booking form; not posted back.</summary>
+    public IReadOnlyList<CareRecipientDto> CareRecipients { get; set; } = [];
+
+    [Required(ErrorMessage = "Please choose who this visit is for.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please choose who this visit is for.")]
+    public int SelectedCareRecipientId { get; set; }
 
     // Payment Selection
     public string PaymentMethod { get; set; } = "Cash"; // "Cash" or "Card"

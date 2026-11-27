@@ -12,6 +12,8 @@ namespace Zyara.Services.Features.Administration.Dtos
         public string Specialty { get; set; } = string.Empty;
         public int ExperienceYears { get; set; }
         public string? BaseCity { get; set; }
+        public VerificationStatus VerificationStatus { get; set; }
+        public string? RejectionReason { get; set; }
         public List<ProviderCredentialDto> Credentials { get; set; } = new();
     }
 }

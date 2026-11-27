@@ -43,9 +43,12 @@
                 </div>
             }
 
-            <div class="d-flex justify-content-center gap-3 mt-4">
-                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
-                    Return to Home
+            <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+                <a asp-controller="Patient" asp-action="Index" class="btn btn-primary px-4 rounded-pill">
+                    <i class="bi bi-calendar2-check me-1"></i>View my bookings
+                </a>
+                <a asp-controller="Landing" asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
+                    Back to Home
                 </a>
             </div>
         </div>

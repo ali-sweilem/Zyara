@@ -17,6 +17,7 @@ public sealed class PatientProfileService : IPatientProfileService
     private readonly IRepository<Address> _addresses;
     private readonly IRepository<Booking> _bookings;
     private readonly IRepository<Review> _reviews;
+    private readonly IRepository<CareRecipient> _careRecipients;
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _users;
     private readonly ISessionService _sessions;
@@ -27,6 +28,7 @@ public sealed class PatientProfileService : IPatientProfileService
         IRepository<Address> addresses,
         IRepository<Booking> bookings,
         IRepository<Review> reviews,
+        IRepository<CareRecipient> careRecipients,
         IUnitOfWork unitOfWork,
         UserManager<User> users,
         ISessionService sessions,
@@ -36,6 +38,7 @@ public sealed class PatientProfileService : IPatientProfileService
         _addresses = addresses;
         _bookings = bookings;
         _reviews = reviews;
+        _careRecipients = careRecipients;
         _unitOfWork = unitOfWork;
         _users = users;
         _sessions = sessions;
@@ -83,6 +86,31 @@ public sealed class PatientProfileService : IPatientProfileService
             })
             .ToListAsync(cancellationToken);
 
+        var careRecipients = await _careRecipients.Query()
+            .AsNoTracking()
+            .Where(c => c.PatientId == patientId && !c.IsArchived)
+            .OrderBy(c => c.Slot)
+            .Select(c => new CareRecipientDto
+            {
+                Id = c.Id,
+                PatientId = c.PatientId,
+                Slot = c.Slot,
+                FullName = c.FullName,
+                PhoneNumber = c.PhoneNumber,
+                DateOfBirth = c.DateOfBirth,
+                Gender = c.Gender,
+                Relationship = c.Relationship,
+                BloodType = c.BloodType,
+                ChronicConditions = c.ChronicConditions,
+                Allergies = c.Allergies,
+                CurrentMedications = c.CurrentMedications,
+                Notes = c.Notes,
+                CreatedAt = c.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var hasSelf = careRecipients.Any(c => c.Relationship == Relationship.Self);
+
         return new PatientProfileDto
         {
             FullName = p.FullName,
@@ -99,7 +127,10 @@ public sealed class PatientProfileService : IPatientProfileService
             CompletedVisits = completed,
             ReviewsWritten = reviewsWritten,
             Addresses = addresses,
-            MaxAddresses = MaxAddresses
+            MaxAddresses = MaxAddresses,
+            CareRecipients = careRecipients,
+            MaxCareRecipients = 3,
+            HasSelfCareRecipient = hasSelf
         };
     }
 
@@ -126,6 +157,20 @@ public sealed class PatientProfileService : IPatientProfileService
         patient.PhoneNumber = phone;
         patient.DateOfBirth = dto.DateOfBirth;
         patient.Gender = dto.Gender.Value;
+
+        // Keep the Self CareRecipient in sync with the account holder profile.
+        var selfRecipient = await _careRecipients.Query()
+            .FirstOrDefaultAsync(c => c.PatientId == patientId
+                                   && c.Relationship == Relationship.Self
+                                   && !c.IsArchived,
+                                   cancellationToken);
+        if (selfRecipient is not null)
+        {
+            selfRecipient.FullName = fullName;
+            selfRecipient.PhoneNumber = phone;
+            selfRecipient.DateOfBirth = dto.DateOfBirth;
+            selfRecipient.Gender = dto.Gender.Value;
+        }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return ServiceResult.Ok();

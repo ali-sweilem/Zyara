@@ -34,6 +34,7 @@ namespace Zyara.Repositories.Data.Configurations
                 .HasMaxLength(10);
 
             builder.Property(b => b.PatientId).IsRequired();
+            builder.Property(b => b.CareRecipientId).IsRequired();
             builder.Property(b => b.ProviderId).IsRequired();
             builder.Property(b => b.ServiceId).IsRequired();
             builder.Property(b => b.TimeSlotId).IsRequired();
@@ -42,6 +43,13 @@ namespace Zyara.Repositories.Data.Configurations
             builder.HasOne(b => b.Patient)
                 .WithMany()
                 .HasForeignKey(b => b.PatientId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            // Booking (many) -> CareRecipient (1): required, Restrict
+            builder.HasOne(b => b.CareRecipient)
+                .WithMany()
+                .HasForeignKey(b => b.CareRecipientId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
@@ -77,6 +85,7 @@ namespace Zyara.Repositories.Data.Configurations
 
             // Prescription (0..1) <-> Booking (1): one-to-one optional, Restrict, FK on Prescription, unique index
             builder.HasIndex(b => b.PatientId);
+            builder.HasIndex(b => b.CareRecipientId);
             builder.HasIndex(b => b.ProviderId);
             builder.HasIndex(b => b.Status);
         }

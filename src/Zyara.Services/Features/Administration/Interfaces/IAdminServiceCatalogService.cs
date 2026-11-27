@@ -17,6 +17,9 @@ namespace Zyara.Services.Features.Administration.Interfaces
 
         /// <summary>Adds a service to the catalog (providers then pick it and set their own price).</summary>
         Task<ServiceResult> CreateServiceAsync(string? name, string? description, ServiceType type, CancellationToken cancellationToken = default);
+
+        /// <summary>Updates an existing service's name, description, and type.</summary>
+        Task<ServiceResult> UpdateServiceAsync(int id, string? name, string? description, ServiceType type, CancellationToken cancellationToken = default);
     }
 }
 

@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWalletService, WalletService>();
         services.AddScoped<IPatientPortalService, PatientPortalService>();
         services.AddScoped<IPatientProfileService, PatientProfileService>();
+        services.AddScoped<ICareRecipientService, CareRecipientService>();
         services.AddScoped<IReviewService, ReviewService>();
 
         services.AddScoped<IBookingService, BookingService>();

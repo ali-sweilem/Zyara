@@ -207,6 +207,9 @@ namespace Zyara.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CareRecipientId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Commission")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -242,6 +245,8 @@ namespace Zyara.Services.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CareRecipientId");
+
                     b.HasIndex("PatientId");
 
                     b.HasIndex("ProviderId");
@@ -254,6 +259,87 @@ namespace Zyara.Services.Migrations
                         .IsUnique();
 
                     b.ToTable("Bookings", (string)null);
+                });
+
+            modelBuilder.Entity("Zyara.Domain.Entities.CareRecipient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Allergies")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("BloodType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ChronicConditions")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrentMedications")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("DateOfBirth")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Relationship")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId")
+                        .IsUnique()
+                        .HasFilter("[Relationship] = 'Self' AND [IsArchived] = 0");
+
+                    b.HasIndex("PatientId", "Slot")
+                        .IsUnique()
+                        .HasFilter("[IsArchived] = 0");
+
+                    b.ToTable("CareRecipients", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CareRecipients_Slot", "[Slot] BETWEEN 1 AND 3");
+                        });
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Notification", b =>
@@ -958,6 +1044,12 @@ namespace Zyara.Services.Migrations
 
             modelBuilder.Entity("Zyara.Domain.Entities.Booking", b =>
                 {
+                    b.HasOne("Zyara.Domain.Entities.CareRecipient", "CareRecipient")
+                        .WithMany()
+                        .HasForeignKey("CareRecipientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Zyara.Domain.Entities.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
@@ -982,6 +1074,8 @@ namespace Zyara.Services.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("CareRecipient");
+
                     b.Navigation("Patient");
 
                     b.Navigation("Provider");
@@ -989,6 +1083,17 @@ namespace Zyara.Services.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("TimeSlot");
+                });
+
+            modelBuilder.Entity("Zyara.Domain.Entities.CareRecipient", b =>
+                {
+                    b.HasOne("Zyara.Domain.Entities.Patient", "Patient")
+                        .WithMany("CareRecipients")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Notification", b =>
@@ -1166,6 +1271,8 @@ namespace Zyara.Services.Migrations
             modelBuilder.Entity("Zyara.Domain.Entities.Patient", b =>
                 {
                     b.Navigation("Addresses");
+
+                    b.Navigation("CareRecipients");
                 });
 
             modelBuilder.Entity("Zyara.Domain.Entities.Provider", b =>

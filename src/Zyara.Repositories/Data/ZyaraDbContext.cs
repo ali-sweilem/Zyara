@@ -15,6 +15,7 @@ namespace Zyara.Repositories.Data
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Provider> Providers { get; set; }
         public DbSet<Address> Addresses { get; set; }
+        public DbSet<CareRecipient> CareRecipients { get; set; }
         public DbSet<ProviderCredential> ProviderCredentials { get; set; }
         public DbSet<ProviderService> ProviderServices { get; set; }
         public DbSet<Service> Services { get; set; }

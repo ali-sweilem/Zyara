@@ -4,11 +4,26 @@
 
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Manage Working Schedule";
+    ViewData["Title"] = "Manage Schedule";
 
     // Egypt week starts on Saturday
-    var weekDays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday, DayOfWeek.Monday, DayOfWeek.Tuesday,
-                           DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
+    var weekDays = new[]
+    {
+        (Day: DayOfWeek.Saturday, Short: "Sat"),
+        (Day: DayOfWeek.Sunday, Short: "Sun"),
+        (Day: DayOfWeek.Monday, Short: "Mon"),
+        (Day: DayOfWeek.Tuesday, Short: "Tue"),
+        (Day: DayOfWeek.Wednesday, Short: "Wed"),
+        (Day: DayOfWeek.Thursday, Short: "Thu"),
+        (Day: DayOfWeek.Friday, Short: "Fri")
+    };
+
+    var showPast = (ViewData["ShowPast"] as bool?) == true;
+    var upcomingCount = (int)(ViewData["UpcomingCount"] ?? 0);
+    var pastCount = (int)(ViewData["PastCount"] ?? 0);
+    var groupedSlots = (Model.TimeSlots ?? new())
+        .GroupBy(s => s.Date.Date)
+        .ToList();
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -18,14 +33,18 @@
     }
 </style>
 
-<div class="container-fluid py-4" dir="ltr" lang="en">
-    <div class="d-flex justify-content-end mb-3">
-        
+<div class="container py-4" dir="ltr" lang="en" style="max-width: 1100px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <p class="text-primary fw-semibold small mb-1">Provider Portal</p>
+            <h1 class="h3 fw-bold mb-1"><i class="bi bi-calendar-week me-2 text-primary"></i>Manage Schedule</h1>
+            <p class="text-muted mb-0">Set your weekly shifts once or add single 2-hour slots.</p>
+        </div>
     </div>
 
     @if (TempData["Message"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+        <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm rounded-3" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i>@TempData["Message"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -33,108 +52,77 @@
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm rounded-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
     <div class="row g-4">
-        <!-- Form: Add New TimeSlot -->
+        @* ── Left Column: Weekly Shift Generator + Single Slot ── *@
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-primary text-white py-3">
-                    <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-clock-plus me-2"></i>Add 2-Hour Time Slot
-                    </h5>
-                </div>
-                <div class="card-body p-4">
-                    <form action="/Provider/Schedule/CreateTimeSlot" method="post">
-                        @Html.AntiForgeryToken()
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Date</label>
-                            <input type="text" id="NewTimeSlot_Date" name="NewTimeSlot.Date" class="form-control datepicker bg-white" placeholder="Select Date" />
-                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.Date")</span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Start Time</label>
-                            <input type="text" id="NewTimeSlot_StartTime" name="NewTimeSlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Start Time" />
-                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.StartTime")</span>
-                            <div class="form-text text-muted small">
-                                * Slot duration is automatically set to 2 hours (120 minutes).
-                            </div>
-                        </div>
-
-                        <div class="mb-4 p-3 bg-light rounded-3">
-                            <span class="text-muted small">Fixed Window:</span>
-                            <div class="fw-bold text-primary mt-1">
-                                <i class="bi bi-hourglass-split me-1"></i> 120 Minutes (Arrival Window)
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm">
-                            <i class="bi bi-plus-circle me-1"></i> Add Time Slot
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Fixed weekly times: add once, repeats every week -->
-            <div class="card border-0 shadow-sm rounded-3 mt-4">
-                <div class="card-header bg-success text-white py-3">
-                    <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-arrow-repeat me-2"></i>Repeat Every Week
-                    </h5>
+            @* 1. Weekly Shift Generator *@
+            <div class="card border rounded-3 bg-white">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h2 class="h6 card-title mb-0 fw-bold text-dark">
+                        <i class="bi bi-arrow-repeat me-2 text-primary"></i>Weekly Shift Generator
+                    </h2>
                 </div>
                 <div class="card-body p-4">
                     <p class="text-muted small mb-3">
-                        Add a fixed weekly time once. 2-hour slots are created for the next 4 weeks and
-                        new weeks are added automatically.
+                        Pick your working days and shift hours. 2-hour slots are generated automatically for the next 4 weeks.
                     </p>
 
-                    <form action="/Provider/Schedule/AddWeekly" method="post">
+                    <form action="/Provider/Schedule/AddWeeklyShift" method="post">
                         @Html.AntiForgeryToken()
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Day</label>
-                            <select name="NewWeeklySlot.DayOfWeek" class="form-select">
-                                @foreach (var day in weekDays)
+                            <label class="form-label fw-semibold small d-block">Days</label>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var d in weekDays)
                                 {
-                                    <option value="@((int)day)">@day</option>
+                                    <input type="checkbox" class="btn-check" name="days" value="@((int)d.Day)" id="day_@d.Short" autocomplete="off" />
+                                    <label class="btn btn-outline-primary btn-sm rounded-pill px-2" for="day_@d.Short" style="min-height: 32px; font-size: .8rem;">
+                                        @d.Short
+                                    </label>
                                 }
-                            </select>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Start Time</label>
-                            <input type="text" name="NewWeeklySlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Start Time" />
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">From</label>
+                                <input type="text" name="startTime" class="form-control timepicker bg-white" placeholder="Start" required />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">To</label>
+                                <input type="text" name="endTime" class="form-control timepicker bg-white" placeholder="End" required />
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100 py-2 fw-bold rounded-pill shadow-sm">
-                            <i class="bi bi-arrow-repeat me-1"></i> Add Weekly Time
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                            <i class="bi bi-magic me-1"></i> Generate Weekly Slots
                         </button>
                     </form>
 
                     @if (Model.WeeklySlots.Any())
                     {
                         <hr class="my-4" />
-                        <div class="small fw-bold mb-2">My weekly times</div>
+                        <div class="small fw-bold mb-2">Active Weekly Times (@Model.WeeklySlots.Count)</div>
                         <ul class="list-group list-group-flush">
                             @foreach (var w in Model.WeeklySlots)
                             {
-                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                    <span>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                    <span class="small">
                                         <strong>@w.DayOfWeek</strong>
                                         <span class="text-muted ms-1">
-                                            @DateTime.Today.Add(w.StartTime).ToString("hh:mm tt") -
+                                            @DateTime.Today.Add(w.StartTime).ToString("hh:mm tt") –
                                             @DateTime.Today.Add(w.EndTime).ToString("hh:mm tt")
                                         </span>
                                     </span>
                                     <form action="/Provider/Schedule/RemoveWeekly/@w.Id" method="post" class="d-inline">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-2" style="min-height:30px;"
                                                 onclick="return confirm('Stop repeating this time? Its free upcoming slots will be deleted (booked ones stay).')">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -145,86 +133,136 @@
                     }
                 </div>
             </div>
+
+            @* 2. Single One-Off Slot *@
+            <div class="card border rounded-3 bg-white mt-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h2 class="h6 card-title mb-0 fw-bold text-dark">
+                        <i class="bi bi-clock-plus me-2 text-primary"></i>Add Single 2-Hour Slot
+                    </h2>
+                </div>
+                <div class="card-body p-4">
+                    <form action="/Provider/Schedule/CreateTimeSlot" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Date</label>
+                            <input type="text" id="NewTimeSlot_Date" name="NewTimeSlot.Date" class="form-control datepicker bg-white" placeholder="Select Date" />
+                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.Date")</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Start Time</label>
+                            <input type="text" id="NewTimeSlot_StartTime" name="NewTimeSlot.StartTime" class="form-control timepicker bg-white" placeholder="Select Start Time" />
+                            <span class="text-danger small">@Html.ValidationMessage("NewTimeSlot.StartTime")</span>
+                            <div class="form-text small">Fixed 2-hour arrival window.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-primary w-100 rounded-pill">
+                            <i class="bi bi-plus-circle me-1"></i> Add Slot
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
 
-        <!-- Table: TimeSlots List -->
+        @* ── Right Column: Grouped Time Slots (Upcoming / Past) ── *@
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 fw-bold text-dark">
-                        <i class="bi bi-calendar-week me-2 text-primary"></i>My Time Slots
-                    </h5>
-                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
-                        Total: @(Model.TimeSlots?.Count ?? 0)
-                    </span>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <ul class="nav nav-pills gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link rounded-pill px-3 @(!showPast ? "active" : "bg-white border text-dark")"
+                           asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-showPast="false">
+                            Upcoming (@upcomingCount)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded-pill px-3 @(showPast ? "active" : "bg-white border text-dark")"
+                           asp-area="Provider" asp-controller="Schedule" asp-action="Index" asp-route-showPast="true">
+                            Past (@pastCount)
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            @if (!groupedSlots.Any())
+            {
+                <div class="card border rounded-3 bg-white p-5 text-center text-muted">
+                    <i class="bi bi-calendar-x fs-1 mb-2 d-block"></i>
+                    @(showPast ? "No past time slots." : "No upcoming time slots yet. Use the Weekly Shift Generator on the left.")
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 text-center">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Window Time</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.TimeSlots != null && Model.TimeSlots.Any())
-                                {
-                                    @foreach (var slot in Model.TimeSlots)
+            }
+            else
+            {
+                @foreach (var dayGroup in groupedSlots)
+                {
+                    var hasAvailable = dayGroup.Any(s => s.Status == TimeSlotStatus.Available);
+                    <section class="card border rounded-3 bg-white mb-3 overflow-hidden">
+                        <div class="card-header bg-white border-bottom px-4 py-2 d-flex justify-content-between align-items-center">
+                            <div class="fw-bold text-dark">
+                                <i class="bi bi-calendar-event me-2 text-primary"></i>@dayGroup.Key.ToString("ddd, dd MMM yyyy")
+                                <span class="badge bg-light text-secondary border rounded-pill ms-2 fw-normal">@dayGroup.Count() slots</span>
+                            </div>
+                            @if (!showPast && hasAvailable)
+                            {
+                                <form action="/Provider/Schedule/ClearDay" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="date" value="@dayGroup.Key.ToString("yyyy-MM-dd")" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" style="min-height: 30px; font-size: .78rem;"
+                                            onclick="return confirm('Remove all available slots on @dayGroup.Key.ToString("dd MMM yyyy")? Booked slots will stay.')">
+                                        Clear day
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 bookings-table">
+                                <tbody>
+                                    @foreach (var slot in dayGroup)
                                     {
                                         <tr>
-                                            <td class="fw-bold">@slot.Date.ToString("yyyy-MM-dd")</td>
-                                            <td>
-                                                @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") -
+                                            <td class="ps-4 fw-medium text-dark">
+                                                @DateTime.Today.Add(slot.StartTime).ToString("hh:mm tt") –
                                                 @DateTime.Today.Add(slot.EndTime).ToString("hh:mm tt")
                                             </td>
                                             <td>
                                                 @switch (slot.Status)
                                                 {
                                                     case TimeSlotStatus.Available:
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Available</span>
+                                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill px-3 py-1">Available</span>
                                                         break;
                                                     case TimeSlotStatus.Locked:
-                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Locked</span>
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-1">Locked</span>
                                                         break;
                                                     case TimeSlotStatus.Booked:
-                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Booked</span>
+                                                        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill px-3 py-1">Booked</span>
                                                         break;
                                                 }
                                             </td>
-                                            <td>
-                                                @if (slot.Status == TimeSlotStatus.Available)
+                                            <td class="text-end pe-4">
+                                                @if (!showPast && slot.Status == TimeSlotStatus.Available)
                                                 {
                                                     <form action="/Provider/Schedule/DeleteTimeSlot/@slot.Id" method="post" class="d-inline">
                                                         @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Are you sure you want to delete this available slot?')">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill"
+                                                                onclick="return confirm('Delete this available slot?')">
                                                             <i class="bi bi-trash"></i> Delete
                                                         </button>
                                                     </form>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-light text-muted border">In Use</span>
+                                                    <span class="text-muted small">@(slot.Status == TimeSlotStatus.Available ? "Past" : "In Use")</span>
                                                 }
                                             </td>
                                         </tr>
                                     }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">
-                                            No time slots available yet. Add your working hours on the left.
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                }
+            }
         </div>
     </div>
 </div>
@@ -251,4 +289,3 @@
         });
     </script>
 }
-

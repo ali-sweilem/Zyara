@@ -15,7 +15,6 @@
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
-        var isLanding = string.Equals(currentController, "Landing", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase);
         var isPrivacy = string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Privacy", StringComparison.OrdinalIgnoreCase);
         var isProfile = string.Equals(currentController, "Providers", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "showprofile", StringComparison.OrdinalIgnoreCase);
         var isAdmin = User.IsInRole("Admin");
@@ -30,7 +29,7 @@
         string Active(string controller, string? area = null) => IsActive(controller, area) ? "is-active" : "";
     }
     <header>
-        <nav class="navbar navbar-expand-lg navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow sticky-top site-navbar">
+        <nav class="navbar navbar-expand-lg navbar-toggleable-sm navbar-light bg-white border-bottom sticky-top site-navbar">
             <div class="container">
                 @if (isAdmin)
                 {
@@ -41,7 +40,7 @@
                 }
                 else if (isProvider)
                 {
-                    <a class="navbar-brand" asp-area="Provider" asp-controller="Schedule" asp-action="Index" aria-label="Zyara">
+                    <a class="navbar-brand" asp-area="Provider" asp-controller="Dashboard" asp-action="Index" aria-label="Zyara">
                         <img class="d-none d-sm-block" src="~/images/branding/zyara-logo.svg" width="145" height="40" alt="Zyara" />
                         <img class="d-sm-none" src="~/images/branding/zyara-icon.svg" width="36" height="36" alt="Zyara" />
                     </a>
@@ -69,30 +68,19 @@
                         }
                         else if (isProvider)
                         {
-                            var isAccount = IsActive("Providers") || IsActive("ProviderCredentials") || IsActive("ProviderVerification");
-                            <li class="nav-item"><a class="nav-link @(IsActive("Bookings", "Provider") && currentAction != "History" ? "is-active" : "")" asp-area="Provider" asp-controller="Bookings" asp-action="Index">Requests</a></li>
-                            <li class="nav-item"><a class="nav-link @(IsActive("Bookings", "Provider") && currentAction == "History" ? "is-active" : "")" asp-area="Provider" asp-controller="Bookings" asp-action="History">History</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Dashboard", "Provider")" asp-area="Provider" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Bookings", "Provider")" asp-area="Provider" asp-controller="Bookings" asp-action="Index">Bookings</a></li>
                             <li class="nav-item"><a class="nav-link @Active("Schedule", "Provider")" asp-area="Provider" asp-controller="Schedule" asp-action="Index">Schedule</a></li>
-                            <li class="nav-item"><a class="nav-link @Active("Services", "Provider")" asp-area="Provider" asp-controller="Services" asp-action="Index">My services</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Services", "Provider")" asp-area="Provider" asp-controller="Services" asp-action="Index">Services</a></li>
                             <li class="nav-item"><a class="nav-link @Active("Wallet", "Provider")" asp-area="Provider" asp-controller="Wallet" asp-action="Index">Wallet</a></li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle @(isAccount ? "is-active" : "")" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Profile</a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Providers" asp-action="showprofile">My profile</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Providers" asp-action="EditProfile">Edit profile</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="ProviderCredentials" asp-action="Index">Credentials</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="ProviderVerification" asp-action="Status">Verification status</a></li>
-                                </ul>
-                            </li>
                         }
                         else
                         {
-                            <li class="nav-item"><a class="nav-link @(isLanding ? "is-active" : "")" asp-area="" asp-controller="Landing" asp-action="Index" aria-current="@(isLanding ? "page" : null)">Services</a></li>
+                            <li class="nav-item"><a class="nav-link @Active("Landing")" asp-area="" asp-controller="Landing" asp-action="Index">Home</a></li>
                             @if (isPatient)
                             {
-                                <li class="nav-item"><a class="nav-link @(IsActive("Patient") && currentAction != "Profile" ? "is-active" : "")" asp-area="" asp-controller="Patient" asp-action="Index">My bookings</a></li>
+                                <li class="nav-item"><a class="nav-link @(IsActive("Patient") && currentAction != "Profile" && currentAction != "Settings" ? "is-active" : "")" asp-area="" asp-controller="Patient" asp-action="Index">My bookings</a></li>
                                 <li class="nav-item"><a class="nav-link @Active("Reviews")" asp-area="" asp-controller="Reviews" asp-action="Index">My reviews</a></li>
-                                <li class="nav-item"><a class="nav-link @(IsActive("Patient") && currentAction == "Profile" ? "is-active" : "")" asp-area="" asp-controller="Patient" asp-action="Profile">Profile</a></li>
                             }
                         }
                     </ul>

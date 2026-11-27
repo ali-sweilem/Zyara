@@ -12,10 +12,20 @@ namespace Zyara.Web.Areas.Admin.Controllers
         public AdminBookingsController(IAdminBookingService bookings) => _bookings = bookings;
 
         [HttpGet]
-        public async Task<IActionResult> Index(BookingStatus? status, int page = 1, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Index(BookingStatus? status, string? search = null, int page = 1, CancellationToken cancellationToken = default)
         {
-            ViewData["Status"] = status;   // عشان الفلتر يفضل مختار
-            return View(await _bookings.GetBookingsAsync(status, page, cancellationToken: cancellationToken));
+            ViewData["Status"] = status;
+            ViewData["Search"] = search;
+            return View(await _bookings.GetBookingsAsync(status, search, page, cancellationToken: cancellationToken));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id, BookingStatus? status, string? search = null, int page = 1, CancellationToken cancellationToken = default)
+        {
+            var result = await _bookings.CancelBookingAsync(id, cancellationToken);
+            TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded ? $"Booking #{id} cancelled." : result.Error;
+            return RedirectToAction(nameof(Index), new { status, search, page });
         }
     }
 }

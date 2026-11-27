@@ -52,7 +52,8 @@ public sealed class MedicalRecordService : IMedicalRecordService
         return ServiceResult<VisitRecordDto>.Ok(new VisitRecordDto
         {
             BookingId = booking.Id,
-            PatientName = booking.Patient!.FullName,
+            // Show care recipient's name (the actual patient, not the account holder)
+            PatientName = booking.CareRecipient?.FullName ?? booking.Patient!.FullName,
             ServiceName = booking.Service!.Name,
             Date = booking.TimeSlot!.Date,
             StartTime = booking.TimeSlot.StartTime,
@@ -206,6 +207,7 @@ public sealed class MedicalRecordService : IMedicalRecordService
     private Task<Booking?> LoadProviderBookingAsync(int providerId, int bookingId, CancellationToken ct) =>
         _bookings.Query()
             .Include(b => b.Patient)
+            .Include(b => b.CareRecipient)
             .Include(b => b.Provider)
             .Include(b => b.Service)
             .Include(b => b.TimeSlot)

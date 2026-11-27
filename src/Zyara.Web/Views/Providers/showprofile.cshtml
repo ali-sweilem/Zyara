@@ -1,82 +1,197 @@
+@using Zyara.Services.Features.Shared.Dtos
 @model ProviderProfileDto
 @{
     ViewData["Title"] = "My Profile";
     var badge = Model.VerificationStatus switch
     {
-        VerificationStatus.Pending => "badge-warning",
-        VerificationStatus.Verified => "badge-success",
-        VerificationStatus.Rejected => "badge-danger"
+        VerificationStatus.Pending => ("bg-warning-subtle text-warning-emphasis", "bi-clock", "Pending"),
+        VerificationStatus.Verified => ("bg-success-subtle text-success-emphasis", "bi-patch-check-fill", "Verified"),
+        VerificationStatus.Rejected => ("bg-danger-subtle text-danger-emphasis", "bi-x-circle-fill", "Rejected"),
+        _ => ("bg-secondary-subtle text-secondary-emphasis", "bi-question-circle", Model.VerificationStatus.ToString())
     };
+    var photoUrl = string.IsNullOrWhiteSpace(Model.PhotoUrl)
+        ? null
+        : (Model.PhotoUrl.StartsWith("/") || Model.PhotoUrl.StartsWith("~") || Model.PhotoUrl.StartsWith("http")
+            ? Model.PhotoUrl
+            : $"/upload/provider/{Model.PhotoUrl}");
 }
 
-<div class="container provider-page my-4">
-   
+<div class="container py-4" style="max-width:960px;">
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success border-0 shadow-sm rounded-4" role="alert">@TempData["Success"]</div>
+        <div class="alert alert-success border-0 shadow-sm rounded-3" role="alert">
+            <i class="bi bi-check-circle me-1"></i>@TempData["Success"]
+        </div>
     }
 
-    <div class="card provider-card overflow-hidden">
-        <div class="provider-hero text-white p-4 p-md-5">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div>
-                    <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 mb-3"><i class="bi bi-person-badge me-1"></i> Provider Profile</span>
-
-                    <h1 class="h2 fw-bold mb-1">@Model.FullName</h1>
-
-                    <p class="mb-0 text-white-50">@Model.Specialty</p>
-                    <p class="mb-0 text-white-50">@Model.Bio</p>
+    @* ── Profile Header Card ── *@
+    <section class="card border rounded-3 bg-white mb-4 overflow-hidden">
+        <div class="provider-hero-banner"></div>
+        <div class="card-body p-4" style="margin-top:-40px;">
+            <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3">
+                <div class="position-relative flex-shrink-0">
+                    @await Html.PartialAsync("_Avatar", new AvatarDto
+                    {
+                        FullName = Model.FullName,
+                        PhotoUrl = photoUrl != null ? Url.Content(photoUrl) : null,
+                        Id = Model.Id,
+                        Size = 100
+                    })
+                    <span class="position-absolute bottom-0 end-0 badge rounded-pill @badge.Item1 border border-white px-2 py-1" style="font-size:.7rem;">
+                        <i class="bi @badge.Item2 me-1"></i>@badge.Item3
+                    </span>
                 </div>
-<a asp-action="EditProfile"
-   class="btn bg-white text-dark border-0 shadow-sm rounded-pill px-4 fw-semibold">
-    <i class="bi bi-pencil-square me-1"></i> Edit Profile
-</a>            </div>
-        </div>
-
-        <div class="card-body p-4 p-md-5">
-            @if (Model.VerificationStatus == VerificationStatus.Rejected && !string.IsNullOrEmpty(Model.RejectionReason))
-            {
-                <div class="alert alert-danger border-0 rounded-4 mb-4"><strong>Rejection Reason:</strong> @Model.RejectionReason</div>
-            }
-
-            <div class="row g-4 align-items-center mb-4">
-                <div class="col-md-4 text-center">
-                    @if (!string.IsNullOrWhiteSpace(Model.PhotoUrl))
+                <div class="text-center text-md-start flex-grow-1 pt-md-4">
+                    <h1 class="h3 fw-bold mb-1">@Model.FullName</h1>
+                    <p class="text-muted mb-2">
+                        @(Model.Specialty ?? "Healthcare Provider")
+                        @if (!string.IsNullOrWhiteSpace(Model.BaseCity)) { <text> · @Model.BaseCity</text> }
+                    </p>
+                    @if (!string.IsNullOrWhiteSpace(Model.Bio))
                     {
-                        var photoUrl = Model.PhotoUrl.StartsWith("/") || Model.PhotoUrl.StartsWith("~") || Model.PhotoUrl.StartsWith("http")
-                            ? Model.PhotoUrl
-                            : $"/upload/provider/{Model.PhotoUrl}";
-                        <img src="@Url.Content(photoUrl)" alt="Profile Image" class="provider-avatar rounded-circle">
+                        <p class="text-secondary small mb-0" style="line-height:1.6;max-width:520px;">@Model.Bio</p>
                     }
-                    else if (Model.Gender == Gender.Male)
-                    {
-                        <img src="https://png.pngtree.com/png-vector/20191110/ourlarge/pngtree-avatar-icon-profile-icon-member-login-vector-isolated-png-image_1978396.jpg" alt="Profile Image" class="provider-avatar rounded-circle">
-                    }
-                    else
-                    {
-                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQ4kPEee1SDUDrJeSfGiNMINVS82sdvmdlfZuSqgmp39EoEu8PoQXwXM0&s=10" alt="Profile Image" class="provider-avatar rounded-circle">
-                    }
-                    <div class="mt-3"><span class="badge @badge rounded-pill px-3 py-2">@Model.VerificationStatus</span></div>
                 </div>
-                <div class="col-md-8">
-                    <div class="row g-3">
-                        <div class="col-sm-6"><div class="provider-detail"><div class="provider-detail-label">Email</div><div class="fw-semibold">@Model.Email</div></div></div>
-                        <div class="col-sm-6"><div class="provider-detail"><div class="provider-detail-label">Phone</div><div class="fw-semibold">@Model.Phone</div></div></div>
-                        <div class="col-sm-6"><div class="provider-detail"><div class="provider-detail-label">Gender</div><div class="fw-semibold">@((Gender)Model.Gender)</div></div></div>
-                        <div class="col-sm-6"><div class="provider-detail"><div class="provider-detail-label">Base City</div><div class="fw-semibold">@Model.BaseCity</div></div></div>
-                        <div class="col-sm-6"><div class="provider-detail"><div class="provider-detail-label">Experience</div><div class="fw-semibold">@Model.ExperienceYears years</div></div></div>
-                        <div class="col-sm-6"><div class="provider-detail"><div class="provider-detail-label">Member Since</div><div class="fw-semibold">@Model.CreatedAt.ToString("MMM yyyy")</div></div></div>
-                    </div>
+                <div class="pt-md-4">
+                    <a asp-action="EditProfile"
+                       class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="bi bi-pencil-square me-1"></i>Edit Profile
+                    </a>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="row g-3 border-top pt-4 text-center">
-                <div class="col-md-4"><div class="h4 fw-bold text-primary mb-1">@Model.RatingCount</div><small class="text-muted">Ratings</small></div>
-                <div class="col-md-4"><div class="h4 fw-bold text-primary mb-1">@Model.AverageRating.ToString("0.0") <i class="bi bi-star-fill text-warning fs-6"></i></div><small class="text-muted">Average Rating</small></div>
-                <div class="col-md-4"><div class="h4 fw-bold text-primary mb-1">@Model.WalletBalance.ToString("N2")</div><small class="text-muted">Wallet Balance</small></div>
+    @if (Model.VerificationStatus == VerificationStatus.Rejected && !string.IsNullOrEmpty(Model.RejectionReason))
+    {
+        <div class="alert alert-danger border-0 rounded-3 mb-4">
+            <i class="bi bi-exclamation-triangle me-1"></i><strong>Rejection Reason:</strong> @Model.RejectionReason
+        </div>
+    }
+
+    @* ── Stats Row ── *@
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border rounded-3 bg-white text-center h-100">
+                <div class="card-body py-3">
+                    <div class="h4 fw-bold text-primary mb-0">@Model.AverageRating.ToString("0.0")</div>
+                    <div class="text-muted small"><i class="bi bi-star-fill text-warning me-1"></i>Rating</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border rounded-3 bg-white text-center h-100">
+                <div class="card-body py-3">
+                    <div class="h4 fw-bold text-primary mb-0">@Model.RatingCount</div>
+                    <div class="text-muted small"><i class="bi bi-chat-dots me-1"></i>Reviews</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border rounded-3 bg-white text-center h-100">
+                <div class="card-body py-3">
+                    <div class="h4 fw-bold text-primary mb-0">@Model.ExperienceYears</div>
+                    <div class="text-muted small"><i class="bi bi-briefcase me-1"></i>Years exp.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border rounded-3 bg-white text-center h-100">
+                <div class="card-body py-3">
+                    <div class="h4 fw-bold text-primary mb-0">@Model.WalletBalance.ToString("N0")</div>
+                    <div class="text-muted small"><i class="bi bi-wallet2 me-1"></i>Wallet (EGP)</div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
+    @* ── Details Grid ── *@
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <section class="card border rounded-3 bg-white h-100">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-person-vcard me-2 text-primary"></i>Personal Details</h2>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="detail-block">
+                                <div class="detail-label">Email</div>
+                                <div class="fw-semibold text-break">@Model.Email</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="detail-block">
+                                <div class="detail-label">Phone</div>
+                                <div class="fw-semibold">@Model.Phone</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="detail-block">
+                                <div class="detail-label">Gender</div>
+                                <div class="fw-semibold">@((Gender)Model.Gender)</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="detail-block">
+                                <div class="detail-label">Base City</div>
+                                <div class="fw-semibold">@(string.IsNullOrWhiteSpace(Model.BaseCity) ? "Not set" : Model.BaseCity)</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="detail-block">
+                                <div class="detail-label">Experience</div>
+                                <div class="fw-semibold">@Model.ExperienceYears years</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="detail-block">
+                                <div class="detail-label">Member Since</div>
+                                <div class="fw-semibold">@Model.CreatedAt.ToString("MMM yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-5">
+            <section class="card border rounded-3 bg-white h-100">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-3"><i class="bi bi-shield-check me-2 text-primary"></i>Verification & Links</h2>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-semibold small">Verification Status</div>
+                            <span class="badge @badge.Item1 rounded-pill px-2 py-1 mt-1">
+                                <i class="bi @badge.Item2 me-1"></i>@badge.Item3
+                            </span>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="ProviderVerification" asp-action="Status">
+                            View
+                        </a>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-semibold small">Credentials</div>
+                            <span class="text-muted small">Manage your documents</span>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="ProviderCredentials" asp-action="Index">
+                            View
+                        </a>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <div class="fw-semibold small">Security</div>
+                            <span class="text-muted small">Two-factor & password</span>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3" asp-controller="TwoFactor" asp-action="Manage">
+                            Manage
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

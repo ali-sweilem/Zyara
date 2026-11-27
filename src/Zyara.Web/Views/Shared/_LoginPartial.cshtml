@@ -1,30 +1,107 @@
+@using Zyara.Services.Features.Shared.Dtos
 @{
     var isSignedIn = User.Identity?.IsAuthenticated == true;
+    var isPatient = User.IsInRole("Patient");
+    var isProvider = User.IsInRole("Doctor") || User.IsInRole("Nurse");
+    var isAdmin = User.IsInRole("Admin");
+    var userName = User.Identity?.Name ?? "User";
 }
 <ul class="navbar-nav align-items-lg-center">
     @if (isSignedIn)
     {
-        <li class="nav-item"><partial name="_NotificationBell" /></li>
-        <li class="nav-item">
-            <span class="navbar-text me-lg-2">@(User.Identity!.Name)</span>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="TwoFactor" asp-action="Manage">Security</a>
-        </li>
-        <li class="nav-item">
-            <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Logout</button>
-            </form>
-            <partial name="_SessionKeepAlive" />
+        <partial name="_NotificationBell" />
+
+        @* ── Avatar Dropdown ── *@
+        <li class="nav-item dropdown ms-lg-2">
+            <a class="nav-link dropdown-toggle d-flex align-items-center p-1 rounded-circle avatar-dropdown-toggle no-caret"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="userAvatarDropdown"
+               title="@userName" aria-label="@userName menu">
+                <span class="avatar-nav-circle d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold"
+                      style="width:38px;height:38px;font-size:14px;">
+                    @{
+                        var words = userName.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+                        var initials = words.Length >= 2
+                            ? $"{words[0][0]}{words[1][0]}"
+                            : (words.Length == 1 ? words[0][..Math.Min(2, words[0].Length)] : "?");
+                    }
+                    @initials.ToUpperInvariant()
+                </span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2 py-2 avatar-dropdown-menu" aria-labelledby="userAvatarDropdown">
+                <li class="px-3 py-2 border-bottom mb-1">
+                    <div class="fw-semibold text-dark small">@userName</div>
+                    <div class="text-muted" style="font-size:.75rem;">
+                        @if (isAdmin) { <text>Administrator</text> }
+                        else if (isProvider) { <text>Healthcare Provider</text> }
+                        else { <text>Patient</text> }
+                    </div>
+                </li>
+
+                @if (isPatient)
+                {
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="" asp-controller="Patient" asp-action="Profile">
+                            <i class="bi bi-person me-2 text-muted"></i>My Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="" asp-controller="Patient" asp-action="Settings">
+                            <i class="bi bi-gear me-2 text-muted"></i>Settings
+                        </a>
+                    </li>
+                }
+                else if (isProvider)
+                {
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="" asp-controller="Providers" asp-action="showprofile">
+                            <i class="bi bi-person me-2 text-muted"></i>My Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="" asp-controller="Providers" asp-action="EditProfile">
+                            <i class="bi bi-pencil-square me-2 text-muted"></i>Edit Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="" asp-controller="Providers" asp-action="Settings">
+                            <i class="bi bi-gear me-2 text-muted"></i>Settings
+                        </a>
+                    </li>
+                }
+                else if (isAdmin)
+                {
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="Admin" asp-controller="AdminUsers" asp-action="Index">
+                            <i class="bi bi-speedometer2 me-2 text-muted"></i>Dashboard
+                        </a>
+                    </li>
+                }
+
+                @if (!isPatient)
+                {
+                    <li>
+                        <a class="dropdown-item py-2" asp-area="" asp-controller="TwoFactor" asp-action="Manage">
+                            <i class="bi bi-shield-lock me-2 text-muted"></i>Security
+                        </a>
+                    </li>
+                }
+
+                <li><hr class="dropdown-divider my-1" /></li>
+                <li>
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="dropdown-item py-2 text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i>Sign out
+                        </button>
+                    </form>
+                    <partial name="_SessionKeepAlive" />
+                </li>
+            </ul>
         </li>
     }
     else
     {
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Sign in</a>
-        </li>
-        <li class="nav-item">
-            <a class="btn btn-primary btn-sm rounded-pill px-3" asp-area="" asp-controller="Register" asp-action="Index">Register</a>
+            <a class="nav-link fw-semibold" asp-area="" asp-controller="Account" asp-action="Login">Sign in</a>
         </li>
     }
 </ul>

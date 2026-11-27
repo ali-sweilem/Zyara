@@ -35,10 +35,26 @@
         $"{b.Date:ddd, dd MMM yyyy} · {DateTime.Today.Add(b.StartTime):hh:mm tt} – {DateTime.Today.Add(b.EndTime):hh:mm tt}";
 }
 
-<div class="container-fluid py-4" dir="ltr" lang="en">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h1 class="h3 fw-bold mb-0">Bookings History</h1>
+<div class="container py-4" dir="ltr" lang="en" style="max-width: 1100px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <p class="text-primary fw-semibold small mb-1">Provider Portal</p>
+            <h1 class="h3 fw-bold mb-0"><i class="bi bi-calendar2-check me-2 text-primary"></i>Bookings</h1>
+        </div>
     </div>
+
+    <ul class="nav nav-pills gap-2 mb-4">
+        <li class="nav-item">
+            <a class="nav-link bg-white border text-dark rounded-pill px-4" asp-area="Provider" asp-controller="Bookings" asp-action="Index">
+                <i class="bi bi-inbox me-1"></i>Active Requests
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active rounded-pill px-4" asp-area="Provider" asp-controller="Bookings" asp-action="History">
+                <i class="bi bi-clock-history me-1"></i>History
+            </a>
+        </li>
+    </ul>
 
     <form method="get" asp-area="Provider" asp-controller="Bookings" asp-action="History" class="row g-2 align-items-center mb-3">
         <div class="col-auto">
@@ -66,20 +82,21 @@
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table align-middle bg-white shadow-sm rounded-4">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>Patient</th>
-                        <th>Service</th>
-                        <th>When</th>
-                        <th>Total</th>
-                        <th>Payment</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
+        <section class="card border rounded-3 bg-white overflow-hidden mb-3">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 bookings-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">#</th>
+                            <th>Patient</th>
+                            <th>Service</th>
+                            <th>When</th>
+                            <th>Total</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4"></th>
+                        </tr>
+                    </thead>
                 <tbody>
                     @foreach (var b in Model.Items)
                     {
@@ -90,6 +107,19 @@
                                 @if (!string.IsNullOrWhiteSpace(b.PatientPhone))
                                 {
                                     <div class="text-muted small">@b.PatientPhone</div>
+                                }
+                                @if (b.CareRecipientGender.HasValue || !string.IsNullOrEmpty(b.BloodTypeDisplay))
+                                {
+                                    <div class="mt-1 d-flex gap-1 align-items-center">
+                                        @if (b.PatientAge.HasValue)
+                                        {
+                                            <span class="badge bg-light text-dark border small" style="font-size: 0.75rem;">@b.PatientAge yrs</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(b.BloodTypeDisplay) && b.BloodTypeDisplay != "Unknown")
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle small" style="font-size: 0.75rem;">@b.BloodTypeDisplay</span>
+                                        }
+                                    </div>
                                 }
                             </td>
                             <td>
@@ -119,9 +149,10 @@
                             </td>
                         </tr>
                     }
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
         <partial name="_Pagination" model="pagination" />
     }

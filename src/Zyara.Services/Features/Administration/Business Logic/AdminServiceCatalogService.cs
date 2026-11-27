@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -34,6 +35,7 @@ namespace Zyara.Services.Features.Administration
                 {
                     Id = s.Id,
                     Name = s.Name,
+                    Description = s.Description,
                     Type = s.Type,
                     IsActive = s.IsActive
                 })
@@ -79,6 +81,38 @@ namespace Zyara.Services.Features.Administration
 
             return ServiceResult.Ok();
         }
+
+        public async Task<ServiceResult> UpdateServiceAsync(
+            int id, string? name, string? description, ServiceType type, CancellationToken cancellationToken = default)
+        {
+            var service = await _db.Services.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+            if (service is null)
+                return ServiceResult.Fail("Service not found.");
+
+            name = name?.Trim();
+            description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+
+            if (string.IsNullOrEmpty(name) || name.Length < 3 || name.Length > 100)
+                return ServiceResult.Fail("The service name must be between 3 and 100 characters.");
+
+            if (description is { Length: > 500 })
+                return ServiceResult.Fail("The description is too long (500 characters max).");
+
+            if (!Enum.IsDefined(type))
+                return ServiceResult.Fail("Choose a valid service type.");
+
+            var duplicate = await _db.Services.AnyAsync(s => s.Name == name && s.Id != id, cancellationToken);
+            if (duplicate)
+                return ServiceResult.Fail("Another service with this name already exists.");
+
+            service.Name = name;
+            service.Description = description;
+            service.Type = type;
+
+            await _unitOfWork.ExecuteInTransactionAsync(
+                ct => _unitOfWork.SaveChangesAsync(ct), cancellationToken);
+
+            return ServiceResult.Ok();
+        }
     }
 }
-

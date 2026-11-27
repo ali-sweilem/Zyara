@@ -89,6 +89,65 @@ public sealed class WeeklyScheduleService : IWeeklyScheduleService
         return ServiceResult.Ok();
     }
 
+    public async Task<ServiceResult<int>> AddShiftRangeAsync(
+        int providerId,
+        IReadOnlyCollection<DayOfWeek> days,
+        TimeSpan startTime,
+        TimeSpan endTime,
+        CancellationToken cancellationToken = default)
+    {
+        if (days is null || days.Count == 0)
+            return ServiceResult<int>.Fail("Select at least one day of the week.");
+
+        if (startTime < TimeSpan.Zero || endTime > TimeSpan.FromHours(24) || endTime <= startTime)
+            return ServiceResult<int>.Fail("End time must be after start time within the same day.");
+
+        if ((endTime - startTime).TotalMinutes < SlotMinutes)
+            return ServiceResult<int>.Fail("The shift must be at least 2 hours long.");
+
+        var distinctDays = days.Distinct().ToList();
+        var existing = await _templates.Query()
+            .AsNoTracking()
+            .Where(t => t.ProviderId == providerId && distinctDays.Contains(t.DayOfWeek))
+            .ToListAsync(cancellationToken);
+
+        var todayMinusOne = EgyptTime.Now(_timeProvider).Date.AddDays(-1);
+        var addedCount = 0;
+
+        foreach (var day in distinctDays)
+        {
+            var dayTemplates = existing
+                .Where(t => t.DayOfWeek == day)
+                .Select(t => (Start: t.StartTime, End: t.StartTime + TimeSpan.FromMinutes(t.SlotDurationMinutes)))
+                .ToList();
+
+            for (var cursor = startTime; cursor + TimeSpan.FromMinutes(SlotMinutes) <= endTime; cursor += TimeSpan.FromMinutes(SlotMinutes))
+            {
+                var slotEnd = cursor + TimeSpan.FromMinutes(SlotMinutes);
+                if (dayTemplates.Any(t => t.Start < slotEnd && t.End > cursor))
+                    continue;
+
+                _templates.Add(new WeeklySlotTemplate
+                {
+                    ProviderId = providerId,
+                    DayOfWeek = day,
+                    StartTime = cursor,
+                    SlotDurationMinutes = SlotMinutes,
+                    GeneratedThrough = todayMinusOne
+                });
+                dayTemplates.Add((cursor, slotEnd));
+                addedCount++;
+            }
+        }
+
+        if (addedCount == 0)
+            return ServiceResult<int>.Fail("All slots in this shift already overlap with your existing weekly times.");
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await GenerateAsync(providerId, cancellationToken);
+        return ServiceResult<int>.Ok(addedCount);
+    }
+
     public async Task<ServiceResult> RemoveAsync(int providerId, int weeklySlotId, CancellationToken cancellationToken = default)
     {
         // ProviderId in the filter: a provider can only remove his own weekly times.

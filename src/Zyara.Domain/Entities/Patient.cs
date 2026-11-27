@@ -4,4 +4,5 @@ public class Patient : User
 {
     public DateOnly? DateOfBirth { get; set; }
     public List<Address> Addresses { get; set; } = new();
+    public List<CareRecipient> CareRecipients { get; set; } = new();
 }

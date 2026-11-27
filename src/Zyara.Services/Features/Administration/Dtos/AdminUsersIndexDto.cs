@@ -7,5 +7,7 @@ public sealed class AdminUsersIndexDto
 {
     public PagedResult<UserListDto> Users { get; init; } = new();
     public UserRole? Role { get; init; }
+    public string? Search { get; init; }
+    public int CurrentAdminId { get; init; }
 }
 

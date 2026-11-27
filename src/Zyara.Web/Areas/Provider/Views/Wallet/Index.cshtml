@@ -18,17 +18,20 @@
     };
 }
 
-<div class="container-fluid py-4" dir="ltr" lang="en">
+<div class="container py-4" dir="ltr" lang="en" style="max-width: 1100px;">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-        <h1 class="h3 fw-bold mb-0">My Wallet</h1>
+        <div>
+            <p class="text-primary fw-semibold small mb-1">Provider Portal</p>
+            <h1 class="h3 fw-bold mb-0"><i class="bi bi-wallet2 me-2 text-primary"></i>My Wallet</h1>
+        </div>
     </div>
 
-    @if (TempData["Message"] != null) { <div class="alert alert-success border-0 shadow-sm">@TempData["Message"]</div> }
-    @if (TempData["Error"] != null) { <div class="alert alert-danger border-0 shadow-sm">@TempData["Error"]</div> }
+    @if (TempData["Message"] != null) { <div class="alert alert-success border-0 shadow-sm rounded-3">@TempData["Message"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger border-0 shadow-sm rounded-3">@TempData["Error"]</div> }
 
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+            <div class="card border rounded-3 bg-white h-100"><div class="card-body">
                 <div class="text-muted small">Current balance</div>
                 <div class="display-6 fw-bold @(Model.Balance < 0 ? "text-danger" : "text-primary")">@Model.Balance.ToString("N2") <small class="fs-6">EGP</small></div>
                 @if (Model.Balance < 0)
@@ -38,60 +41,65 @@
             </div></div>
         </div>
         <div class="col-6 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+            <div class="card border rounded-3 bg-white h-100"><div class="card-body">
                 <div class="text-muted small">Earned from online payments</div>
                 <div class="h4 fw-bold mb-0">@Model.TotalEarned.ToString("N2") EGP</div>
             </div></div>
         </div>
         <div class="col-6 col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+            <div class="card border rounded-3 bg-white h-100"><div class="card-body">
                 <div class="text-muted small">Withdrawn so far</div>
                 <div class="h4 fw-bold mb-0">@Model.TotalWithdrawn.ToString("N2") EGP</div>
             </div></div>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body">
-            <h2 class="h5 fw-bold">Withdraw</h2>
+    <div class="card border rounded-3 bg-white mb-4">
+        <div class="card-body p-4">
+            <h2 class="h5 fw-bold mb-3">Withdraw</h2>
             <form asp-area="Provider" asp-controller="Wallet" asp-action="Withdraw" method="post" class="row g-2 align-items-center">
                 <div class="col-auto">
-                    <input type="number" name="Amount" step="0.01" min="@Model.MinimumWithdrawal" max="@(Model.Balance > 0 ? Model.Balance : 0)"
-                           class="form-control rounded-pill" placeholder="Amount (EGP)" required />
+                    <input type="number" name="Amount" step="0.01" min="@Model.MinimumWithdrawal"
+                           max="@(Model.Balance >= Model.MinimumWithdrawal ? Model.Balance : Model.MinimumWithdrawal)"
+                           class="form-control" placeholder="Amount (EGP)" required />
                 </div>
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary rounded-pill px-4" disabled="@(Model.Balance < Model.MinimumWithdrawal)">Request withdrawal</button>
                 </div>
             </form>
-            <div class="form-text">Minimum @Model.MinimumWithdrawal.ToString("0.##") EGP. The amount leaves your balance immediately and is paid out by the platform.</div>
+            <div class="form-text mt-2">Minimum @Model.MinimumWithdrawal.ToString("0.##") EGP. The amount leaves your balance immediately and is paid out by the platform.</div>
         </div>
     </div>
 
     <h2 class="h5 fw-bold mb-3">Transactions</h2>
     @if (!Model.Transactions.Items.Any())
     {
-        <p class="text-muted">No transactions yet. They appear when you complete a booking.</p>
+        <div class="card border rounded-3 bg-white p-4 text-center text-muted">
+            No transactions yet. They appear when you complete a booking.
+        </div>
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table align-middle bg-white shadow-sm rounded-4">
-                <thead class="table-light"><tr><th>Date</th><th>Type</th><th>Details</th><th class="text-end">Amount</th></tr></thead>
-                <tbody>
-                    @foreach (var t in Model.Transactions.Items)
-                    {
-                        <tr>
-                            <td>@t.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</td>
-                            <td>@Label(t.Type)</td>
-                            <td>@t.Description</td>
-                            <td class="text-end fw-semibold @(t.Amount < 0 ? "text-danger" : "text-success")">
-                                @(t.Amount > 0 ? "+" : "")@t.Amount.ToString("N2")
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <section class="card border rounded-3 bg-white overflow-hidden mb-3">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 bookings-table">
+                    <thead><tr><th class="ps-4">Date</th><th>Type</th><th>Details</th><th class="text-end pe-4">Amount</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in Model.Transactions.Items)
+                        {
+                            <tr>
+                                <td class="ps-4 small text-muted text-nowrap">@t.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</td>
+                                <td class="small fw-medium">@Label(t.Type)</td>
+                                <td class="small text-secondary">@t.Description</td>
+                                <td class="text-end pe-4 fw-semibold text-nowrap @(t.Amount < 0 ? "text-danger" : "text-success")">
+                                    @(t.Amount > 0 ? "+" : "")@t.Amount.ToString("N2") EGP
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
         <partial name="_Pagination" model="pagination" />
     }
 </div>

@@ -11,6 +11,7 @@ using Zyara.Services.Features.Authorization;
 using Zyara.Services.Features.Identity.Interfaces;
 using Zyara.Services.Features.Providers.Dtos;
 using Zyara.Services.Features.Providers.Interfaces;
+using Zyara.Services.Features.Shared;
 
 namespace Zyara.Web.Areas.Provider.Controllers
 {
@@ -35,13 +36,22 @@ namespace Zyara.Web.Areas.Provider.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(bool showPast = false, CancellationToken cancellationToken = default)
         {
             int currentProviderId = _currentUser.RequireUserId();
+            var egyptToday = EgyptTime.Now(TimeProvider.System).Date;
+
+            var allSlots = GetProviderSlots(currentProviderId);
+            var upcoming = allSlots.Where(s => s.Date >= egyptToday).ToList();
+            var past = allSlots.Where(s => s.Date < egyptToday).OrderByDescending(s => s.Date).ThenByDescending(s => s.StartTime).ToList();
+
+            ViewData["ShowPast"] = showPast;
+            ViewData["UpcomingCount"] = upcoming.Count;
+            ViewData["PastCount"] = past.Count;
 
             var model = new ProviderTimeSlotIndexDto
             {
-                TimeSlots = GetProviderSlots(currentProviderId),
+                TimeSlots = showPast ? past : upcoming,
                 WeeklySlots = await _weekly.GetAsync(currentProviderId, cancellationToken)
             };
 
@@ -59,10 +69,15 @@ namespace Zyara.Web.Areas.Provider.Controllers
             var duration = TimeSpan.FromMinutes(120);
             var calculatedEndTime = newSlot.StartTime.Add(duration);
 
-            // 2. التحقق من التاريخ
-            if (newSlot.Date.Date < DateTime.Today)
+            // 2. التحقق من التاريخ والوقت (بتوقيت مصر)
+            var egyptNow = EgyptTime.Now(TimeProvider.System);
+            if (newSlot.Date.Date < egyptNow.Date)
             {
                 ModelState.AddModelError("NewTimeSlot.Date", "Cannot schedule slots in the past.");
+            }
+            else if (newSlot.Date.Date == egyptNow.Date && newSlot.StartTime <= egyptNow.TimeOfDay)
+            {
+                ModelState.AddModelError("NewTimeSlot.StartTime", "Cannot schedule a time slot that has already passed today.");
             }
 
             // 3. التحقق من انتهاء اليوم (Midnight overflow)
@@ -102,7 +117,7 @@ namespace Zyara.Web.Areas.Provider.Controllers
             };
 
             _context.TimeSlots.Add(timeSlotEntity);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             TempData["Message"] = "New 2-hour time slot added successfully.";
             return RedirectToAction(nameof(Index));
@@ -159,6 +174,61 @@ namespace Zyara.Web.Areas.Provider.Controllers
             if (result.Succeeded) TempData["Message"] = "Weekly time added. Slots were created for the next 4 weeks and new weeks are added automatically.";
             else TempData["Error"] = result.Error;
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST /Provider/Schedule/AddWeeklyShift : adds a shift range across multiple days
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddWeeklyShift(
+            List<DayOfWeek> days,
+            TimeSpan? startTime,
+            TimeSpan? endTime,
+            CancellationToken cancellationToken)
+        {
+            if (startTime is null || endTime is null)
+            {
+                TempData["Error"] = "Choose both start and end times.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var result = await _weekly.AddShiftRangeAsync(
+                _currentUser.RequireUserId(),
+                days,
+                startTime.Value,
+                endTime.Value,
+                cancellationToken);
+
+            if (result.Succeeded)
+                TempData["Message"] = $"Added {result.Value} weekly 2-hour slot(s) and generated slots for the next 4 weeks.";
+            else
+                TempData["Error"] = result.Error;
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST /Provider/Schedule/ClearDay : removes all Available slots on a specific date
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearDay(DateTime date, CancellationToken cancellationToken)
+        {
+            int currentProviderId = _currentUser.RequireUserId();
+            var targetDate = date.Date;
+
+            var freeSlots = await _context.TimeSlots
+                .Where(t => t.ProviderId == currentProviderId && t.Date == targetDate && t.Status == TimeSlotStatus.Available)
+                .ToListAsync(cancellationToken);
+
+            if (freeSlots.Count == 0)
+            {
+                TempData["Error"] = "No available slots to clear on this date.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            _context.TimeSlots.RemoveRange(freeSlots);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            TempData["Message"] = $"Cleared {freeSlots.Count} available slot(s) on {targetDate:dd MMM yyyy}. Booked slots remain intact.";
             return RedirectToAction(nameof(Index));
         }
 

@@ -15,12 +15,14 @@ namespace Zyara.Domain.Entities
 
         // FKs
         public int PatientId { get; set; }
+        public int CareRecipientId { get; set; }
         public int ProviderId { get; set; }
         public int ServiceId { get; set; }
         public int TimeSlotId { get; set; }
 
         // Navigation properties
         public Patient? Patient { get; set; }
+        public CareRecipient? CareRecipient { get; set; }
         // TODO(M2): change to Provider once the class exists
         public Provider? Provider { get; set; }
         public Service? Service { get; set; }

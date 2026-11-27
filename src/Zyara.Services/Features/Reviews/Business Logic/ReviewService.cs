@@ -161,7 +161,7 @@ public sealed class ReviewService : IReviewService
                 _reviews.Add(new Review { BookingId = booking.Id, Stars = dto.Stars, Comment = comment });
 
                 _notifications.Notify(provider.Id, NotificationType.General, "New review",
-                    $"A patient rated booking #{booking.Id} with {dto.Stars} star(s).", "/Provider/Bookings/History");
+                    $"A patient rated booking #{booking.Id} with {dto.Stars} star(s).", $"/Providers/Details/{provider.Id}#reviews");
 
                 await _unitOfWork.SaveChangesAsync(ct);
 

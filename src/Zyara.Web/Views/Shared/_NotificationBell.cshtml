@@ -1,17 +1,191 @@
-@* Bell with the unread count. Only for signed-in users. *@
+@using Zyara.Domain.Enums
 @inject Zyara.Services.Features.Notifications.Interfaces.INotificationService Notifications
 @inject Zyara.Services.Features.Identity.Interfaces.ICurrentUser CurrentUser
 
 @if (CurrentUser.UserId is int userId)
 {
     var unread = await Notifications.GetUnreadCountAsync(userId);
-    <a class="nav-link position-relative ms-lg-2" asp-area="" asp-controller="Notifications" asp-action="Index" aria-label="Notifications">
-        <i class="bi bi-bell fs-5"></i>
-        @if (unread > 0)
-        {
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: .65rem;">
+    var latest = await Notifications.GetPageAsync(userId, 1, 5);
+
+    string IconFor(NotificationType t) => t switch
+    {
+        NotificationType.BookingRequested => "bi-calendar-plus",
+        NotificationType.BookingAccepted or NotificationType.VisitCompleted => "bi-check-circle",
+        NotificationType.BookingRejected or NotificationType.BookingCancelled => "bi-x-circle",
+        NotificationType.BookingExpired or NotificationType.BookingNoShow => "bi-hourglass-bottom",
+        NotificationType.VisitStarted => "bi-play-circle",
+        _ => "bi-bell"
+    };
+
+    <li class="nav-item dropdown ms-lg-2" id="notificationBellWrapper">
+        <a class="nav-link dropdown-toggle no-caret position-relative p-2 rounded-circle notification-bell-btn"
+           href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+           aria-expanded="false" aria-label="Notifications" id="notificationBellDropdown">
+            <i class="bi bi-bell fs-5"></i>
+            <span id="notificationUnreadBadge"
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger @(unread > 0 ? "" : "d-none")"
+                  style="font-size: .65rem;">
                 @(unread > 99 ? "99+" : unread.ToString())
             </span>
-        }
-    </a>
+        </a>
+
+        <div class="dropdown-menu dropdown-menu-end shadow-sm border mt-2 p-0 notification-dropdown-menu"
+             aria-labelledby="notificationBellDropdown">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                <span class="fw-bold small text-dark">Notifications</span>
+                <form asp-area="" asp-controller="Notifications" asp-action="MarkAllRead" method="post" id="markAllReadForm"
+                      class="m-0 @(unread > 0 ? "" : "d-none")">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none small" style="min-height:auto;">
+                        Mark all read
+                    </button>
+                </form>
+            </div>
+
+            <div id="notificationDropdownList" class="notification-dropdown-list">
+                @if (!latest.Items.Any())
+                {
+                    <div class="text-center text-muted py-4 px-3 small">
+                        <i class="bi bi-bell-slash fs-4 d-block mb-1"></i>
+                        You're all caught up!
+                    </div>
+                }
+                else
+                {
+                    @foreach (var n in latest.Items)
+                    {
+                        <form asp-area="" asp-controller="Notifications" asp-action="Open" asp-route-id="@n.Id" method="post" class="m-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit"
+                                    class="dropdown-item notification-item d-flex gap-2 align-items-start py-2 px-3 border-bottom @(n.IsRead ? "" : "is-unread")">
+                                <i class="bi @IconFor(n.Type) text-primary mt-1 flex-shrink-0"></i>
+                                <span class="flex-grow-1 overflow-hidden">
+                                    <span class="d-block small text-dark text-truncate @(n.IsRead ? "fw-medium" : "fw-bold")">@n.Title</span>
+                                    <span class="d-block text-muted text-wrap" style="font-size:.78rem;line-height:1.35;">@n.Message</span>
+                                    <span class="d-block text-muted mt-1" style="font-size:.7rem;">@n.CreatedAt.ToLocalTime().ToString("dd MMM, hh:mm tt")</span>
+                                </span>
+                                @if (!n.IsRead)
+                                {
+                                    <span class="notification-dot bg-primary rounded-circle flex-shrink-0 mt-2"></span>
+                                }
+                            </button>
+                        </form>
+                    }
+                }
+            </div>
+
+            <div class="text-center py-2 bg-light border-top rounded-bottom">
+                <a class="small fw-semibold text-decoration-none" asp-area="" asp-controller="Notifications" asp-action="Index">
+                    Show more <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </li>
+
+    <script>
+        (function () {
+            if (window.__zyaraNotifInit) return;
+            window.__zyaraNotifInit = true;
+
+            const iconMap = {
+                BookingRequested: 'bi-calendar-plus',
+                BookingAccepted: 'bi-check-circle',
+                VisitCompleted: 'bi-check-circle',
+                BookingRejected: 'bi-x-circle',
+                BookingCancelled: 'bi-x-circle',
+                BookingExpired: 'bi-hourglass-bottom',
+                BookingNoShow: 'bi-hourglass-bottom',
+                VisitStarted: 'bi-play-circle'
+            };
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str || '';
+                return div.innerHTML;
+            }
+
+            function getToken() {
+                const input = document.querySelector('#notificationBellWrapper input[name="__RequestVerificationToken"]');
+                return input ? input.value : '';
+            }
+
+            function renderList(data) {
+                const badge = document.getElementById('notificationUnreadBadge');
+                const markForm = document.getElementById('markAllReadForm');
+                const list = document.getElementById('notificationDropdownList');
+                if (!badge || !list) return;
+
+                if (data.unreadCount > 0) {
+                    badge.textContent = data.unreadCount > 99 ? '99+' : String(data.unreadCount);
+                    badge.classList.remove('d-none');
+                    if (markForm) markForm.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                    if (markForm) markForm.classList.add('d-none');
+                }
+
+                if (!data.items || data.items.length === 0) {
+                    list.innerHTML = '<div class="text-center text-muted py-4 px-3 small"><i class="bi bi-bell-slash fs-4 d-block mb-1"></i>You\'re all caught up!</div>';
+                    return;
+                }
+
+                const token = escapeHtml(getToken());
+                list.innerHTML = data.items.map(n => {
+                    const icon = iconMap[n.type] || 'bi-bell';
+                    const unreadCls = n.isRead ? '' : 'is-unread';
+                    const titleCls = n.isRead ? 'fw-medium' : 'fw-bold';
+                    const dot = n.isRead ? '' : '<span class="notification-dot bg-primary rounded-circle flex-shrink-0 mt-2"></span>';
+                    return `<form action="/Notifications/Open/${n.id}" method="post" class="m-0">
+                        <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+                        <button type="submit" class="dropdown-item notification-item d-flex gap-2 align-items-start py-2 px-3 border-bottom ${unreadCls}">
+                            <i class="bi ${icon} text-primary mt-1 flex-shrink-0"></i>
+                            <span class="flex-grow-1 overflow-hidden">
+                                <span class="d-block small text-dark text-truncate ${titleCls}">${escapeHtml(n.title)}</span>
+                                <span class="d-block text-muted text-wrap" style="font-size:.78rem;line-height:1.35;">${escapeHtml(n.message)}</span>
+                                <span class="d-block text-muted mt-1" style="font-size:.7rem;">${escapeHtml(n.createdAt)}</span>
+                            </span>
+                            ${dot}
+                        </button>
+                    </form>`;
+                }).join('');
+            }
+
+            async function refreshNotifications() {
+                if (document.visibilityState !== 'visible') return;
+                try {
+                    const res = await fetch('/Notifications/Summary', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        renderList(data);
+                    }
+                } catch (_) { }
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const markForm = document.getElementById('markAllReadForm');
+                if (markForm) {
+                    markForm.addEventListener('submit', async function (e) {
+                        e.preventDefault();
+                        try {
+                            const res = await fetch(markForm.action, {
+                                method: 'POST',
+                                body: new FormData(markForm),
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            if (res.ok) {
+                                await refreshNotifications();
+                            }
+                        } catch (_) { }
+                    });
+                }
+
+                const bell = document.getElementById('notificationBellDropdown');
+                if (bell) {
+                    bell.addEventListener('show.bs.dropdown', refreshNotifications);
+                }
+
+                setInterval(refreshNotifications, 30000);
+            });
+        })();
+    </script>
 }
